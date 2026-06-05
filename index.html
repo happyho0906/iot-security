@@ -3,7 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LISA — Logistics Operations</title>
+    <title>LISA: Logistics Intelligence Sentinel Assistant</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
       :root {
         --bg: #f5f7fa;
@@ -22,10 +27,15 @@
         --amber-soft: #fefce8;
         --radius: 8px;
         --radius-sm: 6px;
-        --shadow: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.05);
-        --shadow-md: 0 4px 8px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.06);
-        --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        --shadow:
+          0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.05);
+        --shadow-md:
+          0 4px 8px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.06);
+        --font:
+          Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
+          sans-serif;
+        --mono:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       }
       *,
       *::before,
@@ -113,7 +123,9 @@
         font-family: var(--font);
         color: var(--text);
         outline: none;
-        transition: border-color 0.15s, box-shadow 0.15s;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
       }
       .form-input:focus {
         border-color: var(--blue);
@@ -161,7 +173,10 @@
         cursor: pointer;
         color: var(--text);
         font-family: var(--font);
-        transition: background 0.1s, border-color 0.1s, color 0.1s;
+        transition:
+          background 0.1s,
+          border-color 0.1s,
+          color 0.1s;
       }
       .demo-btn:hover {
         background: var(--blue-soft);
@@ -217,7 +232,9 @@
         color: var(--muted);
         cursor: pointer;
         user-select: none;
-        transition: background 0.1s, color 0.1s;
+        transition:
+          background 0.1s,
+          color 0.1s;
       }
       .nav-link:hover {
         background: var(--bg);
@@ -470,10 +487,18 @@
         margin-right: 6px;
         flex-shrink: 0;
       }
-      .sdot-green { background: var(--green); }
-      .sdot-amber { background: var(--amber); }
-      .sdot-red   { background: var(--red);   }
-      .sdot-muted { background: #cbd5e1;       }
+      .sdot-green {
+        background: var(--green);
+      }
+      .sdot-amber {
+        background: var(--amber);
+      }
+      .sdot-red {
+        background: var(--red);
+      }
+      .sdot-muted {
+        background: #cbd5e1;
+      }
 
       /* ── DASHBOARD LAYOUT ── */
       .dash-grid {
@@ -597,37 +622,12 @@
       }
 
       /* ── MAP PAGE ── */
-      .location-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
-        margin-top: 14px;
-      }
-      .location-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
+      #leaflet-map {
+        height: 520px;
         border-radius: var(--radius);
+        border: 1px solid var(--border);
         box-shadow: var(--shadow);
-        padding: 18px;
-      }
-      .location-card-id {
-        font-size: 14px;
-        font-weight: 700;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .location-coord {
-        font-size: 12px;
-        color: var(--muted);
-        font-family: var(--mono);
-        margin-bottom: 4px;
-      }
-      .location-meta {
-        font-size: 12px;
-        color: var(--muted);
-        margin-bottom: 14px;
+        margin-top: 14px;
       }
 
       /* ── DISCORD PANEL ── */
@@ -705,14 +705,15 @@
     <script>
       // DEMO MODE — hardcoded accounts (no AWS auth required)
       const DEMO_ACCOUNTS = {
-        "admin@lisa.demo":    { password: "admin123",    role: "ADMIN" },
-        "driver@lisa.demo":   { password: "driver123",   role: "DRIVER" },
+        "admin@lisa.demo": { password: "admin123", role: "ADMIN" },
+        "driver@lisa.demo": { password: "driver123", role: "DRIVER" },
         "customer@lisa.demo": { password: "customer123", role: "CUSTOMER" },
       };
 
       // Set to your Discord webhook URL to enable real notifications.
       // Create one in Discord: Channel Settings > Integrations > Webhooks > New Webhook.
-      const DISCORD_WEBHOOK_URL = "";
+      const DISCORD_WEBHOOK_URL =
+        "DISCORD_WEBHOOK_URL_REMOVED";
 
       // AWS-READY: when Cognito + API Gateway are deployed, uncomment and
       // swap the mock functions below for real fetch() calls.
@@ -735,8 +736,9 @@
         <div class="login-header">
           <div class="login-mark">L</div>
           <div class="login-title">LISA</div>
-          <div class="login-sub">Logistics Intelligence &amp; Sentinel Assistant</div>
-          <div class="login-desc">Logistics monitoring and alert control platform.</div>
+          <div class="login-sub">
+            Logistics Intelligence &amp; Sentinel Assistant
+          </div>
         </div>
 
         <div id="login-error" class="form-error"></div>
@@ -751,7 +753,7 @@
             autocomplete="username"
           />
         </div>
-        <div class="form-group" style="margin-bottom: 16px;">
+        <div class="form-group" style="margin-bottom: 16px">
           <label class="form-label">Password</label>
           <input
             id="login-password"
@@ -762,10 +764,7 @@
           />
         </div>
 
-        <button
-          class="btn btn-primary btn-full"
-          onclick="handleLogin()"
-        >
+        <button class="btn btn-primary btn-full" onclick="handleLogin()">
           Sign In
         </button>
 
@@ -773,22 +772,28 @@
         <div class="demo-grid">
           <button
             class="demo-btn"
-            onclick="signInAs('admin@lisa.demo','admin123')"
-          >Admin Demo</button>
+            onclick="signInAs('admin@lisa.demo', 'admin123')"
+          >
+            Admin Demo
+          </button>
           <button
             class="demo-btn"
-            onclick="signInAs('driver@lisa.demo','driver123')"
-          >Driver Demo</button>
+            onclick="signInAs('driver@lisa.demo', 'driver123')"
+          >
+            Driver Demo
+          </button>
           <button
             class="demo-btn"
-            onclick="signInAs('customer@lisa.demo','customer123')"
-          >Customer Demo</button>
+            onclick="signInAs('customer@lisa.demo', 'customer123')"
+          >
+            Customer Demo
+          </button>
         </div>
       </div>
     </div>
 
     <!-- ── APP SHELL ── -->
-    <div id="app-shell" style="display: none;">
+    <div id="app-shell" style="display: none">
       <!-- Topbar -->
       <div class="topbar">
         <div class="brand">
@@ -796,14 +801,20 @@
           <span class="brand-name">LISA</span>
         </div>
         <nav>
-          <span class="nav-link active" onclick="navigate('dashboard')">Dashboard</span>
-          <span class="nav-link" onclick="navigate('alerts')">Alert Center</span>
+          <span class="nav-link active" onclick="navigate('dashboard')"
+            >Dashboard</span
+          >
+          <span class="nav-link" onclick="navigate('alerts')"
+            >Alert Center</span
+          >
           <span class="nav-link" onclick="navigate('map')">Map</span>
         </nav>
         <div class="topbar-right">
           <span id="nav-user-label"></span>
           &middot;
-          <span id="nav-role-badge" style="font-weight: 600; color: var(--blue);">ADMIN</span>
+          <span id="nav-role-badge" style="font-weight: 600; color: var(--blue)"
+            >ADMIN</span
+          >
           <button class="btn-signout" onclick="handleLogout()">Sign out</button>
         </div>
       </div>
@@ -819,15 +830,33 @@
             </div>
             <div class="stat-card">
               <div class="stat-label">Active Alerts</div>
-              <div class="stat-value" id="stat-alerts" style="color: var(--amber);">–</div>
+              <div
+                class="stat-value"
+                id="stat-alerts"
+                style="color: var(--amber)"
+              >
+                –
+              </div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Critical Alerts</div>
-              <div class="stat-value" id="stat-critical" style="color: var(--red);">–</div>
+              <div
+                class="stat-value"
+                id="stat-critical"
+                style="color: var(--red)"
+              >
+                –
+              </div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Offline Devices</div>
-              <div class="stat-value" id="stat-offline" style="color: var(--muted);">–</div>
+              <div
+                class="stat-value"
+                id="stat-offline"
+                style="color: var(--muted)"
+              >
+                –
+              </div>
             </div>
           </div>
 
@@ -837,8 +866,10 @@
               <div class="panel-header">Recent Alerts</div>
               <div id="dash-alert-list">
                 <div
-                  style="padding: 16px; color: var(--muted); font-size: 12px;"
-                >No active alerts</div>
+                  style="padding: 16px; color: var(--muted); font-size: 12px"
+                >
+                  No active alerts
+                </div>
               </div>
             </div>
             <div class="panel">
@@ -846,19 +877,30 @@
               <div class="panel-body">
                 <div class="discord-status-row">
                   <span id="discord-sdot" class="sdot sdot-muted"></span>
-                  <span id="discord-status-text" style="color: var(--muted);">Not configured</span>
+                  <span id="discord-status-text" style="color: var(--muted)"
+                    >Not configured</span
+                  >
                 </div>
-                <div class="discord-meta">Last alert: <span id="discord-last-alert">–</span></div>
-                <div class="discord-meta">Last command: <span id="discord-last-cmd">–</span></div>
+                <div class="discord-meta">
+                  Last alert: <span id="discord-last-alert">–</span>
+                </div>
+                <div class="discord-meta">
+                  Last command: <span id="discord-last-cmd">–</span>
+                </div>
                 <div id="discord-note" class="discord-note">
                   Set DISCORD_WEBHOOK_URL in config to enable notifications.
                 </div>
-                <div id="discord-test-wrap" style="display: none; margin-top: 12px;">
+                <div
+                  id="discord-test-wrap"
+                  style="display: none; margin-top: 12px"
+                >
                   <button
                     class="btn btn-sm btn-block"
                     onclick="sendTestNotification()"
-                    style="padding: 7px 12px;"
-                  >Send Test Notification</button>
+                    style="padding: 7px 12px"
+                  >
+                    Send Test Notification
+                  </button>
                 </div>
                 <div id="discord-preview-area"></div>
               </div>
@@ -894,9 +936,27 @@
           <div class="section-header">
             <div class="section-title">Alert Center</div>
             <div class="filter-bar">
-              <button class="filter-btn active" id="filter-all"      onclick="filterAlerts('all')">All</button>
-              <button class="filter-btn"        id="filter-active"   onclick="filterAlerts('active')">Active</button>
-              <button class="filter-btn"        id="filter-resolved" onclick="filterAlerts('resolved')">Resolved</button>
+              <button
+                class="filter-btn active"
+                id="filter-all"
+                onclick="filterAlerts('all')"
+              >
+                All
+              </button>
+              <button
+                class="filter-btn"
+                id="filter-active"
+                onclick="filterAlerts('active')"
+              >
+                Active
+              </button>
+              <button
+                class="filter-btn"
+                id="filter-resolved"
+                onclick="filterAlerts('resolved')"
+              >
+                Resolved
+              </button>
             </div>
           </div>
           <div class="panel">
@@ -935,11 +995,11 @@
         <div class="page-content">
           <div class="section-header">
             <div class="section-title">Shipment Locations</div>
-            <a id="maps-all-link" href="#" target="_blank" rel="noopener">
-              <button class="btn btn-primary btn-sm">View All on Google Maps</button>
-            </a>
+            <span style="font-size: 12px; color: var(--muted);">
+              Click a marker to view shipment details
+            </span>
           </div>
-          <div id="location-grid" class="location-grid"></div>
+          <div id="leaflet-map"></div>
         </div>
       </div>
       <!-- /#page-map -->
@@ -961,20 +1021,22 @@
         sessionStorage.setItem("lisa_email", email);
         sessionStorage.setItem("lisa_role", role);
         document.getElementById("page-login").style.display = "none";
-        document.getElementById("app-shell").style.display  = "block";
+        document.getElementById("app-shell").style.display = "block";
         document.getElementById("nav-user-label").textContent = email;
         const badge = document.getElementById("nav-role-badge");
         badge.textContent = role;
         badge.style.color =
-          role === "ADMIN" ? "var(--blue)" :
-          role === "DRIVER" ? "var(--green)" :
-          "var(--muted)";
+          role === "ADMIN"
+            ? "var(--blue)"
+            : role === "DRIVER"
+              ? "var(--green)"
+              : "var(--muted)";
         initApp();
       }
 
       function checkSession() {
         const email = sessionStorage.getItem("lisa_email");
-        const role  = sessionStorage.getItem("lisa_role");
+        const role = sessionStorage.getItem("lisa_role");
         if (email && role && DEMO_ACCOUNTS[email]) {
           showApp(email, role);
         } else {
@@ -983,13 +1045,16 @@
       }
 
       function handleLogin() {
-        const email    = document.getElementById("login-email").value.trim().toLowerCase();
+        const email = document
+          .getElementById("login-email")
+          .value.trim()
+          .toLowerCase();
         const password = document.getElementById("login-password").value;
-        const errEl    = document.getElementById("login-error");
+        const errEl = document.getElementById("login-error");
         errEl.style.display = "none";
         const account = DEMO_ACCOUNTS[email];
         if (!account || account.password !== password) {
-          errEl.textContent   = "Invalid email or password.";
+          errEl.textContent = "Invalid email or password.";
           errEl.style.display = "block";
           return;
         }
@@ -997,7 +1062,7 @@
       }
 
       function signInAs(email, password) {
-        document.getElementById("login-email").value    = email;
+        document.getElementById("login-email").value = email;
         document.getElementById("login-password").value = password;
         handleLogin();
       }
@@ -1010,9 +1075,11 @@
 
       document.addEventListener("DOMContentLoaded", () => {
         checkSession();
-        document.getElementById("login-password").addEventListener("keydown", (e) => {
-          if (e.key === "Enter") handleLogin();
-        });
+        document
+          .getElementById("login-password")
+          .addEventListener("keydown", (e) => {
+            if (e.key === "Enter") handleLogin();
+          });
       });
     </script>
 
@@ -1022,39 +1089,71 @@
       const _db = {
         shipments: [
           {
-            shipmentId: "SHIP-001", status: "IN_TRANSIT", riskLevel: "LOW",
-            temperature: 4.2, humidity: 65, gForce: 0.1, lockStatus: "LOCKED",
-            deviceStatus: "ONLINE", latitude: 1.3521, longitude: 103.8198,
+            shipmentId: "SHIP-001",
+            status: "IN_TRANSIT",
+            riskLevel: "LOW",
+            temperature: 4.2,
+            humidity: 65,
+            gForce: 0.1,
+            lockStatus: "LOCKED",
+            deviceStatus: "ONLINE",
+            latitude: 1.3521,
+            longitude: 103.8198,
             lastUpdatedAt: "2025-06-05T07:00:00Z",
           },
           {
-            shipmentId: "SHIP-002", status: "ALERT", riskLevel: "CRITICAL",
-            temperature: 11.2, humidity: 70, gForce: 0.3, lockStatus: "LOCKED",
-            deviceStatus: "ONLINE", latitude: 1.3000, longitude: 103.8500,
+            shipmentId: "SHIP-002",
+            status: "ALERT",
+            riskLevel: "CRITICAL",
+            temperature: 11.2,
+            humidity: 70,
+            gForce: 0.3,
+            lockStatus: "LOCKED",
+            deviceStatus: "ONLINE",
+            latitude: 1.3,
+            longitude: 103.85,
             lastUpdatedAt: "2025-06-05T08:05:00Z",
           },
           {
-            shipmentId: "SHIP-003", status: "IN_TRANSIT", riskLevel: "LOW",
-            temperature: 3.8, humidity: 62, gForce: 0.0, lockStatus: "LOCKED",
-            deviceStatus: "ONLINE", latitude: 1.3200, longitude: 103.7800,
+            shipmentId: "SHIP-003",
+            status: "IN_TRANSIT",
+            riskLevel: "LOW",
+            temperature: 3.8,
+            humidity: 62,
+            gForce: 0.0,
+            lockStatus: "LOCKED",
+            deviceStatus: "ONLINE",
+            latitude: 1.32,
+            longitude: 103.78,
             lastUpdatedAt: "2025-06-05T07:30:00Z",
           },
         ],
         alerts: [
           {
-            alertId: "ALERT-001", shipmentId: "SHIP-002", alertType: "TEMP_HIGH",
-            severity: "CRITICAL", message: "Temperature exceeded 8C limit: reading 11.2C",
-            resolved: false, resolvedBy: null,
-            createdAt: "2025-06-05T08:00:00Z", resolvedAt: null,
+            alertId: "ALERT-001",
+            shipmentId: "SHIP-002",
+            alertType: "TEMP_HIGH",
+            severity: "CRITICAL",
+            message: "Temperature exceeded 8C limit: reading 11.2C",
+            resolved: false,
+            resolvedBy: null,
+            createdAt: "2025-06-05T08:00:00Z",
+            resolvedAt: null,
           },
         ],
         lastDiscordAt: null,
         lastDiscordCmd: null,
       };
 
-      function dbShipments() { return _db.shipments; }
-      function dbShipment(id) { return _db.shipments.find((s) => s.shipmentId === id) || null; }
-      function dbAlerts()    { return _db.alerts; }
+      function dbShipments() {
+        return _db.shipments;
+      }
+      function dbShipment(id) {
+        return _db.shipments.find((s) => s.shipmentId === id) || null;
+      }
+      function dbAlerts() {
+        return _db.alerts;
+      }
 
       function dbResolveAlert(alertId, resolvedBy) {
         const a = _db.alerts.find((x) => x.alertId === alertId);
@@ -1062,7 +1161,9 @@
         a.resolved = true;
         a.resolvedBy = resolvedBy;
         a.resolvedAt = new Date().toISOString();
-        if (!_db.alerts.some((x) => x.shipmentId === a.shipmentId && !x.resolved)) {
+        if (
+          !_db.alerts.some((x) => x.shipmentId === a.shipmentId && !x.resolved)
+        ) {
           const s = _db.shipments.find((x) => x.shipmentId === a.shipmentId);
           if (s) {
             s.riskLevel = "LOW";
@@ -1074,18 +1175,29 @@
 
       function dbTriggerAlert(shipmentId, alertType, severity, temperature) {
         const alertId = "ALERT-" + Date.now();
-        const msg = alertType + " on " + shipmentId + (temperature ? ": " + temperature + "C" : "");
+        const msg =
+          alertType +
+          " on " +
+          shipmentId +
+          (temperature ? ": " + temperature + "C" : "");
         _db.alerts.push({
-          alertId, shipmentId, alertType, severity, message: msg,
-          resolved: false, resolvedBy: null,
-          createdAt: new Date().toISOString(), resolvedAt: null,
+          alertId,
+          shipmentId,
+          alertType,
+          severity,
+          message: msg,
+          resolved: false,
+          resolvedBy: null,
+          createdAt: new Date().toISOString(),
+          resolvedAt: null,
         });
         const s = _db.shipments.find((x) => x.shipmentId === shipmentId);
         if (s) {
           s.riskLevel = severity;
           s.status = "ALERT";
           s.lastUpdatedAt = new Date().toISOString();
-          if (temperature !== undefined) s.temperature = parseFloat(temperature);
+          if (temperature !== undefined)
+            s.temperature = parseFloat(temperature);
         }
         if (s) postDiscordAlert(s, alertType, severity, alertId);
         return alertId;
@@ -1093,37 +1205,58 @@
 
       function dbSetLock(shipmentId, lockStatus) {
         const s = _db.shipments.find((x) => x.shipmentId === shipmentId);
-        if (s) { s.lockStatus = lockStatus; s.lastUpdatedAt = new Date().toISOString(); }
+        if (s) {
+          s.lockStatus = lockStatus;
+          s.lastUpdatedAt = new Date().toISOString();
+        }
       }
 
       // ── DISCORD ─────────────────────────────────────────────────────────────
       // Discord webhook execution supports CORS — fetch runs from the browser.
-      const DISCORD_EMBED_COLOR = { CRITICAL: 14427686, HIGH: 11817737, LOW: 1483594 };
+      const DISCORD_EMBED_COLOR = {
+        CRITICAL: 14427686,
+        HIGH: 11817737,
+        LOW: 1483594,
+      };
 
       async function postDiscordAlert(ship, alertType, severity, alertId) {
         if (!DISCORD_WEBHOOK_URL) return;
         const payload = {
-          embeds: [{
-            title: "LISA Alert",
-            color: DISCORD_EMBED_COLOR[severity] || 9807270,
-            fields: [
-              { name: "Severity", value: severity, inline: true },
-              { name: "Type",     value: alertType, inline: true },
-              { name: "Shipment", value: ship.shipmentId, inline: true },
-              { name: "Temperature", value: ship.temperature + " C", inline: true },
-              { name: "Location", value: ship.latitude + ", " + ship.longitude, inline: true },
-              { name: "​", value: "​", inline: true },
-              {
-                name: "Suggested Commands",
-                value:
-                  "`/status " + ship.shipmentId + "`\n" +
-                  "`/alerts`\n" +
-                  "`/resolve " + alertId + "`",
-              },
-            ],
-            timestamp: new Date().toISOString(),
-            footer: { text: "LISA Logistics Operations" },
-          }],
+          embeds: [
+            {
+              title: "LISA Alert",
+              color: DISCORD_EMBED_COLOR[severity] || 9807270,
+              fields: [
+                { name: "Severity", value: severity, inline: true },
+                { name: "Type", value: alertType, inline: true },
+                { name: "Shipment", value: ship.shipmentId, inline: true },
+                {
+                  name: "Temperature",
+                  value: ship.temperature + " C",
+                  inline: true,
+                },
+                {
+                  name: "Location",
+                  value: ship.latitude + ", " + ship.longitude,
+                  inline: true,
+                },
+                { name: "​", value: "​", inline: true },
+                {
+                  name: "Suggested Commands",
+                  value:
+                    "`/status " +
+                    ship.shipmentId +
+                    "`\n" +
+                    "`/alerts`\n" +
+                    "`/resolve " +
+                    alertId +
+                    "`",
+                },
+              ],
+              timestamp: new Date().toISOString(),
+              footer: { text: "LISA Logistics Operations" },
+            },
+          ],
         };
         const ok = await _discordPost(payload);
         if (ok) {
@@ -1137,23 +1270,29 @@
       async function sendTestNotification() {
         if (!DISCORD_WEBHOOK_URL) return;
         const payload = {
-          embeds: [{
-            title: "LISA — Test Notification",
-            color: 1483594,
-            description: "Webhook is active. Alert notifications will appear here when triggered.",
-            timestamp: new Date().toISOString(),
-            footer: { text: "LISA Logistics Operations" },
-          }],
+          embeds: [
+            {
+              title: "LISA — Test Notification",
+              color: 1483594,
+              description:
+                "Webhook is active. Alert notifications will appear here when triggered.",
+              timestamp: new Date().toISOString(),
+              footer: { text: "LISA Logistics Operations" },
+            },
+          ],
         };
         const ok = await _discordPost(payload);
         if (ok) {
           _db.lastDiscordAt = new Date().toLocaleTimeString();
-          document.getElementById("discord-last-alert").textContent = _db.lastDiscordAt;
+          document.getElementById("discord-last-alert").textContent =
+            _db.lastDiscordAt;
           document.getElementById("discord-preview-area").innerHTML =
             '<div class="discord-preview">' +
-              '<div class="dp-time">LISA &middot; Today at ' + new Date().toLocaleTimeString() + "</div>" +
-              '<div class="dp-title">LISA &mdash; Test Notification</div>' +
-              '<div style="font-size:12px; color:#dbdee1; font-family:var(--mono);">Webhook is active.</div>' +
+            '<div class="dp-time">LISA &middot; Today at ' +
+            new Date().toLocaleTimeString() +
+            "</div>" +
+            '<div class="dp-title">LISA &mdash; Test Notification</div>' +
+            '<div style="font-size:12px; color:#dbdee1; font-family:var(--mono);">Webhook is active.</div>' +
             "</div>";
         } else {
           alert("Discord webhook failed. Check the URL in config.");
@@ -1176,31 +1315,55 @@
 
       function renderDiscordPreview(ship, alertType, severity, alertId) {
         const borderColor =
-          severity === "CRITICAL" ? "#dc2626" :
-          severity === "HIGH" ? "#b45309" : "#16a34a";
+          severity === "CRITICAL"
+            ? "#dc2626"
+            : severity === "HIGH"
+              ? "#b45309"
+              : "#16a34a";
         document.getElementById("discord-preview-area").innerHTML =
-          '<div class="discord-preview" style="border-left-color:' + borderColor + '">' +
-            '<div class="dp-time">LISA &middot; Today at ' + new Date().toLocaleTimeString() + "</div>" +
-            '<div class="dp-title">LISA Alert</div>' +
-            '<div class="dp-fields">' +
-              '<div class="dp-field"><div class="dp-field-label">Severity</div><div class="dp-field-value">' + severity + "</div></div>" +
-              '<div class="dp-field"><div class="dp-field-label">Type</div><div class="dp-field-value">' + alertType + "</div></div>" +
-              '<div class="dp-field"><div class="dp-field-label">Shipment</div><div class="dp-field-value">' + ship.shipmentId + "</div></div>" +
-              '<div class="dp-field"><div class="dp-field-label">Temperature</div><div class="dp-field-value">' + ship.temperature + " C</div></div>" +
-            "</div>" +
-            '<div class="dp-commands">' +
-              "/status " + ship.shipmentId + " &nbsp;&middot;&nbsp; /alerts &nbsp;&middot;&nbsp; /resolve " + alertId +
-            "</div>" +
+          '<div class="discord-preview" style="border-left-color:' +
+          borderColor +
+          '">' +
+          '<div class="dp-time">LISA &middot; Today at ' +
+          new Date().toLocaleTimeString() +
+          "</div>" +
+          '<div class="dp-title">LISA Alert</div>' +
+          '<div class="dp-fields">' +
+          '<div class="dp-field"><div class="dp-field-label">Severity</div><div class="dp-field-value">' +
+          severity +
+          "</div></div>" +
+          '<div class="dp-field"><div class="dp-field-label">Type</div><div class="dp-field-value">' +
+          alertType +
+          "</div></div>" +
+          '<div class="dp-field"><div class="dp-field-label">Shipment</div><div class="dp-field-value">' +
+          ship.shipmentId +
+          "</div></div>" +
+          '<div class="dp-field"><div class="dp-field-label">Temperature</div><div class="dp-field-value">' +
+          ship.temperature +
+          " C</div></div>" +
+          "</div>" +
+          '<div class="dp-commands">' +
+          "/status " +
+          ship.shipmentId +
+          " &nbsp;&middot;&nbsp; /alerts &nbsp;&middot;&nbsp; /resolve " +
+          alertId +
+          "</div>" +
           "</div>";
       }
 
       // ── ROUTING ─────────────────────────────────────────────────────────────
       function navigate(page) {
-        document.querySelectorAll(".page-section").forEach((el) => el.classList.remove("active"));
-        document.querySelectorAll(".nav-link").forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".page-section")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-link")
+          .forEach((el) => el.classList.remove("active"));
 
         if (page.startsWith("shipment-")) {
-          document.getElementById("page-shipment-detail").classList.add("active");
+          document
+            .getElementById("page-shipment-detail")
+            .classList.add("active");
           renderDetail(page.replace("shipment-", ""));
           return;
         }
@@ -1224,7 +1387,7 @@
       }
 
       window.addEventListener("hashchange", () =>
-        navigate(location.hash.replace("#", "") || "dashboard")
+        navigate(location.hash.replace("#", "") || "dashboard"),
       );
 
       // ── HELPERS ─────────────────────────────────────────────────────────────
@@ -1232,33 +1395,46 @@
         return '<span class="badge badge-' + cls + '">' + text + "</span>";
       }
       function riskBadge(r) {
-        return badge({ CRITICAL: "red", HIGH: "amber", LOW: "green" }[r] || "muted", r);
+        return badge(
+          { CRITICAL: "red", HIGH: "amber", LOW: "green" }[r] || "muted",
+          r,
+        );
       }
       function statusBadge(s) {
         return badge(
-          { ALERT: "red", IN_TRANSIT: "blue", DELIVERED: "green" }[s] || "muted",
-          s.replace("_", " ")
+          { ALERT: "red", IN_TRANSIT: "blue", DELIVERED: "green" }[s] ||
+            "muted",
+          s.replace("_", " "),
         );
       }
       function severityBadge(s) {
-        return badge({ CRITICAL: "red", HIGH: "amber", LOW: "green" }[s] || "muted", s);
+        return badge(
+          { CRITICAL: "red", HIGH: "amber", LOW: "green" }[s] || "muted",
+          s,
+        );
       }
       function fmtTime(iso) {
         const d = new Date(iso);
-        return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        return d.toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
       }
 
       // ── DASHBOARD ──────────────────────────────────────────────────────────
       function renderDashboard() {
-        const ships  = dbShipments();
+        const ships = dbShipments();
         const active = dbAlerts().filter((a) => !a.resolved);
-        const crit   = active.filter((a) => a.severity === "CRITICAL");
+        const crit = active.filter((a) => a.severity === "CRITICAL");
 
         document.getElementById("stat-shipments").textContent = ships.length;
-        document.getElementById("stat-alerts").textContent    = active.length;
-        document.getElementById("stat-critical").textContent  = crit.length;
-        document.getElementById("stat-offline").textContent   =
-          ships.filter((s) => s.deviceStatus !== "ONLINE").length;
+        document.getElementById("stat-alerts").textContent = active.length;
+        document.getElementById("stat-critical").textContent = crit.length;
+        document.getElementById("stat-offline").textContent = ships.filter(
+          (s) => s.deviceStatus !== "ONLINE",
+        ).length;
 
         // Recent alerts panel
         const listEl = document.getElementById("dash-alert-list");
@@ -1266,49 +1442,80 @@
           listEl.innerHTML =
             '<div style="padding:16px; color:var(--muted); font-size:12px;">No active alerts</div>';
         } else {
-          listEl.innerHTML = active.slice(0, 6).map((a) =>
-            '<div class="alert-row">' +
-              severityBadge(a.severity) +
-              '<div class="alert-row-info">' +
-                '<div class="alert-row-title">' + a.alertType + " &middot; " + a.shipmentId + "</div>" +
-                '<div class="alert-row-sub">' + fmtTime(a.createdAt) + "</div>" +
-              "</div>" +
-              (_currentRole === "ADMIN"
-                ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' + a.alertId + '\')">Resolve</button>'
-                : "") +
-            "</div>"
-          ).join("");
+          listEl.innerHTML = active
+            .slice(0, 6)
+            .map(
+              (a) =>
+                '<div class="alert-row">' +
+                severityBadge(a.severity) +
+                '<div class="alert-row-info">' +
+                '<div class="alert-row-title">' +
+                a.alertType +
+                " &middot; " +
+                a.shipmentId +
+                "</div>" +
+                '<div class="alert-row-sub">' +
+                fmtTime(a.createdAt) +
+                "</div>" +
+                "</div>" +
+                (_currentRole === "ADMIN"
+                  ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' +
+                    a.alertId +
+                    "')\">Resolve</button>"
+                  : "") +
+                "</div>",
+            )
+            .join("");
         }
 
         // Shipment table
-        document.getElementById("shipment-table-body").innerHTML = ships.map((s) =>
-          "<tr>" +
-            '<td style="font-family:var(--mono); font-size:12px; font-weight:600;">' + s.shipmentId + "</td>" +
-            "<td>" + statusBadge(s.status) + "</td>" +
-            "<td>" + riskBadge(s.riskLevel) + "</td>" +
-            "<td>" + s.temperature + "</td>" +
-            "<td>" + s.lockStatus + "</td>" +
-            "<td>" + s.deviceStatus + "</td>" +
-            '<td style="font-size:11px; color:var(--muted);">' + fmtTime(s.lastUpdatedAt) + "</td>" +
-            '<td><button class="btn btn-sm" onclick="navigate(\'shipment-' + s.shipmentId + '\')">View</button></td>' +
-          "</tr>"
-        ).join("");
+        document.getElementById("shipment-table-body").innerHTML = ships
+          .map(
+            (s) =>
+              "<tr>" +
+              '<td style="font-family:var(--mono); font-size:12px; font-weight:600;">' +
+              s.shipmentId +
+              "</td>" +
+              "<td>" +
+              statusBadge(s.status) +
+              "</td>" +
+              "<td>" +
+              riskBadge(s.riskLevel) +
+              "</td>" +
+              "<td>" +
+              s.temperature +
+              "</td>" +
+              "<td>" +
+              s.lockStatus +
+              "</td>" +
+              "<td>" +
+              s.deviceStatus +
+              "</td>" +
+              '<td style="font-size:11px; color:var(--muted);">' +
+              fmtTime(s.lastUpdatedAt) +
+              "</td>" +
+              '<td><button class="btn btn-sm" onclick="navigate(\'shipment-' +
+              s.shipmentId +
+              "')\">View</button></td>" +
+              "</tr>",
+          )
+          .join("");
       }
 
       function renderDiscordStatus() {
-        const dot  = document.getElementById("discord-sdot");
+        const dot = document.getElementById("discord-sdot");
         const text = document.getElementById("discord-status-text");
         const note = document.getElementById("discord-note");
         const wrap = document.getElementById("discord-test-wrap");
         const last = document.getElementById("discord-last-alert");
         if (DISCORD_WEBHOOK_URL) {
-          dot.className    = "sdot sdot-green";
+          dot.className = "sdot sdot-green";
           text.textContent = "Webhook active";
           text.style.color = "var(--green)";
           note.style.display = "none";
           wrap.style.display = "block";
         } else {
-          dot.className    = "sdot sdot-muted";
+          dot.className = "sdot sdot-muted";
           text.textContent = "Not configured";
           text.style.color = "var(--muted)";
           note.style.display = "block";
@@ -1321,44 +1528,70 @@
       let _alertFilter = "all";
 
       function renderAlerts() {
-        const all  = dbAlerts();
+        const all = dbAlerts();
         const data =
-          _alertFilter === "active"   ? all.filter((a) => !a.resolved) :
-          _alertFilter === "resolved" ? all.filter((a) =>  a.resolved) :
-          all;
+          _alertFilter === "active"
+            ? all.filter((a) => !a.resolved)
+            : _alertFilter === "resolved"
+              ? all.filter((a) => a.resolved)
+              : all;
         const tbody = document.getElementById("alerts-table-body");
         if (!data.length) {
           tbody.innerHTML =
             '<tr><td colspan="7" style="color:var(--muted); padding:14px 12px;">No alerts</td></tr>';
           return;
         }
-        tbody.innerHTML = data.map((a) =>
-          "<tr>" +
-            '<td style="font-family:var(--mono); font-size:11px;">' + a.alertId + "</td>" +
-            '<td style="font-weight:600;">' + a.shipmentId + "</td>" +
-            "<td>" + a.alertType + "</td>" +
-            "<td>" + severityBadge(a.severity) + "</td>" +
-            "<td>" + (a.resolved ? badge("green", "Resolved") : badge("red", "Active")) + "</td>" +
-            '<td style="font-size:11px; color:var(--muted);">' + fmtTime(a.createdAt) + "</td>" +
-            "<td>" +
+        tbody.innerHTML = data
+          .map(
+            (a) =>
+              "<tr>" +
+              '<td style="font-family:var(--mono); font-size:11px;">' +
+              a.alertId +
+              "</td>" +
+              '<td style="font-weight:600;">' +
+              a.shipmentId +
+              "</td>" +
+              "<td>" +
+              a.alertType +
+              "</td>" +
+              "<td>" +
+              severityBadge(a.severity) +
+              "</td>" +
+              "<td>" +
+              (a.resolved
+                ? badge("green", "Resolved")
+                : badge("red", "Active")) +
+              "</td>" +
+              '<td style="font-size:11px; color:var(--muted);">' +
+              fmtTime(a.createdAt) +
+              "</td>" +
+              "<td>" +
               (!a.resolved && _currentRole === "ADMIN"
-                ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' + a.alertId + '\')">Resolve</button>'
+                ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' +
+                  a.alertId +
+                  "')\">Resolve</button>"
                 : "") +
-            "</td>" +
-          "</tr>"
-        ).join("");
+              "</td>" +
+              "</tr>",
+          )
+          .join("");
       }
 
       function filterAlerts(f) {
         _alertFilter = f;
-        document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
+        document
+          .querySelectorAll(".filter-btn")
+          .forEach((b) => b.classList.remove("active"));
         document.getElementById("filter-" + f).classList.add("active");
         renderAlerts();
       }
 
       function resolveAlertUI(alertId) {
         if (!confirm("Mark alert " + alertId + " as resolved?")) return;
-        dbResolveAlert(alertId, document.getElementById("nav-user-label").textContent);
+        dbResolveAlert(
+          alertId,
+          document.getElementById("nav-user-label").textContent,
+        );
         renderDashboard();
         renderAlerts();
         const detailPage = document.getElementById("page-shipment-detail");
@@ -1371,65 +1604,91 @@
       // ── SHIPMENT DETAIL ────────────────────────────────────────────────────
       function renderDetail(sid) {
         const el = document.getElementById("shipment-detail-content");
-        const s  = dbShipment(sid);
-        if (!s) { el.innerHTML = '<div style="color:var(--muted);">Shipment not found.</div>'; return; }
+        const s = dbShipment(sid);
+        if (!s) {
+          el.innerHTML =
+            '<div style="color:var(--muted);">Shipment not found.</div>';
+          return;
+        }
 
-        const active      = dbAlerts().filter((a) => a.shipmentId === sid && !a.resolved);
+        const active = dbAlerts().filter(
+          (a) => a.shipmentId === sid && !a.resolved,
+        );
         const latestAlert = active[0] || null;
-        const isAdmin     = _currentRole === "ADMIN";
+        const isAdmin = _currentRole === "ADMIN";
 
         const fields = [
-          ["Shipment ID",   s.shipmentId],
-          ["Status",        s.status.replace("_", " ")],
-          ["Risk Level",    s.riskLevel],
-          ["Temperature",   s.temperature + " C"],
-          ["Humidity",      s.humidity + " %"],
-          ["G-Force",       s.gForce],
-          ["Lock Status",   s.lockStatus],
+          ["Shipment ID", s.shipmentId],
+          ["Status", s.status.replace("_", " ")],
+          ["Risk Level", s.riskLevel],
+          ["Temperature", s.temperature + " C"],
+          ["Humidity", s.humidity + " %"],
+          ["G-Force", s.gForce],
+          ["Lock Status", s.lockStatus],
           ["Device Status", s.deviceStatus],
-          ["Location",      s.latitude + ", " + s.longitude],
-          ["Last Updated",  fmtTime(s.lastUpdatedAt)],
+          ["Location", s.latitude + ", " + s.longitude],
+          ["Last Updated", fmtTime(s.lastUpdatedAt)],
         ];
 
         el.innerHTML =
           '<div class="detail-header">' +
-            '<div class="detail-title">' + s.shipmentId + "</div>" +
-            riskBadge(s.riskLevel) +
-            statusBadge(s.status) +
+          '<div class="detail-title">' +
+          s.shipmentId +
+          "</div>" +
+          riskBadge(s.riskLevel) +
+          statusBadge(s.status) +
           "</div>" +
           '<div class="detail-grid">' +
-            '<div class="panel">' +
-              '<div class="panel-header">Shipment Details</div>' +
-              '<table class="kv-table">' +
-                fields.map((f) => "<tr><th>" + f[0] + "</th><td>" + f[1] + "</td></tr>").join("") +
-              "</table>" +
-            "</div>" +
-            '<div style="display:flex; flex-direction:column; gap:12px;">' +
-              (isAdmin
-                ? '<div class="panel">' +
-                    '<div class="panel-header">Controls</div>' +
-                    '<div class="panel-body controls-stack">' +
-                      '<button class="btn btn-danger control-btn" onclick="doTriggerTemp(\'' + sid + '\')">Trigger Temperature Alert</button>' +
-                      '<button class="btn btn-warning control-btn" onclick="doTriggerCollision(\'' + sid + '\')">Trigger Collision Alert</button>' +
-                      (latestAlert
-                        ? '<button class="btn btn-success control-btn" onclick="resolveAlertUI(\'' + latestAlert.alertId + '\')">Resolve Active Alert</button>'
-                        : "") +
-                      '<button class="btn btn-primary control-btn" onclick="doSetLock(\'' + sid + '\',\'LOCKED\')">Lock Cargo</button>' +
-                      '<button class="btn control-btn" onclick="doSetLock(\'' + sid + '\',\'UNLOCKED\')">Unlock Cargo</button>' +
-                    "</div>" +
-                  "</div>"
+          '<div class="panel">' +
+          '<div class="panel-header">Shipment Details</div>' +
+          '<table class="kv-table">' +
+          fields
+            .map((f) => "<tr><th>" + f[0] + "</th><td>" + f[1] + "</td></tr>")
+            .join("") +
+          "</table>" +
+          "</div>" +
+          '<div style="display:flex; flex-direction:column; gap:12px;">' +
+          (isAdmin
+            ? '<div class="panel">' +
+              '<div class="panel-header">Controls</div>' +
+              '<div class="panel-body controls-stack">' +
+              '<button class="btn btn-danger control-btn" onclick="doTriggerTemp(\'' +
+              sid +
+              "')\">Trigger Temperature Alert</button>" +
+              '<button class="btn btn-warning control-btn" onclick="doTriggerCollision(\'' +
+              sid +
+              "')\">Trigger Collision Alert</button>" +
+              (latestAlert
+                ? '<button class="btn btn-success control-btn" onclick="resolveAlertUI(\'' +
+                  latestAlert.alertId +
+                  "')\">Resolve Active Alert</button>"
                 : "") +
-              '<div class="panel">' +
-                '<div class="panel-header">Latest Alert</div>' +
-                '<div class="panel-body">' +
-                  (latestAlert
-                    ? '<div style="font-size:12px; font-weight:600; color:var(--red); margin-bottom:4px;">' + latestAlert.alertType + "</div>" +
-                      '<div style="font-size:12px; color:var(--muted);">' + latestAlert.message + "</div>" +
-                      '<div style="font-size:11px; color:var(--muted); margin-top:6px;">' + fmtTime(latestAlert.createdAt) + "</div>"
-                    : '<div style="font-size:12px; color:var(--muted);">No active alerts</div>') +
-                "</div>" +
+              '<button class="btn btn-primary control-btn" onclick="doSetLock(\'' +
+              sid +
+              "','LOCKED')\">Lock Cargo</button>" +
+              '<button class="btn control-btn" onclick="doSetLock(\'' +
+              sid +
+              "','UNLOCKED')\">Unlock Cargo</button>" +
               "</div>" +
-            "</div>" +
+              "</div>"
+            : "") +
+          '<div class="panel">' +
+          '<div class="panel-header">Latest Alert</div>' +
+          '<div class="panel-body">' +
+          (latestAlert
+            ? '<div style="font-size:12px; font-weight:600; color:var(--red); margin-bottom:4px;">' +
+              latestAlert.alertType +
+              "</div>" +
+              '<div style="font-size:12px; color:var(--muted);">' +
+              latestAlert.message +
+              "</div>" +
+              '<div style="font-size:11px; color:var(--muted); margin-top:6px;">' +
+              fmtTime(latestAlert.createdAt) +
+              "</div>"
+            : '<div style="font-size:12px; color:var(--muted);">No active alerts</div>') +
+          "</div>" +
+          "</div>" +
+          "</div>" +
           "</div>";
       }
 
@@ -1437,47 +1696,96 @@
         const temp = prompt("Enter simulated temperature (C):", "12.0");
         if (temp === null) return;
         dbTriggerAlert(sid, "TEMP_HIGH", "CRITICAL", temp);
-        renderDetail(sid); renderDashboard(); renderAlerts();
+        renderDetail(sid);
+        renderDashboard();
+        renderAlerts();
       }
 
       function doTriggerCollision(sid) {
         dbTriggerAlert(sid, "COLLISION", "HIGH");
-        renderDetail(sid); renderDashboard(); renderAlerts();
+        renderDetail(sid);
+        renderDashboard();
+        renderAlerts();
       }
 
       function doSetLock(sid, status) {
         dbSetLock(sid, status);
-        renderDetail(sid); renderDashboard();
+        renderDetail(sid);
+        renderDashboard();
       }
 
       // ── MAP ─────────────────────────────────────────────────────────────────
+      let _leafletMap = null;
+      let _leafletMarkers = [];
+
       function renderMap() {
         const ships = dbShipments();
 
-        // "View All" link uses Google Maps directions with all shipments as waypoints
-        const waypoints = ships.map((s) => s.latitude + "," + s.longitude).join("/");
-        document.getElementById("maps-all-link").href =
-          "https://www.google.com/maps/dir/" + waypoints;
+        if (!_leafletMap) {
+          _leafletMap = L.map("leaflet-map").setView(
+            [1.3521, 103.8198],
+            13,
+          );
+          L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+              attribution: "© OpenStreetMap contributors",
+              maxZoom: 18,
+            },
+          ).addTo(_leafletMap);
+        }
 
-        const riskColor = { LOW: "var(--green)", HIGH: "var(--amber)", CRITICAL: "var(--red)" };
+        // Leaflet needs the container to be visible before it can size itself
+        setTimeout(() => _leafletMap.invalidateSize(), 50);
 
-        document.getElementById("location-grid").innerHTML = ships.map((s) =>
-          '<div class="location-card">' +
-            '<div class="location-card-id">' +
-              '<span style="font-family:var(--mono);">' + s.shipmentId + "</span>" +
-              riskBadge(s.riskLevel) +
-              statusBadge(s.status) +
-            "</div>" +
-            '<div class="location-coord">Lat: ' + s.latitude + "</div>" +
-            '<div class="location-coord">Lng: ' + s.longitude + "</div>" +
-            '<div class="location-meta" style="margin-top:6px;">' +
-              "Temp: " + s.temperature + " C &nbsp;&middot;&nbsp; Lock: " + s.lockStatus +
-            "</div>" +
-            '<a href="https://www.google.com/maps?q=' + s.latitude + "," + s.longitude + '" target="_blank" rel="noopener">' +
-              '<button class="btn btn-sm btn-block" style="margin-top:2px; padding:7px 12px;">Open in Google Maps</button>' +
-            "</a>" +
-          "</div>"
-        ).join("");
+        // Clear old markers
+        _leafletMarkers.forEach((m) => _leafletMap.removeLayer(m));
+        _leafletMarkers = [];
+
+        const markerColor = {
+          CRITICAL: "#dc2626",
+          HIGH: "#b45309",
+          LOW: "#16a34a",
+        };
+
+        ships.forEach((s) => {
+          const color = markerColor[s.riskLevel] || "#64748b";
+          const marker = L.circleMarker([s.latitude, s.longitude], {
+            radius: 11,
+            fillColor: color,
+            color: "#ffffff",
+            weight: 2.5,
+            opacity: 1,
+            fillOpacity: 0.9,
+          });
+
+          marker.bindPopup(
+            '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif; min-width:170px; padding:2px 0;">' +
+              '<div style="font-weight:700; font-size:13px; margin-bottom:8px;">' + s.shipmentId + "</div>" +
+              '<div style="font-size:12px; line-height:1.9; color:#374151;">' +
+                "Risk: <strong style=\"color:" + color + "\">" + s.riskLevel + "</strong><br>" +
+                "Status: " + s.status.replace("_", " ") + "<br>" +
+                "Temp: " + s.temperature + " C<br>" +
+                "Lock: " + s.lockStatus +
+              "</div>" +
+              '<button onclick="navigate(\'shipment-' + s.shipmentId + '\')" ' +
+                'style="margin-top:10px; width:100%; padding:5px 0; font-size:12px; font-weight:600; ' +
+                "border:1px solid #dde3ec; border-radius:6px; cursor:pointer; background:#f5f7fa; color:#0f172a;\">" +
+                "View Detail" +
+              "</button>" +
+            "</div>",
+          );
+
+          marker.addTo(_leafletMap);
+          _leafletMarkers.push(marker);
+        });
+
+        if (ships.length > 0) {
+          const bounds = L.latLngBounds(
+            ships.map((s) => [s.latitude, s.longitude]),
+          );
+          _leafletMap.fitBounds(bounds, { padding: [50, 50] });
+        }
       }
     </script>
   </body>
