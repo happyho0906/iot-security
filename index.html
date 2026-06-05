@@ -846,190 +846,67 @@
     </header>
 
     <div id="page-dashboard" class="page-section active">
-    <main>
-      <section class="hero">
-        <div>
-          <h1>Lab Item Sentinel Alert</h1>
-          <div class="subtitle">Security Monitor</div>
-        </div>
+        <div style="padding:32px 34px;">
 
-        <div class="actions">
-          <button id="testBtn" class="btn-test" onclick="testAlert()">
-            Run Test
-          </button>
-          <button id="armBtn" class="btn-enable" onclick="enableMonitoring()">
-            Enable Monitoring
-          </button>
-          <button id="disarmBtn" class="btn-pause" onclick="pauseMonitoring()">
-            Pause Monitoring
-          </button>
-          <button id="clearBtn" class="btn-resolve" onclick="resolveAlert()">
-            Resolve Alert
-          </button>
-        </div>
-      </section>
-
-      <section class="context-bar" aria-label="Protected asset context">
-        <div class="context-item">
-          <div class="context-label">Protected Area</div>
-          <div id="areaValue" class="context-value">Research Lab B204</div>
-        </div>
-
-        <div class="context-item">
-          <div class="context-label">Device ID</div>
-          <div id="deviceValue" class="context-value">Sentinel Device 01</div>
-        </div>
-
-        <div class="context-item">
-          <div class="context-label">Site</div>
-          <div id="locationValue" class="context-value">NTHU Campus</div>
-        </div>
-
-        <div class="context-item">
-          <div class="context-label">Notifications</div>
-          <div class="context-value">Discord #alert</div>
-        </div>
-      </section>
-
-      <section id="noticeBox" class="notice normal">
-        <div class="notice-content">
-          <div id="noticeTitle" class="notice-title">Monitoring active</div>
-          <div id="noticeText" class="notice-text"></div>
-        </div>
-        <button
-          id="noticeAction"
-          class="btn-resolve notice-action"
-          onclick="resolveAlert()"
-          style="display: none"
-        >
-          Resolve Alert
-        </button>
-      </section>
-
-      <section class="status-grid">
-        <div id="securityCard" class="card status-card normal-card">
-          <div class="label">Current Status</div>
-          <div class="big-value">
-            <span id="status" class="pill pill-normal">
-              <span class="dot"></span>Normal
-            </span>
-          </div>
-          <div id="statusHelp" class="support-text">No active incidents.</div>
-        </div>
-
-        <div id="modeCard" class="card status-card mode-enabled-card">
-          <div class="label">Monitoring</div>
-          <div id="mode" class="big-value">Enabled</div>
-          <div class="support-text">Alerts are active.</div>
-        </div>
-
-        <div class="card status-card location-card">
-          <div class="label">Site</div>
-          <div class="big-value" style="font-size: 22px">Lab B204</div>
-          <div class="support-text">NTHU Campus.</div>
-        </div>
-
-        <div class="card status-card action-card">
-          <div class="label">Last Update</div>
-          <div id="lastNotify" class="big-value" style="font-size: 22px">
-            Ready
-          </div>
-          <div class="support-text">Latest system response time.</div>
-        </div>
-      </section>
-
-      <section class="dashboard-grid">
-        <div class="card panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">Recent Activity</div>
+          <!-- Summary Cards -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+            <div class="stat-card">
+              <div class="stat-label">Active Shipments</div>
+              <div class="stat-value" id="stat-shipments">–</div>
             </div>
-            <span id="timelineBadge" class="pill pill-normal">Normal</span>
-          </div>
-
-          <div class="panel-body">
-            <div id="eventList" class="event-list">
-              <div class="event-item">
-                <div class="event-time">--:--:--</div>
-                <div class="event-main">
-                  <div class="event-title">Monitoring ready</div>
-                </div>
-                <span class="pill pill-normal">Normal</span>
-              </div>
+            <div class="stat-card">
+              <div class="stat-label">Active Alerts</div>
+              <div class="stat-value" id="stat-alerts" style="color:var(--amber);">–</div>
             </div>
-          </div>
-        </div>
-
-        <aside class="card panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">Action Guide</div>
+            <div class="stat-card">
+              <div class="stat-label">Critical Alerts</div>
+              <div class="stat-value" id="stat-critical" style="color:var(--red);">–</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Offline Devices</div>
+              <div class="stat-value" id="stat-offline" style="color:var(--muted);">–</div>
             </div>
           </div>
 
-          <div class="panel-body">
-            <div class="help-list">
-              <div class="help-item">
-                <div class="help-icon red">!</div>
-                <div>
-                  <div class="help-title">Run Test</div>
-                  <div class="help-text">
-                    Sends a simulated security event for testing.
-                  </div>
-                </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+            <!-- Recent Critical Alerts -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+              <div style="font-weight:700;margin-bottom:14px;">Recent Critical Alerts</div>
+              <div id="dash-critical-list"><div style="color:var(--muted);font-size:13px;">Loading…</div></div>
+            </div>
+            <!-- Discord Status -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+              <div style="font-weight:700;margin-bottom:14px;">Discord Status</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <div id="discord-dot" style="width:10px;height:10px;border-radius:50%;background:var(--muted);"></div>
+                <span id="discord-status-text" style="font-size:13px;color:var(--muted);">Not configured</span>
               </div>
-
-              <div class="help-item">
-                <div class="help-icon green">✓</div>
-                <div>
-                  <div class="help-title">Enable Monitoring</div>
-                  <div class="help-text">Turns monitoring on.</div>
-                </div>
-              </div>
-
-              <div class="help-item">
-                <div class="help-icon blue">Ⅱ</div>
-                <div>
-                  <div class="help-title">Pause Monitoring</div>
-                  <div class="help-text">Temporarily stops alerts.</div>
-                </div>
-              </div>
-
-              <div class="help-item">
-                <div class="help-icon amber">✓</div>
-                <div>
-                  <div class="help-title">Resolve Alert</div>
-                  <div class="help-text">
-                    Marks the current event as resolved.
-                  </div>
-                </div>
-              </div>
+              <div style="font-size:12px;color:var(--muted);">Last alert sent: <span id="discord-last-alert">–</span></div>
+              <div style="font-size:12px;color:var(--muted);">Last command: <span id="discord-last-cmd">–</span></div>
             </div>
           </div>
-        </aside>
-      </section>
 
-      <section class="system-log">
-        <div class="log-panel">
-          <div class="log-head">
-            <div>
-              <div class="log-title">System Activity Log</div>
-            </div>
-            <div id="logCount" class="log-count">0 events</div>
+          <!-- Shipment Overview Table -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+            <div style="font-weight:700;margin-bottom:14px;">Shipment Overview</div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border);color:var(--muted);">
+                  <th style="text-align:left;padding:8px 0;font-weight:600;">Shipment ID</th>
+                  <th style="text-align:left;padding:8px 0;font-weight:600;">Status</th>
+                  <th style="text-align:left;padding:8px 0;font-weight:600;">Risk</th>
+                  <th style="text-align:left;padding:8px 0;font-weight:600;">Temp (°C)</th>
+                  <th style="text-align:left;padding:8px 0;font-weight:600;">Lock</th>
+                  <th style="padding:8px 0;"></th>
+                </tr>
+              </thead>
+              <tbody id="shipment-table-body">
+                <tr><td colspan="6" style="color:var(--muted);padding:12px 0;">Loading…</td></tr>
+              </tbody>
+            </table>
           </div>
 
-          <div id="logBody" class="log-body">
-            <div class="log-entry">
-              <div class="log-time">--:--:--</div>
-              <div class="log-type">System</div>
-              <div class="log-message">
-                Monitoring ready for Sentinel Device 01 at Research Lab B204.
-              </div>
-            </div>
-          </div>
         </div>
-      </section>
-    </main>
     </div><!-- end page-dashboard -->
     </div><!-- end app-shell -->
 
@@ -1473,6 +1350,60 @@
       const hash = location.hash.replace('#', '') || 'dashboard';
       navigate(hash);
     });
+
+    // ── DASHBOARD ─────────────────────────────────────────────────────────────
+    async function loadDashboard() {
+      const [shipments, alerts] = await Promise.all([
+        fetch(API_BASE + '/shipments').then(r => r.json()).catch(() => []),
+        fetch(API_BASE + '/alerts?resolved=false').then(r => r.json()).catch(() => []),
+      ]);
+
+      document.getElementById('stat-shipments').textContent = shipments.length;
+      document.getElementById('stat-alerts').textContent    = alerts.length;
+      const critical = alerts.filter(a => a.severity === 'CRITICAL');
+      document.getElementById('stat-critical').textContent  = critical.length;
+      document.getElementById('stat-offline').textContent   =
+        shipments.filter(s => s.deviceStatus !== 'ONLINE').length;
+
+      const critEl = document.getElementById('dash-critical-list');
+      if (critEl) {
+        critEl.innerHTML = critical.length === 0
+          ? '<div style="color:var(--muted);font-size:13px;">No critical alerts ✅</div>'
+          : critical.slice(0, 5).map(a =>
+              '<div style="padding:10px 0;border-bottom:1px solid var(--border-soft);display:flex;gap:10px;align-items:center;">' +
+                '<span style="background:var(--red-soft);color:var(--red);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">' + a.severity + '</span>' +
+                '<span style="font-weight:600;">' + a.alertType + '</span>' +
+                '<span style="color:var(--muted);">· ' + a.shipmentId + '</span>' +
+                '<span style="margin-left:auto;color:var(--muted);font-size:12px;">' + new Date(a.createdAt).toLocaleTimeString() + '</span>' +
+              '</div>'
+            ).join('');
+      }
+
+      const riskColor = { LOW: 'var(--green)', HIGH: 'var(--amber)', CRITICAL: 'var(--red)' };
+      const tbody = document.getElementById('shipment-table-body');
+      if (tbody) {
+        tbody.innerHTML = shipments.length === 0
+          ? '<tr><td colspan="6" style="color:var(--muted);padding:12px 0;">No shipments</td></tr>'
+          : shipments.map(s =>
+              '<tr style="border-bottom:1px solid var(--border-soft);">' +
+                '<td style="padding:10px 0;font-weight:600;">' + s.shipmentId + '</td>' +
+                '<td style="padding:10px 0;">' + s.status + '</td>' +
+                '<td style="padding:10px 0;color:' + (riskColor[s.riskLevel] || 'var(--muted)') + ';font-weight:700;">' + s.riskLevel + '</td>' +
+                '<td style="padding:10px 0;">' + s.temperature + '</td>' +
+                '<td style="padding:10px 0;">' + s.lockStatus + '</td>' +
+                '<td style="padding:10px 0;">' +
+                  '<button onclick="navigate(\'shipment-' + s.shipmentId + '\')" ' +
+                    'style="background:var(--blue-soft);color:var(--blue);border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;">View</button>' +
+                '</td>' +
+              '</tr>'
+            ).join('');
+      }
+
+      const discordDot  = document.getElementById('discord-dot');
+      const discordText = document.getElementById('discord-status-text');
+      if (discordDot)  discordDot.style.background  = 'var(--amber)';
+      if (discordText) discordText.textContent       = 'Webhook active (set DISCORD_WEBHOOK_URL env var)';
+    }
     </script>
   </body>
 </html>
