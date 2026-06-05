@@ -942,6 +942,36 @@
       </div>
       <!-- ── END ALERT CENTER PAGE ── -->
 
+      <!-- ── SHIPMENT DETAIL PAGE ── -->
+      <div id="page-shipment-detail" class="page-section">
+        <div style="padding:32px 34px;">
+          <button onclick="navigate('dashboard')"
+            style="background:none;border:none;color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:20px;padding:0;">
+            ← Back to Dashboard
+          </button>
+          <div id="shipment-detail-content">
+            <div style="color:var(--muted);">Select a shipment to view details.</div>
+          </div>
+        </div>
+      </div>
+      <!-- ── END SHIPMENT DETAIL PAGE ── -->
+
+      <!-- ── MAP PAGE ── -->
+      <div id="page-map" class="page-section">
+        <div style="padding:32px 34px;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:60px 40px;text-align:center;max-width:560px;margin:0 auto;">
+            <div style="font-size:40px;margin-bottom:16px;">🗺</div>
+            <div style="font-size:22px;font-weight:900;margin-bottom:8px;letter-spacing:-.02em;">Map Intelligence</div>
+            <div style="color:var(--blue);font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:20px;">Coming Soon</div>
+            <div style="color:var(--muted);font-size:14px;line-height:1.7;">
+              Real-time GPS Tracking · Collision Hotspot Analysis · Route Risk Intelligence<br>
+              Live shipment positions and predictive risk overlays will appear here.
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ── END MAP PAGE ── -->
+
     </div><!-- end app-shell -->
 
     <script>
@@ -1502,6 +1532,125 @@
       });
       await loadAlerts();
       if (typeof loadDashboard === 'function') loadDashboard();
+    }
+
+    // ── SHIPMENT DETAIL ───────────────────────────────────────────────────────
+    async function loadShipmentDetail(sid) {
+      const el = document.getElementById('shipment-detail-content');
+      if (!el) return;
+      el.innerHTML = '<div style="color:var(--muted);">Loading…</div>';
+
+      const [shipment, alerts] = await Promise.all([
+        fetch(API_BASE + '/shipments/' + sid).then(r => r.json()).catch(() => null),
+        fetch(API_BASE + '/alerts?resolved=false').then(r => r.json()).catch(() => []),
+      ]);
+
+      if (!shipment || shipment.error) {
+        el.innerHTML = '<div style="color:var(--red);">Shipment not found.</div>';
+        return;
+      }
+
+      const latestAlert = alerts.find(a => a.shipmentId === sid);
+      const rc = { LOW: 'var(--green)', HIGH: 'var(--amber)', CRITICAL: 'var(--red)' };
+
+      const fields = [
+        ['Temperature', (shipment.temperature !== undefined ? shipment.temperature + ' °C' : 'N/A')],
+        ['Humidity',    (shipment.humidity    !== undefined ? shipment.humidity    + ' %'  : 'N/A')],
+        ['G-Force',     (shipment.gForce      !== undefined ? shipment.gForce              : 'N/A')],
+        ['Lock Status', shipment.lockStatus   || 'N/A'],
+        ['Device',      shipment.deviceStatus || 'N/A'],
+        ['Latitude',    shipment.latitude     || 'N/A'],
+        ['Longitude',   shipment.longitude    || 'N/A'],
+        ['Updated',     shipment.lastUpdatedAt ? new Date(shipment.lastUpdatedAt).toLocaleString() : 'N/A'],
+      ];
+
+      el.innerHTML =
+        '<div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">' +
+          '<div style="flex:1;min-width:280px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">' +
+            '<div style="font-size:18px;font-weight:900;margin-bottom:4px;">' + shipment.shipmentId + '</div>' +
+            '<div style="color:' + (rc[shipment.riskLevel] || 'var(--muted)') + ';font-weight:700;font-size:13px;margin-bottom:20px;">' +
+              (shipment.riskLevel || 'N/A') + ' RISK · ' + (shipment.status || 'N/A') +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">' +
+              fields.map(function(f) {
+                return '<div>' +
+                  '<div style="color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;">' + f[0] + '</div>' +
+                  '<div style="font-weight:600;margin-top:2px;">' + f[1] + '</div>' +
+                '</div>';
+              }).join('') +
+            '</div>' +
+          '</div>' +
+
+          '<div style="display:flex;flex-direction:column;gap:12px;min-width:220px;">' +
+            '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">' +
+              '<div style="font-weight:700;margin-bottom:14px;">Admin Controls</div>' +
+              '<div style="display:flex;flex-direction:column;gap:8px;">' +
+                '<button onclick="triggerTempAlert(\'' + sid + '\')" ' +
+                  'style="background:var(--red-soft);color:var(--red);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                  '🌡 Trigger Temp Alert' +
+                '</button>' +
+                '<button onclick="triggerCollisionAlert(\'' + sid + '\')" ' +
+                  'style="background:var(--amber-soft);color:var(--amber);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                  '💥 Trigger Collision Alert' +
+                '</button>' +
+                (latestAlert
+                  ? '<button onclick="resolveAlertUI(\'' + latestAlert.alertId + '\')" ' +
+                      'style="background:var(--green-soft);color:var(--green);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                      '✅ Resolve Alert' +
+                    '</button>'
+                  : '') +
+                '<button onclick="setLock(\'' + sid + '\',\'LOCKED\')" ' +
+                  'style="background:var(--blue-soft);color:var(--blue);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                  '🔒 Lock' +
+                '</button>' +
+                '<button onclick="setLock(\'' + sid + '\',\'UNLOCKED\')" ' +
+                  'style="background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                  '🔓 Unlock' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
+
+            '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">' +
+              '<div style="font-weight:700;margin-bottom:10px;">Latest Alert</div>' +
+              (latestAlert
+                ? '<div style="font-size:13px;">' +
+                    '<div style="font-weight:600;color:var(--red);">' + latestAlert.alertType + '</div>' +
+                    '<div style="color:var(--muted);margin-top:4px;">' + (latestAlert.message || '') + '</div>' +
+                    '<div style="color:var(--muted);font-size:12px;margin-top:6px;">' + new Date(latestAlert.createdAt).toLocaleString() + '</div>' +
+                  '</div>'
+                : '<div style="color:var(--muted);font-size:13px;">No active alerts ✅</div>') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    async function triggerTempAlert(sid) {
+      const temp = prompt('Simulated temperature (°C):', '12.0');
+      if (!temp) return;
+      await fetch(API_BASE + '/demo/trigger-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shipmentId: sid, alertType: 'TEMP_HIGH', severity: 'CRITICAL', temperature: temp }),
+      });
+      loadShipmentDetail(sid);
+    }
+
+    async function triggerCollisionAlert(sid) {
+      await fetch(API_BASE + '/demo/trigger-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shipmentId: sid, alertType: 'COLLISION', severity: 'HIGH' }),
+      });
+      loadShipmentDetail(sid);
+    }
+
+    async function setLock(sid, lockStatus) {
+      await fetch(API_BASE + '/demo/trigger-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shipmentId: sid, alertType: 'LOCK_UPDATE', lockStatus: lockStatus }),
+      });
+      loadShipmentDetail(sid);
     }
     </script>
   </body>
