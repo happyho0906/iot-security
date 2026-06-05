@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timezone
 
 dynamodb = boto3.resource('dynamodb')
+iot_data = boto3.client('iot-data', region_name='us-east-1')
 
 def lambda_handler(event, context):
     body = json.loads(event.get('body') or '{}')
@@ -20,7 +21,7 @@ def lambda_handler(event, context):
     now = datetime.now(timezone.utc).isoformat()
     shipments_table = dynamodb.Table('Shipments')
 
-    # Handle lock/unlock — no alert created, just update DynamoDB
+    # Handle lock/unlock — update DynamoDB and push desired state to IoT shadow
     if alert_type == 'LOCK_UPDATE':
         lock_status = body.get('lockStatus', 'LOCKED')
         shipments_table.update_item(
@@ -28,6 +29,14 @@ def lambda_handler(event, context):
             UpdateExpression='SET lockStatus = :l, lastUpdatedAt = :t',
             ExpressionAttributeValues={':l': lock_status, ':t': now},
         )
+        # Push desired lock state to Device Shadow so Pi actuates the physical lock
+        try:
+            iot_data.update_thing_shadow(
+                thingName=f'shipment-{shipment_id}',
+                payload=json.dumps({'state': {'desired': {'lockStatus': lock_status}}}).encode(),
+            )
+        except Exception as exc:
+            print(f'Shadow lock update error (non-fatal): {exc}')
         return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*'},
                 'body': json.dumps({'status': 'lock updated', 'lockStatus': lock_status})}
 
