@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LISA: Logistics Intelligence Sentinel Assistant</title>
+    <!-- config.local.js is gitignored — set window.LISA_CONFIG there for local secrets -->
+    <script src="config.local.js" onerror="window.LISA_CONFIG={}"></script>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -710,10 +712,8 @@
         "customer@lisa.demo": { password: "customer123", role: "CUSTOMER" },
       };
 
-      // Set to your Discord webhook URL to enable real notifications.
-      // Create one in Discord: Channel Settings > Integrations > Webhooks > New Webhook.
-      const DISCORD_WEBHOOK_URL =
-        "DISCORD_WEBHOOK_URL_REMOVED";
+      // Loaded from config.local.js (gitignored) — never hardcode this here.
+      const DISCORD_WEBHOOK_URL = (window.LISA_CONFIG || {}).DISCORD_WEBHOOK_URL || "";
 
       // AWS-READY: when Cognito + API Gateway are deployed, uncomment and
       // swap the mock functions below for real fetch() calls.
