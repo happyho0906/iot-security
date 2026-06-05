@@ -908,6 +908,40 @@
 
         </div>
     </div><!-- end page-dashboard -->
+
+      <!-- ── ALERT CENTER PAGE ── -->
+      <div id="page-alerts" class="page-section">
+        <div style="padding:32px 34px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-size:20px;font-weight:900;letter-spacing:-.02em;">Alert Center</div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="filterAlerts('all')"      id="filter-all"      class="filter-btn active">All</button>
+              <button onclick="filterAlerts('active')"   id="filter-active"   class="filter-btn">Active</button>
+              <button onclick="filterAlerts('resolved')" id="filter-resolved" class="filter-btn">Resolved</button>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:var(--bg);border-bottom:1px solid var(--border);">
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:var(--muted);">Alert ID</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:var(--muted);">Shipment</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:var(--muted);">Type</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:var(--muted);">Severity</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:var(--muted);">Status</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:var(--muted);">Created</th>
+                  <th style="padding:12px 16px;"></th>
+                </tr>
+              </thead>
+              <tbody id="alerts-table-body">
+                <tr><td colspan="7" style="padding:20px 16px;color:var(--muted);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- ── END ALERT CENTER PAGE ── -->
+
     </div><!-- end app-shell -->
 
     <script>
@@ -1403,6 +1437,71 @@
       const discordText = document.getElementById('discord-status-text');
       if (discordDot)  discordDot.style.background  = 'var(--amber)';
       if (discordText) discordText.textContent       = 'Webhook active (set DISCORD_WEBHOOK_URL env var)';
+    }
+
+    // ── ALERT CENTER ─────────────────────────────────────────────────────────
+    let _allAlerts   = [];
+    let _alertFilter = 'all';
+
+    async function loadAlerts() {
+      _allAlerts = await fetch(API_BASE + '/alerts').then(r => r.json()).catch(() => []);
+      renderAlerts();
+    }
+
+    function filterAlerts(f) {
+      _alertFilter = f;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      const filterBtn = document.getElementById('filter-' + f);
+      if (filterBtn) filterBtn.classList.add('active');
+      renderAlerts();
+    }
+
+    function renderAlerts() {
+      const data = _alertFilter === 'active'   ? _allAlerts.filter(a => !a.resolved)
+                 : _alertFilter === 'resolved' ? _allAlerts.filter(a =>  a.resolved)
+                 : _allAlerts;
+      const tbody = document.getElementById('alerts-table-body');
+      if (!tbody) return;
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="padding:20px 16px;color:var(--muted);">No alerts</td></tr>';
+        return;
+      }
+      const sc = { CRITICAL: 'var(--red)', HIGH: 'var(--amber)', LOW: 'var(--green)' };
+      tbody.innerHTML = data.map(a =>
+        '<tr style="border-bottom:1px solid var(--border-soft);">' +
+          '<td style="padding:12px 16px;font-family:var(--mono);font-size:12px;">' + a.alertId + '</td>' +
+          '<td style="padding:12px 16px;font-weight:600;">' + a.shipmentId + '</td>' +
+          '<td style="padding:12px 16px;">' + a.alertType + '</td>' +
+          '<td style="padding:12px 16px;color:' + (sc[a.severity] || 'var(--muted)') + ';font-weight:700;">' + a.severity + '</td>' +
+          '<td style="padding:12px 16px;">' +
+            '<span style="background:' + (a.resolved ? 'var(--green-soft)' : 'var(--red-soft)') + ';' +
+              'color:' + (a.resolved ? 'var(--green)' : 'var(--red)') + ';' +
+              'border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">' +
+              (a.resolved ? 'RESOLVED' : 'ACTIVE') +
+            '</span>' +
+          '</td>' +
+          '<td style="padding:12px 16px;color:var(--muted);font-size:12px;">' + new Date(a.createdAt).toLocaleString() + '</td>' +
+          '<td style="padding:12px 16px;">' +
+            (!a.resolved
+              ? '<button onclick="resolveAlertUI(\'' + a.alertId + '\')" ' +
+                  'style="background:var(--green-soft);color:var(--green);border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;">Resolve</button>'
+              : '') +
+          '</td>' +
+        '</tr>'
+      ).join('');
+    }
+
+    async function resolveAlertUI(alertId) {
+      if (!confirm('Resolve alert ' + alertId + '?')) return;
+      const userLabel = document.getElementById('nav-user-label');
+      const resolvedBy = userLabel ? userLabel.textContent : 'web-user';
+      await fetch(API_BASE + '/alerts/' + alertId + '/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolvedBy: resolvedBy }),
+      });
+      await loadAlerts();
+      if (typeof loadDashboard === 'function') loadDashboard();
     }
     </script>
   </body>
