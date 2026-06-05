@@ -1,9 +1,4 @@
-"""
-LISA Raspberry Pi Sensor Agent
-Reads sensors, updates IoT Device Shadow, listens for lock commands.
-
-Hardware: DHT22 (temp/humidity), MPU-6050 (G-force), GPS (gpsd), GPIO (lock relay)
-"""
+"""Raspberry Pi sensor agent — reads DHT22/MPU-6050/GPS, updates IoT Device Shadow."""
 
 import json
 import time
@@ -11,38 +6,37 @@ import math
 import logging
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
 
-# ── Configuration ────────────────────────────────────────────────────────────
-THING_NAME = "shipment-SHIP-001"   # must match DynamoDB shipmentId with "shipment-" prefix
-ENDPOINT   = "XXXXXXXXXXXX.iot.us-east-1.amazonaws.com"   # from IoT Core → Settings
-CERT_PATH  = "certs/device.pem.crt"
-KEY_PATH   = "certs/private.pem.key"
-CA_PATH    = "certs/root-CA.crt"
+# Configuration — update per device
+THING_NAME        = "shipment-SHIP-001"
+ENDPOINT          = "XXXXXXXXXXXX.iot.us-east-1.amazonaws.com"
+CERT_PATH         = "certs/device.pem.crt"
+KEY_PATH          = "certs/private.pem.key"
+CA_PATH           = "certs/root-CA.crt"
 REPORT_INTERVAL_S = 30
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
-# ── Sensor reads ─────────────────────────────────────────────────────────────
 
 def read_dht22():
-    """Read temperature and humidity from DHT22 on GPIO pin 4."""
+    """DHT22 on GPIO pin 4 — returns (temperature_C, humidity_pct)."""
     try:
         import Adafruit_DHT
         humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, 4)
         if temperature is not None and humidity is not None:
             return round(temperature, 2), round(humidity, 1)
     except Exception as exc:
-        log.warning(f"DHT22 read error: {exc}")
+        log.warning(f"DHT22: {exc}")
     return None, None
 
 
 def read_mpu6050():
-    """Read G-force magnitude from MPU-6050 via I2C."""
+    """MPU-6050 via I2C — returns G-force magnitude."""
     try:
         import smbus2
         bus  = smbus2.SMBus(1)
         addr = 0x68
-        bus.write_byte_data(addr, 0x6B, 0)   # wake up
+        bus.write_byte_data(addr, 0x6B, 0)
         def read_word(reg):
             hi = bus.read_byte_data(addr, reg)
             lo = bus.read_byte_data(addr, reg + 1)
@@ -53,12 +47,12 @@ def read_mpu6050():
         az = read_word(0x3F) / 16384.0
         return round(math.sqrt(ax**2 + ay**2 + az**2), 3)
     except Exception as exc:
-        log.warning(f"MPU-6050 read error: {exc}")
+        log.warning(f"MPU-6050: {exc}")
     return None
 
 
 def read_gps():
-    """Read latitude and longitude from gpsd."""
+    """gpsd — returns (latitude, longitude)."""
     try:
         import gps
         session = gps.gps(mode=gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
@@ -67,48 +61,41 @@ def read_gps():
             if report['class'] == 'TPV' and hasattr(report, 'lat'):
                 return round(report.lat, 6), round(report.lon, 6)
     except Exception as exc:
-        log.warning(f"GPS read error: {exc}")
+        log.warning(f"GPS: {exc}")
     return None, None
 
 
 def read_battery():
-    """Read battery level — implement for your ADC/fuel gauge chip."""
-    return 87   # placeholder
+    """Battery percent — replace with ADC/fuel gauge read."""
+    return 87
 
 
 def actuate_lock(lock_status):
-    """Toggle GPIO relay for physical lock. HIGH = locked."""
+    """GPIO relay on pin 17 — HIGH = locked."""
     try:
         import RPi.GPIO as GPIO
-        LOCK_PIN = 17
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(LOCK_PIN, GPIO.OUT)
-        GPIO.output(LOCK_PIN, GPIO.HIGH if lock_status == "LOCKED" else GPIO.LOW)
-        log.info(f"Lock actuated: {lock_status}")
+        GPIO.setup(17, GPIO.OUT)
+        GPIO.output(17, GPIO.HIGH if lock_status == "LOCKED" else GPIO.LOW)
+        log.info(f"Lock: {lock_status}")
     except Exception as exc:
-        log.warning(f"GPIO lock error: {exc}")
+        log.warning(f"GPIO: {exc}")
 
-
-# ── Shadow callbacks ─────────────────────────────────────────────────────────
 
 _device_shadow = None
 
+
 def on_shadow_delta(payload, response_status, token):
-    """Called when dashboard sends a desired state change."""
     try:
         delta = json.loads(payload).get("state", {})
-        log.info(f"Shadow delta received: {delta}")
         if "lockStatus" in delta:
             desired = delta["lockStatus"]
             actuate_lock(desired)
-            # Confirm the new state back to shadow
             confirm = json.dumps({"state": {"reported": {"lockStatus": desired}}})
             _device_shadow.shadowUpdate(confirm, None, 5)
     except Exception as exc:
-        log.error(f"Delta handler error: {exc}")
+        log.error(f"Delta: {exc}")
 
-
-# ── Main loop ────────────────────────────────────────────────────────────────
 
 def main():
     global _device_shadow
@@ -122,7 +109,7 @@ def main():
 
     _device_shadow = client.createShadowHandlerWithName(THING_NAME, True)
     _device_shadow.shadowRegisterDeltaCallback(on_shadow_delta)
-    log.info(f"Connected as {THING_NAME}")
+    log.info(f"Connected: {THING_NAME}")
 
     while True:
         temperature, humidity = read_dht22()
@@ -141,7 +128,6 @@ def main():
         payload = json.dumps({"state": {"reported": reported}})
         _device_shadow.shadowUpdate(payload, None, 5)
         log.info(f"Shadow updated: {reported}")
-
         time.sleep(REPORT_INTERVAL_S)
 
 

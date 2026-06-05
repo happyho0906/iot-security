@@ -28,7 +28,6 @@ def lambda_handler(event, context):
     battery      = event.get('batteryLevel')
     online       = event.get('online', True)
 
-    # 1. Write sensor readings to Shipments
     expr_parts = ['lastUpdatedAt = :t', 'deviceStatus = :ds']
     expr_vals  = {':t': now, ':ds': 'ONLINE' if online else 'OFFLINE'}
 
@@ -57,7 +56,6 @@ def lambda_handler(event, context):
         ExpressionAttributeValues=expr_vals,
     )
 
-    # 2. Threshold checks — create AlertEvents on breach
     if temperature is not None and float(temperature) > TEMP_HIGH_C:
         _create_alert(
             shipment_id, 'TEMP_HIGH', 'CRITICAL',

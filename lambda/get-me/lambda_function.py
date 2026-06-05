@@ -2,10 +2,6 @@ import json
 
 
 def lambda_handler(event, context):
-    """
-    Returns the authenticated user's identity from the Cognito JWT.
-    API Gateway Cognito Authorizer populates requestContext.authorizer.claims.
-    """
     claims = (
         (event.get('requestContext') or {})
         .get('authorizer', {})

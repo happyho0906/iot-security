@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LISA: Logistics Intelligence Sentinel Assistant</title>
-    <!-- config.local.js is gitignored set window.LISA_CONFIG there for local secrets -->
+    <!-- local secrets — config.local.js is gitignored -->
     <script src="config.local.js" onerror="window.LISA_CONFIG = {}"></script>
     <link
       rel="stylesheet"
@@ -55,7 +55,7 @@
         -webkit-font-smoothing: antialiased;
       }
 
-      /* ── LOGIN ── */
+      /* login */
       #page-login {
         display: none;
         min-height: 100vh;
@@ -186,7 +186,7 @@
         color: var(--blue);
       }
 
-      /* ── TOPBAR ── */
+      /* topbar */
       .topbar {
         height: 52px;
         background: var(--surface);
@@ -270,7 +270,7 @@
         color: var(--text);
       }
 
-      /* ── PAGES ── */
+      /* pages */
       .page-section {
         display: none;
       }
@@ -282,7 +282,7 @@
         max-width: 1320px;
       }
 
-      /* ── STAT STRIP ── */
+      /* stat-strip */
       .stat-strip {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -310,7 +310,7 @@
         margin-top: 4px;
       }
 
-      /* ── PANELS ── */
+      /* panels */
       .panel {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -332,7 +332,7 @@
         padding: 16px;
       }
 
-      /* ── TABLES ── */
+      /* tables */
       table {
         width: 100%;
         border-collapse: collapse;
@@ -361,7 +361,7 @@
         background: #fafbfd;
       }
 
-      /* ── BADGES ── */
+      /* badges */
       .badge {
         display: inline-block;
         padding: 2px 7px;
@@ -392,7 +392,7 @@
         color: var(--blue);
       }
 
-      /* ── BUTTONS ── */
+      /* buttons */
       .btn {
         display: inline-flex;
         align-items: center;
@@ -456,7 +456,7 @@
         padding: 9px 14px;
       }
 
-      /* ── FILTER BAR ── */
+      /* filter-bar */
       .filter-bar {
         display: flex;
         gap: 4px;
@@ -479,7 +479,7 @@
         border-color: var(--blue);
       }
 
-      /* ── STATUS DOT ── */
+      /* status-dot */
       .sdot {
         display: inline-block;
         width: 8px;
@@ -502,7 +502,7 @@
         background: #cbd5e1;
       }
 
-      /* ── DASHBOARD LAYOUT ── */
+      /* dashboard-layout */
       .dash-grid {
         display: grid;
         grid-template-columns: 1fr 300px;
@@ -536,7 +536,7 @@
         margin-top: 1px;
       }
 
-      /* ── SECTION HEADER ── */
+      /* section-header */
       .section-header {
         display: flex;
         align-items: center;
@@ -548,7 +548,7 @@
         font-weight: 700;
       }
 
-      /* ── BACK LINK ── */
+      /* back-link */
       .back-link {
         padding: 0;
         border: none;
@@ -566,7 +566,7 @@
         color: var(--blue);
       }
 
-      /* ── SHIPMENT DETAIL ── */
+      /* shipment-detail */
       .detail-header {
         display: flex;
         align-items: center;
@@ -623,7 +623,7 @@
         justify-content: flex-start;
       }
 
-      /* ── MAP PAGE ── */
+      /* map-page */
       #leaflet-map {
         height: 520px;
         border-radius: var(--radius);
@@ -632,7 +632,7 @@
         margin-top: 14px;
       }
 
-      /* ── DISCORD PANEL ── */
+      /* discord-panel */
       .discord-status-row {
         display: flex;
         align-items: center;
@@ -703,25 +703,20 @@
     </style>
   </head>
   <body>
-    <!-- ── CONFIG ── -->
     <script>
-      // DEMO MODE hardcoded accounts (no AWS auth required)
       const DEMO_ACCOUNTS = {
-        "admin@lisa.demo": { password: "admin123", role: "ADMIN" },
-        "driver@lisa.demo": { password: "driver123", role: "DRIVER" },
+        "admin@lisa.demo":    { password: "admin123",    role: "ADMIN" },
+        "driver@lisa.demo":   { password: "driver123",   role: "DRIVER" },
         "customer@lisa.demo": { password: "customer123", role: "CUSTOMER" },
       };
 
-      // Loaded from config.local.js (gitignored) never hardcode this here.
-      const DISCORD_WEBHOOK_URL =
-        (window.LISA_CONFIG || {}).DISCORD_WEBHOOK_URL || "";
+      // Read from config.local.js (gitignored)
+      const DISCORD_WEBHOOK_URL = (window.LISA_CONFIG || {}).DISCORD_WEBHOOK_URL || "";
 
-      // AWS-READY: when Cognito + API Gateway are deployed, uncomment and
-      // swap the mock functions below for real fetch() calls.
-      // const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/prod';
+      // const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/unlock';
     </script>
 
-    <!-- ── LOGIN ── -->
+    <!-- login -->
     <div
       id="page-login"
       style="
@@ -793,7 +788,7 @@
       </div>
     </div>
 
-    <!-- ── APP SHELL ── -->
+    <!-- app -->
     <div id="app-shell" style="display: none">
       <!-- Topbar -->
       <div class="topbar">
@@ -820,7 +815,7 @@
         </div>
       </div>
 
-      <!-- ── DASHBOARD ── -->
+      <!-- dashboard -->
       <div id="page-dashboard" class="page-section active">
         <div class="page-content">
           <!-- Stat strip -->
@@ -929,9 +924,7 @@
           </div>
         </div>
       </div>
-      <!-- /#page-dashboard -->
-
-      <!-- ── ALERT CENTER ── -->
+      <!-- alerts -->
       <div id="page-alerts" class="page-section">
         <div class="page-content">
           <div class="section-header">
@@ -978,9 +971,7 @@
           </div>
         </div>
       </div>
-      <!-- /#page-alerts -->
-
-      <!-- ── SHIPMENT DETAIL ── -->
+      <!-- shipment detail -->
       <div id="page-shipment-detail" class="page-section">
         <div class="page-content">
           <button class="back-link" onclick="navigate('dashboard')">
@@ -989,9 +980,7 @@
           <div id="shipment-detail-content"></div>
         </div>
       </div>
-      <!-- /#page-shipment-detail -->
-
-      <!-- ── MAP ── -->
+      <!-- map -->
       <div id="page-map" class="page-section">
         <div class="page-content">
           <div class="section-header">
@@ -1003,11 +992,8 @@
           <div id="leaflet-map"></div>
         </div>
       </div>
-      <!-- /#page-map -->
     </div>
-    <!-- /#app-shell -->
 
-    <!-- ── AUTH ── -->
     <script>
       let _currentRole = null;
 
@@ -1084,9 +1070,8 @@
       });
     </script>
 
-    <!-- ── APP ── -->
     <script>
-      // ── MOCK DATA ──────────────────────────────────────────────────────────
+      // MOCK DATA
       const _db = {
         shipments: [
           {
@@ -1164,7 +1149,7 @@
         if (s) { s.lockStatus = lockStatus; s.lastUpdatedAt = new Date().toISOString(); }
       }
 
-      // ── DISCORD ─────────────────────────────────────────────────────────────
+      // DISCORD
       const DISCORD_EMBED_COLOR = { CRITICAL: 14427686, HIGH: 11817737, LOW: 1483594 };
 
       async function postDiscordAlert(ship, alertType, severity, alertId) {
@@ -1259,7 +1244,7 @@
           </div>`;
       }
 
-      // ── ROUTING ─────────────────────────────────────────────────────────────
+      // ROUTING
       function navigate(page) {
         document.querySelectorAll(".page-section").forEach((el) => el.classList.remove("active"));
         const navLinks = document.querySelectorAll(".nav-link");
@@ -1292,14 +1277,13 @@
         navigate(location.hash.replace("#", "") || "dashboard"),
       );
 
-      // ── HELPERS ─────────────────────────────────────────────────────────────
+      // HELPERS
       function badge(cls, text) {
         return `<span class="badge badge-${cls}">${text}</span>`;
       }
       function riskBadge(r) {
         return badge({ CRITICAL: "red", HIGH: "amber", LOW: "green" }[r] || "muted", r);
       }
-      // riskBadge doubles as severityBadge — identical mapping
       const severityBadge = riskBadge;
       function statusBadge(s) {
         return badge(
@@ -1311,7 +1295,7 @@
         return new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
       }
 
-      // ── DASHBOARD ──────────────────────────────────────────────────────────
+      // DASHBOARD
       function renderDashboard() {
         const ships  = dbShipments();
         const active = dbAlerts().filter((a) => !a.resolved);
@@ -1357,7 +1341,7 @@
         document.getElementById("discord-last-alert").textContent   = _db.lastDiscordAt || "–";
       }
 
-      // ── ALERT CENTER ───────────────────────────────────────────────────────
+      // ALERT CENTER
       let _alertFilter = "all";
 
       function renderAlerts() {
@@ -1402,7 +1386,7 @@
         }
       }
 
-      // ── SHIPMENT DETAIL ────────────────────────────────────────────────────
+      // SHIPMENT DETAIL
       function renderDetail(sid) {
         const el = document.getElementById("shipment-detail-content");
         const s  = dbShipment(sid);
@@ -1479,7 +1463,7 @@
         renderDetail(sid); renderDashboard();
       }
 
-      // ── MAP ─────────────────────────────────────────────────────────────────
+      // MAP
       let _leafletMap = null;
       let _leafletMarkers = [];
 
@@ -1494,10 +1478,8 @@
           }).addTo(_leafletMap);
         }
 
-        // Leaflet needs the container to be visible before it can size itself
         setTimeout(() => _leafletMap.invalidateSize(), 50);
 
-        // Clear old markers
         _leafletMarkers.forEach((m) => _leafletMap.removeLayer(m));
         _leafletMarkers = [];
 
