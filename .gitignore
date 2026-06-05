@@ -1,7 +1,17 @@
-.venv/
+# Secrets — never commit these
+.env
+.env.*
+secrets.json
+config.local.js
+
+# Lambda build artifacts
+lambda/*/package/
+lambda/*.zip
+
+# Python
 __pycache__/
 *.pyc
+.venv/
+
+# macOS
 .DS_Store
-lambda/discord-commands/package/
-lambda/discord-commands/discord-commands.zip
-*.zip
