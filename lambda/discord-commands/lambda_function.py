@@ -64,11 +64,11 @@ def lambda_handler(event, context):
             sid = opts.get('shipment_id', '')
             s   = get_shipment(sid)
             if not s:
-                return discord_response(f"❌ Shipment `{sid}` not found.")
+                return discord_response(f"Shipment `{sid}` not found.")
             return discord_response(
-                f"📦 **{s['shipmentId']}**\n"
+                f"**{s['shipmentId']}**\n"
                 f"Status: {s.get('status')} | Risk: {s.get('riskLevel')}\n"
-                f"Temp: {s.get('temperature')}°C | Humidity: {s.get('humidity')}%\n"
+                f"Temp: {s.get('temperature')} C | Humidity: {s.get('humidity')}%\n"
                 f"Lock: {s.get('lockStatus')} | Device: {s.get('deviceStatus')}"
             )
 
@@ -77,8 +77,8 @@ def lambda_handler(event, context):
                 FilterExpression=Attr('resolved').eq(False)
             ).get('Items', [])
             if not items:
-                return discord_response("✅ No active alerts.")
-            lines = [f"🚨 `{a['alertId']}` | {a['shipmentId']} | {a['alertType']} | {a['severity']}"
+                return discord_response("No active alerts.")
+            lines = [f"`{a['alertId']}` | {a['shipmentId']} | {a['alertType']} | {a['severity']}"
                      for a in items[:10]]
             return discord_response("**Active Alerts:**\n" + "\n".join(lines))
 
@@ -87,7 +87,7 @@ def lambda_handler(event, context):
             alerts   = dynamodb.Table('AlertEvents')
             alert    = alerts.get_item(Key={'alertId': alert_id}).get('Item')
             if not alert:
-                return discord_response(f"❌ Alert `{alert_id}` not found.")
+                return discord_response(f"Alert `{alert_id}` not found.")
             sid = alert['shipmentId']
             alerts.update_item(
                 Key={'alertId': alert_id},
@@ -104,17 +104,17 @@ def lambda_handler(event, context):
                     ExpressionAttributeNames={'#s': 'status'},
                     ExpressionAttributeValues={':r': 'LOW', ':s': 'IN_TRANSIT', ':t': now},
                 )
-            return discord_response(f"✅ Alert `{alert_id}` resolved by {username}.")
+            return discord_response(f"Alert `{alert_id}` resolved by {username}.")
 
         if cmd == 'lock':
             sid = opts.get('shipment_id', '')
             update_lock(sid, 'LOCKED')
-            return discord_response(f"🔒 Shipment `{sid}` locked.")
+            return discord_response(f"Shipment `{sid}` locked.")
 
         if cmd == 'unlock':
             sid = opts.get('shipment_id', '')
             update_lock(sid, 'UNLOCKED')
-            return discord_response(f"🔓 Shipment `{sid}` unlocked.")
+            return discord_response(f"Shipment `{sid}` unlocked.")
 
         return discord_response(f"Unknown command: {cmd}")
 

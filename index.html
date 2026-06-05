@@ -1,783 +1,1484 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LISA — Logistics Operations</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    :root {
-      --bg: #f5f7fa;
-      --surface: #ffffff;
-      --border: #dde3ec;
-      --border-soft: #f0f4f8;
-      --text: #0f172a;
-      --muted: #64748b;
-      --blue: #1a56db;
-      --blue-soft: #eff6ff;
-      --green: #16a34a;
-      --green-soft: #f0fdf4;
-      --red: #dc2626;
-      --red-soft: #fef2f2;
-      --amber: #b45309;
-      --amber-soft: #fefce8;
-      --radius: 3px;
-      --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LISA — Logistics Operations</title>
+    <style>
+      :root {
+        --bg: #f5f7fa;
+        --surface: #ffffff;
+        --border: #dde3ec;
+        --border-soft: #eef2f7;
+        --text: #0f172a;
+        --muted: #64748b;
+        --blue: #1a56db;
+        --blue-soft: #eff6ff;
+        --green: #16a34a;
+        --green-soft: #f0fdf4;
+        --red: #dc2626;
+        --red-soft: #fef2f2;
+        --amber: #b45309;
+        --amber-soft: #fefce8;
+        --radius: 8px;
+        --radius-sm: 6px;
+        --shadow: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.05);
+        --shadow-md: 0 4px 8px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.06);
+        --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        font-size: 13px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
 
-    /* Topbar */
-    .topbar { height: 48px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 100; }
-    .brand { display: flex; align-items: baseline; gap: 10px; }
-    .brand-name { font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
-    .brand-desc { font-size: 12px; color: var(--muted); }
-    nav { display: flex; gap: 2px; }
-    .nav-link { padding: 5px 10px; border-radius: var(--radius); font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; user-select: none; transition: background .1s, color .1s; }
-    .nav-link:hover { background: var(--bg); color: var(--text); }
-    .nav-link.active { background: var(--blue-soft); color: var(--blue); font-weight: 600; }
-    .topbar-user { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
-    .btn-logout { padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: 12px; cursor: pointer; color: var(--muted); font-family: var(--font); }
-    .btn-logout:hover { background: var(--bg); color: var(--text); }
+      /* ── LOGIN ── */
+      #page-login {
+        display: none;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        background: var(--bg);
+      }
+      .login-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        padding: 36px 40px;
+        width: 390px;
+      }
+      .login-header {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .login-mark {
+        width: 46px;
+        height: 46px;
+        border-radius: 10px;
+        background: var(--blue);
+        color: #fff;
+        font-size: 20px;
+        font-weight: 800;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 14px;
+      }
+      .login-title {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .login-sub {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .login-desc {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .form-group {
+        margin-bottom: 12px;
+      }
+      .form-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 5px;
+      }
+      .form-input {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-family: var(--font);
+        color: var(--text);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .form-input:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+      }
+      .form-error {
+        font-size: 12px;
+        color: var(--red);
+        background: var(--red-soft);
+        border-radius: var(--radius-sm);
+        padding: 8px 12px;
+        margin-bottom: 14px;
+        display: none;
+      }
+      .login-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 18px 0 14px;
+      }
+      .login-divider::before,
+      .login-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+      .login-divider span {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .demo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 7px;
+      }
+      .demo-btn {
+        padding: 8px 6px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        color: var(--text);
+        font-family: var(--font);
+        transition: background 0.1s, border-color 0.1s, color 0.1s;
+      }
+      .demo-btn:hover {
+        background: var(--blue-soft);
+        border-color: var(--blue);
+        color: var(--blue);
+      }
 
-    /* Pages */
-    .page-section { display: none; }
-    .page-section.active { display: block; }
-    .page-content { padding: 20px 24px; }
+      /* ── TOPBAR ── */
+      .topbar {
+        height: 52px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: var(--blue);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+      .brand-name {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      nav {
+        display: flex;
+        gap: 2px;
+      }
+      .nav-link {
+        padding: 6px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.1s, color 0.1s;
+      }
+      .nav-link:hover {
+        background: var(--bg);
+        color: var(--text);
+      }
+      .nav-link.active {
+        background: var(--blue-soft);
+        color: var(--blue);
+        font-weight: 600;
+      }
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .btn-signout {
+        padding: 5px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        font-size: 12px;
+        cursor: pointer;
+        color: var(--muted);
+        font-family: var(--font);
+        transition: background 0.1s;
+      }
+      .btn-signout:hover {
+        background: var(--bg);
+        color: var(--text);
+      }
 
-    /* Stat strip */
-    .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--border); gap: 1px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
-    .stat-cell { background: var(--surface); padding: 12px 16px; }
-    .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-    .stat-value { font-size: 22px; font-weight: 700; letter-spacing: -.02em; margin-top: 2px; }
+      /* ── PAGES ── */
+      .page-section {
+        display: none;
+      }
+      .page-section.active {
+        display: block;
+      }
+      .page-content {
+        padding: 24px 28px;
+        max-width: 1320px;
+      }
 
-    /* Panel */
-    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    .panel-header { padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; justify-content: space-between; }
-    .panel-body { padding: 14px; }
+      /* ── STAT STRIP ── */
+      .stat-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 16px 18px;
+      }
+      .stat-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .stat-value {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin-top: 4px;
+      }
 
-    /* Tables */
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding: 7px 12px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); background: var(--bg); white-space: nowrap; }
-    td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    tbody tr:hover td { background: #fafbfd; }
+      /* ── PANELS ── */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .panel-header {
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .panel-body {
+        padding: 16px;
+      }
 
-    /* Badges */
-    .badge { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
-    .badge-red    { background: var(--red-soft);   color: var(--red); }
-    .badge-amber  { background: var(--amber-soft); color: var(--amber); }
-    .badge-green  { background: var(--green-soft); color: var(--green); }
-    .badge-muted  { background: var(--border-soft); color: var(--muted); }
-    .badge-blue   { background: var(--blue-soft);  color: var(--blue); }
+      /* ── TABLES ── */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        text-align: left;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+        white-space: nowrap;
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tbody tr:hover td {
+        background: #fafbfd;
+      }
 
-    /* Buttons */
-    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--text); font-family: var(--font); transition: background .1s; white-space: nowrap; }
-    .btn:hover { background: var(--bg); }
-    .btn-primary { background: var(--blue);      color: white; border-color: var(--blue); }
-    .btn-primary:hover { background: #1447cc; }
-    .btn-danger  { background: var(--red-soft);  color: var(--red);   border-color: #fecaca; }
-    .btn-danger:hover  { background: #fee2e2; }
-    .btn-warning { background: var(--amber-soft); color: var(--amber); border-color: #fde68a; }
-    .btn-warning:hover { background: #fef3c7; }
-    .btn-success { background: var(--green-soft); color: var(--green); border-color: #bbf7d0; }
-    .btn-success:hover { background: #dcfce7; }
-    .btn-sm { padding: 3px 8px; font-size: 11px; }
-    .btn-block { width: 100%; display: flex; }
+      /* ── BADGES ── */
+      .badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .badge-red {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+      .badge-amber {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+      .badge-green {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+      .badge-muted {
+        background: var(--border-soft);
+        color: var(--muted);
+      }
+      .badge-blue {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
 
-    /* Filter bar */
-    .filter-bar { display: flex; gap: 4px; }
-    .filter-btn { padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--muted); font-family: var(--font); transition: background .1s; }
-    .filter-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+      /* ── BUTTONS ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        font-family: var(--font);
+        transition: background 0.1s;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: var(--bg);
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
+      .btn-primary:hover {
+        background: #1447cc;
+      }
+      .btn-danger {
+        background: var(--red-soft);
+        color: var(--red);
+        border-color: #fecaca;
+      }
+      .btn-danger:hover {
+        background: #fee2e2;
+      }
+      .btn-warning {
+        background: var(--amber-soft);
+        color: var(--amber);
+        border-color: #fde68a;
+      }
+      .btn-warning:hover {
+        background: #fef3c7;
+      }
+      .btn-success {
+        background: var(--green-soft);
+        color: var(--green);
+        border-color: #bbf7d0;
+      }
+      .btn-success:hover {
+        background: #dcfce7;
+      }
+      .btn-sm {
+        padding: 4px 9px;
+        font-size: 11px;
+      }
+      .btn-block {
+        width: 100%;
+      }
+      .btn-full {
+        width: 100%;
+        padding: 9px 14px;
+      }
 
-    /* Status dot */
-    .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; vertical-align: middle; margin-right: 5px; }
-    .dot-green { background: var(--green); }
-    .dot-amber { background: var(--amber); }
-    .dot-red   { background: var(--red); }
-    .dot-muted { background: #cbd5e1; }
+      /* ── FILTER BAR ── */
+      .filter-bar {
+        display: flex;
+        gap: 4px;
+      }
+      .filter-btn {
+        padding: 5px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--muted);
+        font-family: var(--font);
+        transition: background 0.1s;
+      }
+      .filter-btn.active {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
 
-    /* Dashboard two-column layout */
-    .dash-grid { display: grid; grid-template-columns: 1fr 280px; gap: 16px; margin-bottom: 16px; }
+      /* ── STATUS DOT ── */
+      .sdot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        vertical-align: middle;
+        margin-right: 6px;
+        flex-shrink: 0;
+      }
+      .sdot-green { background: var(--green); }
+      .sdot-amber { background: var(--amber); }
+      .sdot-red   { background: var(--red);   }
+      .sdot-muted { background: #cbd5e1;       }
 
-    /* Alert rows inside dashboard panel */
-    .alert-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--border-soft); }
-    .alert-row:last-child { border-bottom: none; }
-    .alert-row-label { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
-    .alert-row-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+      /* ── DASHBOARD LAYOUT ── */
+      .dash-grid {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .alert-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .alert-row:last-child {
+        border-bottom: none;
+      }
+      .alert-row-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .alert-row-title {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .alert-row-sub {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 1px;
+      }
 
-    /* Section header */
-    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .section-title { font-size: 14px; font-weight: 700; }
+      /* ── SECTION HEADER ── */
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-size: 15px;
+        font-weight: 700;
+      }
 
-    /* Back link */
-    .back-link { padding: 0; border: none; background: none; font-size: 12px; color: var(--muted); cursor: pointer; font-family: var(--font); margin-bottom: 16px; display: inline-flex; align-items: center; gap: 4px; }
-    .back-link:hover { color: var(--blue); }
+      /* ── BACK LINK ── */
+      .back-link {
+        padding: 0;
+        border: none;
+        background: none;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+        font-family: var(--font);
+        margin-bottom: 18px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .back-link:hover {
+        color: var(--blue);
+      }
 
-    /* Shipment detail */
-    .detail-grid { display: grid; grid-template-columns: 1fr 240px; gap: 14px; align-items: start; }
-    .kv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .kv-table th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; width: 140px; border-bottom: 1px solid var(--border-soft); background: var(--bg); white-space: nowrap; }
-    .kv-table td { padding: 8px 12px; font-weight: 500; border-bottom: 1px solid var(--border-soft); }
-    .kv-table tr:last-child th, .kv-table tr:last-child td { border-bottom: none; }
+      /* ── SHIPMENT DETAIL ── */
+      .detail-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .detail-title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 260px;
+        gap: 16px;
+        align-items: start;
+      }
+      .kv-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .kv-table tr {
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .kv-table tr:last-child {
+        border-bottom: none;
+      }
+      .kv-table th {
+        text-align: left;
+        padding: 9px 14px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: var(--bg);
+        width: 38%;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .kv-table td {
+        padding: 9px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .controls-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .control-btn {
+        width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+      }
 
-    /* Controls stack */
-    .controls-stack { display: flex; flex-direction: column; gap: 6px; }
+      /* ── MAP PAGE ── */
+      .location-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .location-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+      .location-card-id {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .location-coord {
+        font-size: 12px;
+        color: var(--muted);
+        font-family: var(--mono);
+        margin-bottom: 4px;
+      }
+      .location-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
 
-    /* Discord preview */
-    .discord-preview { margin-top: 10px; background: #2b2d31; color: #dbdee1; border-radius: 4px; padding: 12px; font-size: 11px; font-family: var(--mono); line-height: 1.7; white-space: pre-wrap; }
+      /* ── DISCORD PANEL ── */
+      .discord-status-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .discord-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .discord-note {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.7;
+        margin-top: 10px;
+      }
+      .discord-preview {
+        margin-top: 12px;
+        background: #2b2d31;
+        border-radius: 6px;
+        padding: 12px 14px;
+        border-left: 4px solid var(--blue);
+      }
+      .dp-title {
+        color: #f2f3f5;
+        font-weight: 700;
+        font-size: 13px;
+        font-family: var(--mono);
+        margin-bottom: 10px;
+      }
+      .dp-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .dp-field-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #b5bac1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-family: var(--mono);
+      }
+      .dp-field-value {
+        font-size: 12px;
+        color: #dbdee1;
+        font-family: var(--mono);
+        margin-top: 2px;
+      }
+      .dp-commands {
+        font-size: 11px;
+        color: #80848e;
+        font-family: var(--mono);
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .dp-time {
+        font-size: 10px;
+        color: #80848e;
+        font-family: var(--mono);
+        margin-bottom: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── CONFIG ── -->
+    <script>
+      // DEMO MODE — hardcoded accounts (no AWS auth required)
+      const DEMO_ACCOUNTS = {
+        "admin@lisa.demo":    { password: "admin123",    role: "ADMIN" },
+        "driver@lisa.demo":   { password: "driver123",   role: "DRIVER" },
+        "customer@lisa.demo": { password: "customer123", role: "CUSTOMER" },
+      };
 
-    /* Map */
-    #leaflet-map { height: 520px; }
+      // Set to your Discord webhook URL to enable real notifications.
+      // Create one in Discord: Channel Settings > Integrations > Webhooks > New Webhook.
+      const DISCORD_WEBHOOK_URL = "";
 
-    /* Login */
-    #page-login { display: none; min-height: 100vh; align-items: center; justify-content: center; flex-direction: column; background: var(--bg); }
-    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 32px; width: 340px; }
-    .login-title { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
-    .login-sub { font-size: 12px; color: var(--muted); margin-bottom: 22px; }
-    .form-group { margin-bottom: 10px; }
-    .form-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
-    .form-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-family: var(--font); outline: none; color: var(--text); }
-    .form-input:focus { border-color: var(--blue); }
-    .form-error { font-size: 12px; color: var(--red); margin-bottom: 10px; display: none; }
-  </style>
-</head>
-<body>
+      // AWS-READY: when Cognito + API Gateway are deployed, uncomment and
+      // swap the mock functions below for real fetch() calls.
+      // const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/prod';
+    </script>
 
-  <!-- ── CONFIG ── -->
-  <script>
-    // DEMO MODE — hardcoded accounts, no AWS auth required
-    const DEMO_ACCOUNTS = {
-      'admin@lisa.demo':    { password: 'admin123',    role: 'ADMIN' },
-      'driver@lisa.demo':   { password: 'driver123',   role: 'DRIVER' },
-      'customer@lisa.demo': { password: 'customer123', role: 'CUSTOMER' },
-    };
-
-    // Set to your Discord webhook URL to enable real notifications.
-    // Create one in Discord: Channel Settings > Integrations > Webhooks.
-    const DISCORD_WEBHOOK_URL = '';
-
-    // AWS-READY: when API Gateway is deployed, uncomment and point to real base URL.
-    // const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/prod';
-  </script>
-
-  <!-- ── LOGIN ── -->
-  <div id="page-login" style="display:none; min-height:100vh; align-items:center; justify-content:center; flex-direction:column; background:var(--bg);">
-    <div class="login-card">
-      <div class="login-title">LISA</div>
-      <div class="login-sub">Logistics Intelligence &amp; Sentinel Assistant</div>
-      <div id="login-error" class="form-error"></div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input id="login-email" class="form-input" type="email" placeholder="user@lisa.demo" autocomplete="username" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input id="login-password" class="form-input" type="password" placeholder="Password" autocomplete="current-password" />
-      </div>
-      <button class="btn btn-primary btn-block" style="margin-top:4px; padding:8px 12px;" onclick="handleLogin()">Sign In</button>
-    </div>
-    <div style="margin-top:14px; font-size:11px; color:var(--muted); text-align:center; line-height:2;">
-      admin@lisa.demo / admin123 &nbsp;&middot;&nbsp; driver@lisa.demo / driver123 &nbsp;&middot;&nbsp; customer@lisa.demo / customer123
-    </div>
-  </div>
-
-  <!-- ── APP SHELL ── -->
-  <div id="app-shell" style="display:none;">
-
-    <!-- Topbar -->
-    <div class="topbar">
-      <div class="brand">
-        <span class="brand-name">LISA</span>
-        <span class="brand-desc">Logistics Operations</span>
-      </div>
-      <nav>
-        <span class="nav-link active" onclick="navigate('dashboard')">Dashboard</span>
-        <span class="nav-link" onclick="navigate('alerts')">Alerts</span>
-        <span class="nav-link" onclick="navigate('map')">Map</span>
-      </nav>
-      <div class="topbar-user">
-        <span id="nav-user-label"></span>
-        &middot;
-        <span id="nav-role-badge" style="font-weight:600; color:var(--blue);">ADMIN</span>
-        <button class="btn-logout" onclick="handleLogout()">Sign out</button>
-      </div>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="page-dashboard" class="page-section active">
-      <div class="page-content">
-
-        <div class="stat-strip">
-          <div class="stat-cell">
-            <div class="stat-label">Shipments</div>
-            <div class="stat-value" id="stat-shipments">–</div>
-          </div>
-          <div class="stat-cell">
-            <div class="stat-label">Active Alerts</div>
-            <div class="stat-value" id="stat-alerts" style="color:var(--amber);">–</div>
-          </div>
-          <div class="stat-cell">
-            <div class="stat-label">Critical</div>
-            <div class="stat-value" id="stat-critical" style="color:var(--red);">–</div>
-          </div>
-          <div class="stat-cell">
-            <div class="stat-label">Offline Devices</div>
-            <div class="stat-value" id="stat-offline" style="color:var(--muted);">–</div>
-          </div>
+    <!-- ── LOGIN ── -->
+    <div
+      id="page-login"
+      style="
+        display: none;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        background: var(--bg);
+      "
+    >
+      <div class="login-card">
+        <div class="login-header">
+          <div class="login-mark">L</div>
+          <div class="login-title">LISA</div>
+          <div class="login-sub">Logistics Intelligence &amp; Sentinel Assistant</div>
+          <div class="login-desc">Logistics monitoring and alert control platform.</div>
         </div>
 
-        <div class="dash-grid">
-          <!-- Active alerts panel -->
-          <div class="panel">
-            <div class="panel-header">Active Alerts</div>
-            <div id="dash-alert-list">
-              <div style="padding:14px; color:var(--muted); font-size:12px;">No active alerts</div>
+        <div id="login-error" class="form-error"></div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input
+            id="login-email"
+            class="form-input"
+            type="email"
+            placeholder="user@lisa.demo"
+            autocomplete="username"
+          />
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Password</label>
+          <input
+            id="login-password"
+            class="form-input"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button
+          class="btn btn-primary btn-full"
+          onclick="handleLogin()"
+        >
+          Sign In
+        </button>
+
+        <div class="login-divider"><span>Demo accounts</span></div>
+        <div class="demo-grid">
+          <button
+            class="demo-btn"
+            onclick="signInAs('admin@lisa.demo','admin123')"
+          >Admin Demo</button>
+          <button
+            class="demo-btn"
+            onclick="signInAs('driver@lisa.demo','driver123')"
+          >Driver Demo</button>
+          <button
+            class="demo-btn"
+            onclick="signInAs('customer@lisa.demo','customer123')"
+          >Customer Demo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── APP SHELL ── -->
+    <div id="app-shell" style="display: none;">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-mark">L</div>
+          <span class="brand-name">LISA</span>
+        </div>
+        <nav>
+          <span class="nav-link active" onclick="navigate('dashboard')">Dashboard</span>
+          <span class="nav-link" onclick="navigate('alerts')">Alert Center</span>
+          <span class="nav-link" onclick="navigate('map')">Map</span>
+        </nav>
+        <div class="topbar-right">
+          <span id="nav-user-label"></span>
+          &middot;
+          <span id="nav-role-badge" style="font-weight: 600; color: var(--blue);">ADMIN</span>
+          <button class="btn-signout" onclick="handleLogout()">Sign out</button>
+        </div>
+      </div>
+
+      <!-- ── DASHBOARD ── -->
+      <div id="page-dashboard" class="page-section active">
+        <div class="page-content">
+          <!-- Stat strip -->
+          <div class="stat-strip">
+            <div class="stat-card">
+              <div class="stat-label">Active Shipments</div>
+              <div class="stat-value" id="stat-shipments">–</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Active Alerts</div>
+              <div class="stat-value" id="stat-alerts" style="color: var(--amber);">–</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Critical Alerts</div>
+              <div class="stat-value" id="stat-critical" style="color: var(--red);">–</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Offline Devices</div>
+              <div class="stat-value" id="stat-offline" style="color: var(--muted);">–</div>
             </div>
           </div>
 
-          <!-- Discord panel -->
-          <div class="panel">
-            <div class="panel-header">Discord</div>
-            <div class="panel-body">
-              <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-                <span id="discord-dot" class="status-dot dot-muted"></span>
-                <span id="discord-status-text" style="font-size:12px; color:var(--muted);">Not configured</span>
+          <!-- Two-column: recent alerts | Discord -->
+          <div class="dash-grid">
+            <div class="panel">
+              <div class="panel-header">Recent Alerts</div>
+              <div id="dash-alert-list">
+                <div
+                  style="padding: 16px; color: var(--muted); font-size: 12px;"
+                >No active alerts</div>
               </div>
-              <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">
-                Last notification: <span id="discord-last-sent">–</span>
+            </div>
+            <div class="panel">
+              <div class="panel-header">Discord</div>
+              <div class="panel-body">
+                <div class="discord-status-row">
+                  <span id="discord-sdot" class="sdot sdot-muted"></span>
+                  <span id="discord-status-text" style="color: var(--muted);">Not configured</span>
+                </div>
+                <div class="discord-meta">Last alert: <span id="discord-last-alert">–</span></div>
+                <div class="discord-meta">Last command: <span id="discord-last-cmd">–</span></div>
+                <div id="discord-note" class="discord-note">
+                  Set DISCORD_WEBHOOK_URL in config to enable notifications.
+                </div>
+                <div id="discord-test-wrap" style="display: none; margin-top: 12px;">
+                  <button
+                    class="btn btn-sm btn-block"
+                    onclick="sendTestNotification()"
+                    style="padding: 7px 12px;"
+                  >Send Test Notification</button>
+                </div>
+                <div id="discord-preview-area"></div>
               </div>
-              <div id="discord-setup-note" style="margin-top:10px; font-size:11px; color:var(--muted); line-height:1.7;">
-                Set DISCORD_WEBHOOK_URL in the config block at the top of index.html to enable notifications.
-              </div>
-              <div id="discord-test-wrap" style="display:none; margin-top:10px;">
-                <button class="btn btn-sm btn-block" onclick="sendTestNotification()">Send Test Notification</button>
-              </div>
-              <div id="discord-preview-area"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Shipment table -->
-        <div class="panel">
-          <div class="panel-header">All Shipments</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Shipment ID</th>
-                <th>Status</th>
-                <th>Risk</th>
-                <th>Temp (C)</th>
-                <th>Humidity (%)</th>
-                <th>Lock</th>
-                <th>Device</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="shipment-table-body"></tbody>
-          </table>
-        </div>
-
-      </div>
-    </div><!-- /#page-dashboard -->
-
-    <!-- Alert Center -->
-    <div id="page-alerts" class="page-section">
-      <div class="page-content">
-        <div class="section-header">
-          <div class="section-title">Alert Center</div>
-          <div class="filter-bar">
-            <button class="filter-btn active" id="filter-all"      onclick="filterAlerts('all')">All</button>
-            <button class="filter-btn"        id="filter-active"   onclick="filterAlerts('active')">Active</button>
-            <button class="filter-btn"        id="filter-resolved" onclick="filterAlerts('resolved')">Resolved</button>
+          <!-- Shipment table -->
+          <div class="panel">
+            <div class="panel-header">All Shipments</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Shipment ID</th>
+                  <th>Status</th>
+                  <th>Risk</th>
+                  <th>Temp (C)</th>
+                  <th>Lock</th>
+                  <th>Device</th>
+                  <th>Last Update</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="shipment-table-body"></tbody>
+            </table>
           </div>
         </div>
-        <div class="panel">
-          <table>
-            <thead>
-              <tr>
-                <th>Alert ID</th>
-                <th>Shipment</th>
-                <th>Type</th>
-                <th>Severity</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="alerts-table-body"></tbody>
-          </table>
+      </div>
+      <!-- /#page-dashboard -->
+
+      <!-- ── ALERT CENTER ── -->
+      <div id="page-alerts" class="page-section">
+        <div class="page-content">
+          <div class="section-header">
+            <div class="section-title">Alert Center</div>
+            <div class="filter-bar">
+              <button class="filter-btn active" id="filter-all"      onclick="filterAlerts('all')">All</button>
+              <button class="filter-btn"        id="filter-active"   onclick="filterAlerts('active')">Active</button>
+              <button class="filter-btn"        id="filter-resolved" onclick="filterAlerts('resolved')">Resolved</button>
+            </div>
+          </div>
+          <div class="panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Alert ID</th>
+                  <th>Shipment</th>
+                  <th>Type</th>
+                  <th>Severity</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="alerts-table-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div><!-- /#page-alerts -->
+      <!-- /#page-alerts -->
 
-    <!-- Shipment Detail -->
-    <div id="page-shipment-detail" class="page-section">
-      <div class="page-content">
-        <button class="back-link" onclick="navigate('dashboard')">&#8592; Back to Dashboard</button>
-        <div id="shipment-detail-content"></div>
-      </div>
-    </div><!-- /#page-shipment-detail -->
-
-    <!-- Map -->
-    <div id="page-map" class="page-section">
-      <div class="page-content">
-        <div class="section-header">
-          <div class="section-title">Shipment Locations</div>
-        </div>
-        <div class="panel" style="overflow:hidden;">
-          <div id="leaflet-map"></div>
+      <!-- ── SHIPMENT DETAIL ── -->
+      <div id="page-shipment-detail" class="page-section">
+        <div class="page-content">
+          <button class="back-link" onclick="navigate('dashboard')">
+            &#8592; Back to Dashboard
+          </button>
+          <div id="shipment-detail-content"></div>
         </div>
       </div>
-    </div><!-- /#page-map -->
+      <!-- /#page-shipment-detail -->
 
-  </div><!-- /#app-shell -->
+      <!-- ── MAP ── -->
+      <div id="page-map" class="page-section">
+        <div class="page-content">
+          <div class="section-header">
+            <div class="section-title">Shipment Locations</div>
+            <a id="maps-all-link" href="#" target="_blank" rel="noopener">
+              <button class="btn btn-primary btn-sm">View All on Google Maps</button>
+            </a>
+          </div>
+          <div id="location-grid" class="location-grid"></div>
+        </div>
+      </div>
+      <!-- /#page-map -->
+    </div>
+    <!-- /#app-shell -->
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- ── AUTH ── -->
+    <script>
+      let _currentRole = null;
 
-  <!-- ── AUTH ── -->
-  <script>
-    let _currentRole = null;
-
-    function showLogin() {
-      document.getElementById('page-login').style.cssText =
-        'display:flex; min-height:100vh; align-items:center; justify-content:center; flex-direction:column; background:var(--bg);';
-      document.getElementById('app-shell').style.display = 'none';
-    }
-
-    function showApp(email, role) {
-      _currentRole = role;
-      sessionStorage.setItem('lisa_email', email);
-      sessionStorage.setItem('lisa_role',  role);
-      document.getElementById('page-login').style.display = 'none';
-      document.getElementById('app-shell').style.display  = 'block';
-      document.getElementById('nav-user-label').textContent = email;
-      const badge = document.getElementById('nav-role-badge');
-      badge.textContent  = role;
-      badge.style.color  = role === 'ADMIN' ? 'var(--blue)' : role === 'DRIVER' ? 'var(--green)' : 'var(--muted)';
-      initApp();
-    }
-
-    function checkSession() {
-      const email = sessionStorage.getItem('lisa_email');
-      const role  = sessionStorage.getItem('lisa_role');
-      if (email && role && DEMO_ACCOUNTS[email]) { showApp(email, role); } else { showLogin(); }
-    }
-
-    function handleLogin() {
-      const email    = document.getElementById('login-email').value.trim().toLowerCase();
-      const password = document.getElementById('login-password').value;
-      const errEl    = document.getElementById('login-error');
-      errEl.style.display = 'none';
-      const account = DEMO_ACCOUNTS[email];
-      if (!account || account.password !== password) {
-        errEl.textContent   = 'Invalid email or password.';
-        errEl.style.display = 'block';
-        return;
+      function showLogin() {
+        document.getElementById("page-login").style.cssText =
+          "display:flex; min-height:100vh; align-items:center; justify-content:center; flex-direction:column; background:var(--bg);";
+        document.getElementById("app-shell").style.display = "none";
       }
-      showApp(email, account.role);
-    }
 
-    function handleLogout() {
-      sessionStorage.clear();
-      _currentRole = null;
-      showLogin();
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      checkSession();
-      document.getElementById('login-password').addEventListener('keydown', e => {
-        if (e.key === 'Enter') handleLogin();
-      });
-    });
-  </script>
-
-  <!-- ── APP ── -->
-  <script>
-    // ── MOCK DATA ─────────────────────────────────────────────────────────────
-    const _db = {
-      shipments: [
-        { shipmentId: 'SHIP-001', status: 'IN_TRANSIT', riskLevel: 'LOW',
-          temperature: 4.2, humidity: 65, gForce: 0.1, lockStatus: 'LOCKED',
-          deviceStatus: 'ONLINE', latitude: 1.3521, longitude: 103.8198,
-          lastUpdatedAt: '2025-06-05T07:00:00Z' },
-        { shipmentId: 'SHIP-002', status: 'ALERT', riskLevel: 'CRITICAL',
-          temperature: 11.2, humidity: 70, gForce: 0.3, lockStatus: 'LOCKED',
-          deviceStatus: 'ONLINE', latitude: 1.3000, longitude: 103.8500,
-          lastUpdatedAt: '2025-06-05T08:05:00Z' },
-        { shipmentId: 'SHIP-003', status: 'IN_TRANSIT', riskLevel: 'LOW',
-          temperature: 3.8, humidity: 62, gForce: 0.0, lockStatus: 'LOCKED',
-          deviceStatus: 'ONLINE', latitude: 1.3200, longitude: 103.7800,
-          lastUpdatedAt: '2025-06-05T07:30:00Z' },
-      ],
-      alerts: [
-        { alertId: 'ALERT-001', shipmentId: 'SHIP-002', alertType: 'TEMP_HIGH',
-          severity: 'CRITICAL', message: 'Temperature exceeded 8C limit: reading 11.2C',
-          resolved: false, resolvedBy: null,
-          createdAt: '2025-06-05T08:00:00Z', resolvedAt: null },
-      ],
-      lastDiscordAt: null,
-    };
-
-    function dbShipments() { return _db.shipments; }
-    function dbShipment(id) { return _db.shipments.find(s => s.shipmentId === id) || null; }
-    function dbAlerts() { return _db.alerts; }
-
-    function dbResolveAlert(alertId, resolvedBy) {
-      const a = _db.alerts.find(x => x.alertId === alertId);
-      if (!a || a.resolved) return;
-      a.resolved = true; a.resolvedBy = resolvedBy; a.resolvedAt = new Date().toISOString();
-      if (!_db.alerts.some(x => x.shipmentId === a.shipmentId && !x.resolved)) {
-        const s = _db.shipments.find(x => x.shipmentId === a.shipmentId);
-        if (s) { s.riskLevel = 'LOW'; s.status = 'IN_TRANSIT'; s.lastUpdatedAt = new Date().toISOString(); }
+      function showApp(email, role) {
+        _currentRole = role;
+        sessionStorage.setItem("lisa_email", email);
+        sessionStorage.setItem("lisa_role", role);
+        document.getElementById("page-login").style.display = "none";
+        document.getElementById("app-shell").style.display  = "block";
+        document.getElementById("nav-user-label").textContent = email;
+        const badge = document.getElementById("nav-role-badge");
+        badge.textContent = role;
+        badge.style.color =
+          role === "ADMIN" ? "var(--blue)" :
+          role === "DRIVER" ? "var(--green)" :
+          "var(--muted)";
+        initApp();
       }
-    }
 
-    function dbTriggerAlert(shipmentId, alertType, severity, temperature) {
-      const alertId = 'ALERT-' + Date.now();
-      const msg     = alertType + ' on ' + shipmentId + (temperature ? ': ' + temperature + 'C' : '');
-      _db.alerts.push({ alertId, shipmentId, alertType, severity, message: msg,
-        resolved: false, resolvedBy: null, createdAt: new Date().toISOString(), resolvedAt: null });
-      const s = _db.shipments.find(x => x.shipmentId === shipmentId);
-      if (s) {
-        s.riskLevel = severity; s.status = 'ALERT'; s.lastUpdatedAt = new Date().toISOString();
-        if (temperature !== undefined) s.temperature = parseFloat(temperature);
-      }
-      postDiscordAlert(shipmentId, alertType, severity, msg, alertId);
-      return alertId;
-    }
-
-    function dbSetLock(shipmentId, lockStatus) {
-      const s = _db.shipments.find(x => x.shipmentId === shipmentId);
-      if (s) { s.lockStatus = lockStatus; s.lastUpdatedAt = new Date().toISOString(); }
-    }
-
-    // ── DISCORD ───────────────────────────────────────────────────────────────
-    // Discord webhooks support CORS — this fetch runs directly from the browser.
-    async function postDiscordAlert(shipmentId, alertType, severity, message, alertId) {
-      if (!DISCORD_WEBHOOK_URL) return;
-      const content =
-        '[' + severity + '] ' + alertType + '\n' +
-        'Shipment: ' + shipmentId + '\n' +
-        message + '\n' +
-        'Commands: /status ' + shipmentId + ' | /resolve ' + alertId;
-      await _discordPost(content);
-    }
-
-    async function sendTestNotification() {
-      if (!DISCORD_WEBHOOK_URL) return;
-      const content = 'LISA test notification. Webhook is active.';
-      const ok = await _discordPost(content);
-      if (ok) {
-        document.getElementById('discord-preview-area').innerHTML =
-          '<div class="discord-preview">' +
-          '<span style="color:#949ba4; font-size:10px;">LISA  Today at ' + new Date().toLocaleTimeString() + '</span>\n' +
-          content + '</div>';
-      }
-    }
-
-    async function _discordPost(content) {
-      try {
-        const resp = await fetch(DISCORD_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content }),
-        });
-        if (resp.ok || resp.status === 204) {
-          _db.lastDiscordAt = new Date().toLocaleTimeString();
-          const el = document.getElementById('discord-last-sent');
-          if (el) el.textContent = _db.lastDiscordAt;
-          return true;
+      function checkSession() {
+        const email = sessionStorage.getItem("lisa_email");
+        const role  = sessionStorage.getItem("lisa_role");
+        if (email && role && DEMO_ACCOUNTS[email]) {
+          showApp(email, role);
+        } else {
+          showLogin();
         }
-      } catch (e) { console.warn('Discord webhook error:', e); }
-      return false;
-    }
-
-    // ── ROUTING ───────────────────────────────────────────────────────────────
-    let _leafletMap = null;
-    let _markerLayer = null;
-
-    function navigate(page) {
-      document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-
-      if (page.startsWith('shipment-')) {
-        document.getElementById('page-shipment-detail').classList.add('active');
-        renderDetail(page.replace('shipment-', ''));
-        return;
       }
 
-      const section = document.getElementById('page-' + page);
-      if (section) section.classList.add('active');
-      document.querySelectorAll('.nav-link').forEach(el => {
-        if ((el.getAttribute('onclick') || '').includes("'" + page + "'")) el.classList.add('active');
+      function handleLogin() {
+        const email    = document.getElementById("login-email").value.trim().toLowerCase();
+        const password = document.getElementById("login-password").value;
+        const errEl    = document.getElementById("login-error");
+        errEl.style.display = "none";
+        const account = DEMO_ACCOUNTS[email];
+        if (!account || account.password !== password) {
+          errEl.textContent   = "Invalid email or password.";
+          errEl.style.display = "block";
+          return;
+        }
+        showApp(email, account.role);
+      }
+
+      function signInAs(email, password) {
+        document.getElementById("login-email").value    = email;
+        document.getElementById("login-password").value = password;
+        handleLogin();
+      }
+
+      function handleLogout() {
+        sessionStorage.clear();
+        _currentRole = null;
+        showLogin();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        checkSession();
+        document.getElementById("login-password").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") handleLogin();
+        });
       });
+    </script>
 
-      if (page === 'map') initMap();
-    }
+    <!-- ── APP ── -->
+    <script>
+      // ── MOCK DATA ──────────────────────────────────────────────────────────
+      const _db = {
+        shipments: [
+          {
+            shipmentId: "SHIP-001", status: "IN_TRANSIT", riskLevel: "LOW",
+            temperature: 4.2, humidity: 65, gForce: 0.1, lockStatus: "LOCKED",
+            deviceStatus: "ONLINE", latitude: 1.3521, longitude: 103.8198,
+            lastUpdatedAt: "2025-06-05T07:00:00Z",
+          },
+          {
+            shipmentId: "SHIP-002", status: "ALERT", riskLevel: "CRITICAL",
+            temperature: 11.2, humidity: 70, gForce: 0.3, lockStatus: "LOCKED",
+            deviceStatus: "ONLINE", latitude: 1.3000, longitude: 103.8500,
+            lastUpdatedAt: "2025-06-05T08:05:00Z",
+          },
+          {
+            shipmentId: "SHIP-003", status: "IN_TRANSIT", riskLevel: "LOW",
+            temperature: 3.8, humidity: 62, gForce: 0.0, lockStatus: "LOCKED",
+            deviceStatus: "ONLINE", latitude: 1.3200, longitude: 103.7800,
+            lastUpdatedAt: "2025-06-05T07:30:00Z",
+          },
+        ],
+        alerts: [
+          {
+            alertId: "ALERT-001", shipmentId: "SHIP-002", alertType: "TEMP_HIGH",
+            severity: "CRITICAL", message: "Temperature exceeded 8C limit: reading 11.2C",
+            resolved: false, resolvedBy: null,
+            createdAt: "2025-06-05T08:00:00Z", resolvedAt: null,
+          },
+        ],
+        lastDiscordAt: null,
+        lastDiscordCmd: null,
+      };
 
-    function initApp() {
-      navigate(location.hash.replace('#', '') || 'dashboard');
-      renderDashboard();
-      renderAlerts();
-      renderDiscordPanel();
-    }
+      function dbShipments() { return _db.shipments; }
+      function dbShipment(id) { return _db.shipments.find((s) => s.shipmentId === id) || null; }
+      function dbAlerts()    { return _db.alerts; }
 
-    window.addEventListener('hashchange', () => navigate(location.hash.replace('#', '') || 'dashboard'));
-
-    // ── HELPERS ───────────────────────────────────────────────────────────────
-    function badge(cls, text) {
-      return '<span class="badge badge-' + cls + '">' + text + '</span>';
-    }
-
-    function riskBadge(r) {
-      return badge({ CRITICAL:'red', HIGH:'amber', LOW:'green' }[r] || 'muted', r);
-    }
-
-    function statusBadge(s) {
-      const text = s.replace('_', ' ');
-      return badge({ ALERT:'red', IN_TRANSIT:'blue', DELIVERED:'green' }[s] || 'muted', text);
-    }
-
-    function severityBadge(s) {
-      return badge({ CRITICAL:'red', HIGH:'amber', LOW:'green' }[s] || 'muted', s);
-    }
-
-    // ── DASHBOARD ─────────────────────────────────────────────────────────────
-    function renderDashboard() {
-      const ships  = dbShipments();
-      const active = dbAlerts().filter(a => !a.resolved);
-      const crit   = active.filter(a => a.severity === 'CRITICAL');
-
-      document.getElementById('stat-shipments').textContent = ships.length;
-      document.getElementById('stat-alerts').textContent    = active.length;
-      document.getElementById('stat-critical').textContent  = crit.length;
-      document.getElementById('stat-offline').textContent   = ships.filter(s => s.deviceStatus !== 'ONLINE').length;
-
-      // Alert list
-      const listEl = document.getElementById('dash-alert-list');
-      if (!active.length) {
-        listEl.innerHTML = '<div style="padding:14px; color:var(--muted); font-size:12px;">No active alerts</div>';
-      } else {
-        listEl.innerHTML = active.slice(0, 6).map(a =>
-          '<div class="alert-row">' +
-            severityBadge(a.severity) +
-            '<span class="alert-row-label">' + a.alertType + ' &middot; ' + a.shipmentId + '</span>' +
-            '<span class="alert-row-time">' + new Date(a.createdAt).toLocaleTimeString() + '</span>' +
-            (_currentRole === 'ADMIN'
-              ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' + a.alertId + '\')">Resolve</button>'
-              : '') +
-          '</div>'
-        ).join('');
+      function dbResolveAlert(alertId, resolvedBy) {
+        const a = _db.alerts.find((x) => x.alertId === alertId);
+        if (!a || a.resolved) return;
+        a.resolved = true;
+        a.resolvedBy = resolvedBy;
+        a.resolvedAt = new Date().toISOString();
+        if (!_db.alerts.some((x) => x.shipmentId === a.shipmentId && !x.resolved)) {
+          const s = _db.shipments.find((x) => x.shipmentId === a.shipmentId);
+          if (s) {
+            s.riskLevel = "LOW";
+            s.status = "IN_TRANSIT";
+            s.lastUpdatedAt = new Date().toISOString();
+          }
+        }
       }
 
-      // Shipment table
-      document.getElementById('shipment-table-body').innerHTML = ships.map(s =>
-        '<tr>' +
-          '<td style="font-family:var(--mono); font-size:12px; font-weight:600;">' + s.shipmentId + '</td>' +
-          '<td>' + statusBadge(s.status) + '</td>' +
-          '<td>' + riskBadge(s.riskLevel) + '</td>' +
-          '<td>' + s.temperature + '</td>' +
-          '<td>' + s.humidity + '</td>' +
-          '<td>' + s.lockStatus + '</td>' +
-          '<td>' + s.deviceStatus + '</td>' +
-          '<td><button class="btn btn-sm" onclick="navigate(\'shipment-' + s.shipmentId + '\')">View</button></td>' +
-        '</tr>'
-      ).join('');
-    }
-
-    function renderDiscordPanel() {
-      const dot    = document.getElementById('discord-dot');
-      const text   = document.getElementById('discord-status-text');
-      const note   = document.getElementById('discord-setup-note');
-      const testW  = document.getElementById('discord-test-wrap');
-      const lastEl = document.getElementById('discord-last-sent');
-      if (DISCORD_WEBHOOK_URL) {
-        dot.className    = 'status-dot dot-green';
-        text.textContent = 'Webhook configured';
-        text.style.color = 'var(--green)';
-        note.style.display = 'none';
-        testW.style.display = 'block';
-      } else {
-        dot.className    = 'status-dot dot-muted';
-        text.textContent = 'Not configured';
-        text.style.color = 'var(--muted)';
-        note.style.display = 'block';
-        testW.style.display = 'none';
-      }
-      if (lastEl) lastEl.textContent = _db.lastDiscordAt || '–';
-    }
-
-    // ── ALERTS ────────────────────────────────────────────────────────────────
-    let _alertFilter = 'all';
-
-    function renderAlerts() {
-      const all  = dbAlerts();
-      const data = _alertFilter === 'active'   ? all.filter(a => !a.resolved)
-                 : _alertFilter === 'resolved' ? all.filter(a =>  a.resolved)
-                 : all;
-      const tbody = document.getElementById('alerts-table-body');
-      if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted); padding:14px 12px;">No alerts</td></tr>';
-        return;
-      }
-      tbody.innerHTML = data.map(a =>
-        '<tr>' +
-          '<td style="font-family:var(--mono); font-size:11px;">' + a.alertId + '</td>' +
-          '<td style="font-weight:600;">' + a.shipmentId + '</td>' +
-          '<td>' + a.alertType + '</td>' +
-          '<td>' + severityBadge(a.severity) + '</td>' +
-          '<td>' + (a.resolved ? badge('green', 'Resolved') : badge('red', 'Active')) + '</td>' +
-          '<td style="font-size:11px; color:var(--muted);">' + new Date(a.createdAt).toLocaleString() + '</td>' +
-          '<td>' +
-            (!a.resolved && _currentRole === 'ADMIN'
-              ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' + a.alertId + '\')">Resolve</button>'
-              : '') +
-          '</td>' +
-        '</tr>'
-      ).join('');
-    }
-
-    function filterAlerts(f) {
-      _alertFilter = f;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('filter-' + f).classList.add('active');
-      renderAlerts();
-    }
-
-    function resolveAlertUI(alertId) {
-      if (!confirm('Mark alert ' + alertId + ' as resolved?')) return;
-      dbResolveAlert(alertId, document.getElementById('nav-user-label').textContent);
-      renderDashboard();
-      renderAlerts();
-      const detailPage = document.getElementById('page-shipment-detail');
-      if (detailPage.classList.contains('active')) {
-        const a = _db.alerts.find(x => x.alertId === alertId);
-        if (a) renderDetail(a.shipmentId);
-      }
-    }
-
-    // ── SHIPMENT DETAIL ───────────────────────────────────────────────────────
-    function renderDetail(sid) {
-      const el = document.getElementById('shipment-detail-content');
-      const s  = dbShipment(sid);
-      if (!s) { el.innerHTML = '<div style="color:var(--muted);">Shipment not found.</div>'; return; }
-
-      const activeAlerts = dbAlerts().filter(a => a.shipmentId === sid && !a.resolved);
-      const latestAlert  = activeAlerts[0] || null;
-      const isAdmin      = _currentRole === 'ADMIN';
-
-      const fields = [
-        ['Temperature',   s.temperature + ' C'],
-        ['Humidity',      s.humidity + ' %'],
-        ['G-Force',       s.gForce],
-        ['Lock Status',   s.lockStatus],
-        ['Device Status', s.deviceStatus],
-        ['Latitude',      s.latitude],
-        ['Longitude',     s.longitude],
-        ['Last Updated',  new Date(s.lastUpdatedAt).toLocaleString()],
-      ];
-
-      el.innerHTML =
-        '<div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">' +
-          '<span style="font-size:15px; font-weight:700;">' + s.shipmentId + '</span>' +
-          riskBadge(s.riskLevel) +
-          statusBadge(s.status) +
-        '</div>' +
-        '<div class="detail-grid">' +
-          '<div class="panel">' +
-            '<div class="panel-header">Telemetry</div>' +
-            '<table class="kv-table">' +
-              fields.map(f => '<tr><th>' + f[0] + '</th><td>' + f[1] + '</td></tr>').join('') +
-            '</table>' +
-          '</div>' +
-          '<div style="display:flex; flex-direction:column; gap:12px;">' +
-            (isAdmin ?
-              '<div class="panel">' +
-                '<div class="panel-header">Controls</div>' +
-                '<div class="panel-body controls-stack">' +
-                  '<button class="btn btn-danger btn-block" onclick="doTriggerTemp(\'' + sid + '\')">Trigger Temp Alert</button>' +
-                  '<button class="btn btn-warning btn-block" onclick="doTriggerCollision(\'' + sid + '\')">Trigger Collision Alert</button>' +
-                  (latestAlert
-                    ? '<button class="btn btn-success btn-block" onclick="resolveAlertUI(\'' + latestAlert.alertId + '\')">Resolve Active Alert</button>'
-                    : '') +
-                  '<button class="btn btn-primary btn-block" onclick="doSetLock(\'' + sid + '\',\'LOCKED\')">Lock</button>' +
-                  '<button class="btn btn-block" onclick="doSetLock(\'' + sid + '\',\'UNLOCKED\')">Unlock</button>' +
-                '</div>' +
-              '</div>'
-            : '') +
-            '<div class="panel">' +
-              '<div class="panel-header">Latest Alert</div>' +
-              '<div class="panel-body">' +
-                (latestAlert
-                  ? '<div style="font-size:12px; font-weight:600; color:var(--red); margin-bottom:4px;">' + latestAlert.alertType + '</div>' +
-                    '<div style="font-size:12px; color:var(--muted);">' + latestAlert.message + '</div>' +
-                    '<div style="font-size:11px; color:var(--muted); margin-top:6px;">' + new Date(latestAlert.createdAt).toLocaleString() + '</div>'
-                  : '<div style="font-size:12px; color:var(--muted);">No active alerts</div>') +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-    }
-
-    function doTriggerTemp(sid) {
-      const temp = prompt('Simulated temperature (C):', '12.0');
-      if (temp === null) return;
-      dbTriggerAlert(sid, 'TEMP_HIGH', 'CRITICAL', temp);
-      renderDetail(sid); renderDashboard(); renderAlerts();
-    }
-
-    function doTriggerCollision(sid) {
-      dbTriggerAlert(sid, 'COLLISION', 'HIGH');
-      renderDetail(sid); renderDashboard(); renderAlerts();
-    }
-
-    function doSetLock(sid, status) {
-      dbSetLock(sid, status);
-      renderDetail(sid); renderDashboard();
-    }
-
-    // ── MAP ───────────────────────────────────────────────────────────────────
-    function initMap() {
-      if (!_leafletMap) {
-        _leafletMap   = L.map('leaflet-map').setView([1.315, 103.820], 12);
-        _markerLayer  = L.layerGroup().addTo(_leafletMap);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19,
-        }).addTo(_leafletMap);
+      function dbTriggerAlert(shipmentId, alertType, severity, temperature) {
+        const alertId = "ALERT-" + Date.now();
+        const msg = alertType + " on " + shipmentId + (temperature ? ": " + temperature + "C" : "");
+        _db.alerts.push({
+          alertId, shipmentId, alertType, severity, message: msg,
+          resolved: false, resolvedBy: null,
+          createdAt: new Date().toISOString(), resolvedAt: null,
+        });
+        const s = _db.shipments.find((x) => x.shipmentId === shipmentId);
+        if (s) {
+          s.riskLevel = severity;
+          s.status = "ALERT";
+          s.lastUpdatedAt = new Date().toISOString();
+          if (temperature !== undefined) s.temperature = parseFloat(temperature);
+        }
+        if (s) postDiscordAlert(s, alertType, severity, alertId);
+        return alertId;
       }
 
-      _leafletMap.invalidateSize();
-      _markerLayer.clearLayers();
+      function dbSetLock(shipmentId, lockStatus) {
+        const s = _db.shipments.find((x) => x.shipmentId === shipmentId);
+        if (s) { s.lockStatus = lockStatus; s.lastUpdatedAt = new Date().toISOString(); }
+      }
 
-      const riskColor = { LOW: '#16a34a', HIGH: '#b45309', CRITICAL: '#dc2626' };
-      const ships = dbShipments();
+      // ── DISCORD ─────────────────────────────────────────────────────────────
+      // Discord webhook execution supports CORS — fetch runs from the browser.
+      const DISCORD_EMBED_COLOR = { CRITICAL: 14427686, HIGH: 11817737, LOW: 1483594 };
 
-      ships.forEach(s => {
-        const color = riskColor[s.riskLevel] || '#64748b';
-        L.circleMarker([s.latitude, s.longitude], {
-          radius: 9, fillColor: color, color: '#ffffff', weight: 2, fillOpacity: 0.9,
-        })
-        .bindPopup(
-          '<b>' + s.shipmentId + '</b><br>' +
-          'Status: ' + s.status + '<br>' +
-          'Risk: ' + s.riskLevel + '<br>' +
-          'Temp: ' + s.temperature + ' C<br>' +
-          'Lock: ' + s.lockStatus
-        )
-        .addTo(_markerLayer);
-      });
+      async function postDiscordAlert(ship, alertType, severity, alertId) {
+        if (!DISCORD_WEBHOOK_URL) return;
+        const payload = {
+          embeds: [{
+            title: "LISA Alert",
+            color: DISCORD_EMBED_COLOR[severity] || 9807270,
+            fields: [
+              { name: "Severity", value: severity, inline: true },
+              { name: "Type",     value: alertType, inline: true },
+              { name: "Shipment", value: ship.shipmentId, inline: true },
+              { name: "Temperature", value: ship.temperature + " C", inline: true },
+              { name: "Location", value: ship.latitude + ", " + ship.longitude, inline: true },
+              { name: "​", value: "​", inline: true },
+              {
+                name: "Suggested Commands",
+                value:
+                  "`/status " + ship.shipmentId + "`\n" +
+                  "`/alerts`\n" +
+                  "`/resolve " + alertId + "`",
+              },
+            ],
+            timestamp: new Date().toISOString(),
+            footer: { text: "LISA Logistics Operations" },
+          }],
+        };
+        const ok = await _discordPost(payload);
+        if (ok) {
+          _db.lastDiscordAt = new Date().toLocaleTimeString();
+          const el = document.getElementById("discord-last-alert");
+          if (el) el.textContent = _db.lastDiscordAt;
+          renderDiscordPreview(ship, alertType, severity, alertId);
+        }
+      }
 
-      if (ships.length) {
-        _leafletMap.fitBounds(
-          L.latLngBounds(ships.map(s => [s.latitude, s.longitude])),
-          { padding: [50, 50], maxZoom: 14 }
+      async function sendTestNotification() {
+        if (!DISCORD_WEBHOOK_URL) return;
+        const payload = {
+          embeds: [{
+            title: "LISA — Test Notification",
+            color: 1483594,
+            description: "Webhook is active. Alert notifications will appear here when triggered.",
+            timestamp: new Date().toISOString(),
+            footer: { text: "LISA Logistics Operations" },
+          }],
+        };
+        const ok = await _discordPost(payload);
+        if (ok) {
+          _db.lastDiscordAt = new Date().toLocaleTimeString();
+          document.getElementById("discord-last-alert").textContent = _db.lastDiscordAt;
+          document.getElementById("discord-preview-area").innerHTML =
+            '<div class="discord-preview">' +
+              '<div class="dp-time">LISA &middot; Today at ' + new Date().toLocaleTimeString() + "</div>" +
+              '<div class="dp-title">LISA &mdash; Test Notification</div>' +
+              '<div style="font-size:12px; color:#dbdee1; font-family:var(--mono);">Webhook is active.</div>' +
+            "</div>";
+        } else {
+          alert("Discord webhook failed. Check the URL in config.");
+        }
+      }
+
+      async function _discordPost(payload) {
+        try {
+          const resp = await fetch(DISCORD_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          return resp.ok || resp.status === 204;
+        } catch (e) {
+          console.warn("Discord webhook error:", e);
+          return false;
+        }
+      }
+
+      function renderDiscordPreview(ship, alertType, severity, alertId) {
+        const borderColor =
+          severity === "CRITICAL" ? "#dc2626" :
+          severity === "HIGH" ? "#b45309" : "#16a34a";
+        document.getElementById("discord-preview-area").innerHTML =
+          '<div class="discord-preview" style="border-left-color:' + borderColor + '">' +
+            '<div class="dp-time">LISA &middot; Today at ' + new Date().toLocaleTimeString() + "</div>" +
+            '<div class="dp-title">LISA Alert</div>' +
+            '<div class="dp-fields">' +
+              '<div class="dp-field"><div class="dp-field-label">Severity</div><div class="dp-field-value">' + severity + "</div></div>" +
+              '<div class="dp-field"><div class="dp-field-label">Type</div><div class="dp-field-value">' + alertType + "</div></div>" +
+              '<div class="dp-field"><div class="dp-field-label">Shipment</div><div class="dp-field-value">' + ship.shipmentId + "</div></div>" +
+              '<div class="dp-field"><div class="dp-field-label">Temperature</div><div class="dp-field-value">' + ship.temperature + " C</div></div>" +
+            "</div>" +
+            '<div class="dp-commands">' +
+              "/status " + ship.shipmentId + " &nbsp;&middot;&nbsp; /alerts &nbsp;&middot;&nbsp; /resolve " + alertId +
+            "</div>" +
+          "</div>";
+      }
+
+      // ── ROUTING ─────────────────────────────────────────────────────────────
+      function navigate(page) {
+        document.querySelectorAll(".page-section").forEach((el) => el.classList.remove("active"));
+        document.querySelectorAll(".nav-link").forEach((el) => el.classList.remove("active"));
+
+        if (page.startsWith("shipment-")) {
+          document.getElementById("page-shipment-detail").classList.add("active");
+          renderDetail(page.replace("shipment-", ""));
+          return;
+        }
+
+        const section = document.getElementById("page-" + page);
+        if (section) section.classList.add("active");
+        document.querySelectorAll(".nav-link").forEach((el) => {
+          if ((el.getAttribute("onclick") || "").includes("'" + page + "'")) {
+            el.classList.add("active");
+          }
+        });
+
+        if (page === "map") renderMap();
+      }
+
+      function initApp() {
+        navigate(location.hash.replace("#", "") || "dashboard");
+        renderDashboard();
+        renderAlerts();
+        renderDiscordStatus();
+      }
+
+      window.addEventListener("hashchange", () =>
+        navigate(location.hash.replace("#", "") || "dashboard")
+      );
+
+      // ── HELPERS ─────────────────────────────────────────────────────────────
+      function badge(cls, text) {
+        return '<span class="badge badge-' + cls + '">' + text + "</span>";
+      }
+      function riskBadge(r) {
+        return badge({ CRITICAL: "red", HIGH: "amber", LOW: "green" }[r] || "muted", r);
+      }
+      function statusBadge(s) {
+        return badge(
+          { ALERT: "red", IN_TRANSIT: "blue", DELIVERED: "green" }[s] || "muted",
+          s.replace("_", " ")
         );
       }
-    }
-  </script>
+      function severityBadge(s) {
+        return badge({ CRITICAL: "red", HIGH: "amber", LOW: "green" }[s] || "muted", s);
+      }
+      function fmtTime(iso) {
+        const d = new Date(iso);
+        return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      }
 
-</body>
+      // ── DASHBOARD ──────────────────────────────────────────────────────────
+      function renderDashboard() {
+        const ships  = dbShipments();
+        const active = dbAlerts().filter((a) => !a.resolved);
+        const crit   = active.filter((a) => a.severity === "CRITICAL");
+
+        document.getElementById("stat-shipments").textContent = ships.length;
+        document.getElementById("stat-alerts").textContent    = active.length;
+        document.getElementById("stat-critical").textContent  = crit.length;
+        document.getElementById("stat-offline").textContent   =
+          ships.filter((s) => s.deviceStatus !== "ONLINE").length;
+
+        // Recent alerts panel
+        const listEl = document.getElementById("dash-alert-list");
+        if (!active.length) {
+          listEl.innerHTML =
+            '<div style="padding:16px; color:var(--muted); font-size:12px;">No active alerts</div>';
+        } else {
+          listEl.innerHTML = active.slice(0, 6).map((a) =>
+            '<div class="alert-row">' +
+              severityBadge(a.severity) +
+              '<div class="alert-row-info">' +
+                '<div class="alert-row-title">' + a.alertType + " &middot; " + a.shipmentId + "</div>" +
+                '<div class="alert-row-sub">' + fmtTime(a.createdAt) + "</div>" +
+              "</div>" +
+              (_currentRole === "ADMIN"
+                ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' + a.alertId + '\')">Resolve</button>'
+                : "") +
+            "</div>"
+          ).join("");
+        }
+
+        // Shipment table
+        document.getElementById("shipment-table-body").innerHTML = ships.map((s) =>
+          "<tr>" +
+            '<td style="font-family:var(--mono); font-size:12px; font-weight:600;">' + s.shipmentId + "</td>" +
+            "<td>" + statusBadge(s.status) + "</td>" +
+            "<td>" + riskBadge(s.riskLevel) + "</td>" +
+            "<td>" + s.temperature + "</td>" +
+            "<td>" + s.lockStatus + "</td>" +
+            "<td>" + s.deviceStatus + "</td>" +
+            '<td style="font-size:11px; color:var(--muted);">' + fmtTime(s.lastUpdatedAt) + "</td>" +
+            '<td><button class="btn btn-sm" onclick="navigate(\'shipment-' + s.shipmentId + '\')">View</button></td>' +
+          "</tr>"
+        ).join("");
+      }
+
+      function renderDiscordStatus() {
+        const dot  = document.getElementById("discord-sdot");
+        const text = document.getElementById("discord-status-text");
+        const note = document.getElementById("discord-note");
+        const wrap = document.getElementById("discord-test-wrap");
+        const last = document.getElementById("discord-last-alert");
+        if (DISCORD_WEBHOOK_URL) {
+          dot.className    = "sdot sdot-green";
+          text.textContent = "Webhook active";
+          text.style.color = "var(--green)";
+          note.style.display = "none";
+          wrap.style.display = "block";
+        } else {
+          dot.className    = "sdot sdot-muted";
+          text.textContent = "Not configured";
+          text.style.color = "var(--muted)";
+          note.style.display = "block";
+          wrap.style.display = "none";
+        }
+        if (last) last.textContent = _db.lastDiscordAt || "–";
+      }
+
+      // ── ALERT CENTER ───────────────────────────────────────────────────────
+      let _alertFilter = "all";
+
+      function renderAlerts() {
+        const all  = dbAlerts();
+        const data =
+          _alertFilter === "active"   ? all.filter((a) => !a.resolved) :
+          _alertFilter === "resolved" ? all.filter((a) =>  a.resolved) :
+          all;
+        const tbody = document.getElementById("alerts-table-body");
+        if (!data.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="7" style="color:var(--muted); padding:14px 12px;">No alerts</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.map((a) =>
+          "<tr>" +
+            '<td style="font-family:var(--mono); font-size:11px;">' + a.alertId + "</td>" +
+            '<td style="font-weight:600;">' + a.shipmentId + "</td>" +
+            "<td>" + a.alertType + "</td>" +
+            "<td>" + severityBadge(a.severity) + "</td>" +
+            "<td>" + (a.resolved ? badge("green", "Resolved") : badge("red", "Active")) + "</td>" +
+            '<td style="font-size:11px; color:var(--muted);">' + fmtTime(a.createdAt) + "</td>" +
+            "<td>" +
+              (!a.resolved && _currentRole === "ADMIN"
+                ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' + a.alertId + '\')">Resolve</button>'
+                : "") +
+            "</td>" +
+          "</tr>"
+        ).join("");
+      }
+
+      function filterAlerts(f) {
+        _alertFilter = f;
+        document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
+        document.getElementById("filter-" + f).classList.add("active");
+        renderAlerts();
+      }
+
+      function resolveAlertUI(alertId) {
+        if (!confirm("Mark alert " + alertId + " as resolved?")) return;
+        dbResolveAlert(alertId, document.getElementById("nav-user-label").textContent);
+        renderDashboard();
+        renderAlerts();
+        const detailPage = document.getElementById("page-shipment-detail");
+        if (detailPage.classList.contains("active")) {
+          const a = _db.alerts.find((x) => x.alertId === alertId);
+          if (a) renderDetail(a.shipmentId);
+        }
+      }
+
+      // ── SHIPMENT DETAIL ────────────────────────────────────────────────────
+      function renderDetail(sid) {
+        const el = document.getElementById("shipment-detail-content");
+        const s  = dbShipment(sid);
+        if (!s) { el.innerHTML = '<div style="color:var(--muted);">Shipment not found.</div>'; return; }
+
+        const active      = dbAlerts().filter((a) => a.shipmentId === sid && !a.resolved);
+        const latestAlert = active[0] || null;
+        const isAdmin     = _currentRole === "ADMIN";
+
+        const fields = [
+          ["Shipment ID",   s.shipmentId],
+          ["Status",        s.status.replace("_", " ")],
+          ["Risk Level",    s.riskLevel],
+          ["Temperature",   s.temperature + " C"],
+          ["Humidity",      s.humidity + " %"],
+          ["G-Force",       s.gForce],
+          ["Lock Status",   s.lockStatus],
+          ["Device Status", s.deviceStatus],
+          ["Location",      s.latitude + ", " + s.longitude],
+          ["Last Updated",  fmtTime(s.lastUpdatedAt)],
+        ];
+
+        el.innerHTML =
+          '<div class="detail-header">' +
+            '<div class="detail-title">' + s.shipmentId + "</div>" +
+            riskBadge(s.riskLevel) +
+            statusBadge(s.status) +
+          "</div>" +
+          '<div class="detail-grid">' +
+            '<div class="panel">' +
+              '<div class="panel-header">Shipment Details</div>' +
+              '<table class="kv-table">' +
+                fields.map((f) => "<tr><th>" + f[0] + "</th><td>" + f[1] + "</td></tr>").join("") +
+              "</table>" +
+            "</div>" +
+            '<div style="display:flex; flex-direction:column; gap:12px;">' +
+              (isAdmin
+                ? '<div class="panel">' +
+                    '<div class="panel-header">Controls</div>' +
+                    '<div class="panel-body controls-stack">' +
+                      '<button class="btn btn-danger control-btn" onclick="doTriggerTemp(\'' + sid + '\')">Trigger Temperature Alert</button>' +
+                      '<button class="btn btn-warning control-btn" onclick="doTriggerCollision(\'' + sid + '\')">Trigger Collision Alert</button>' +
+                      (latestAlert
+                        ? '<button class="btn btn-success control-btn" onclick="resolveAlertUI(\'' + latestAlert.alertId + '\')">Resolve Active Alert</button>'
+                        : "") +
+                      '<button class="btn btn-primary control-btn" onclick="doSetLock(\'' + sid + "\','LOCKED')">Lock Cargo</button>" +
+                      '<button class="btn control-btn" onclick="doSetLock(\'' + sid + "\','UNLOCKED')">Unlock Cargo</button>" +
+                    "</div>" +
+                  "</div>"
+                : "") +
+              '<div class="panel">' +
+                '<div class="panel-header">Latest Alert</div>' +
+                '<div class="panel-body">' +
+                  (latestAlert
+                    ? '<div style="font-size:12px; font-weight:600; color:var(--red); margin-bottom:4px;">' + latestAlert.alertType + "</div>" +
+                      '<div style="font-size:12px; color:var(--muted);">' + latestAlert.message + "</div>" +
+                      '<div style="font-size:11px; color:var(--muted); margin-top:6px;">' + fmtTime(latestAlert.createdAt) + "</div>"
+                    : '<div style="font-size:12px; color:var(--muted);">No active alerts</div>") +
+                "</div>" +
+              "</div>" +
+            "</div>" +
+          "</div>";
+      }
+
+      function doTriggerTemp(sid) {
+        const temp = prompt("Enter simulated temperature (C):", "12.0");
+        if (temp === null) return;
+        dbTriggerAlert(sid, "TEMP_HIGH", "CRITICAL", temp);
+        renderDetail(sid); renderDashboard(); renderAlerts();
+      }
+
+      function doTriggerCollision(sid) {
+        dbTriggerAlert(sid, "COLLISION", "HIGH");
+        renderDetail(sid); renderDashboard(); renderAlerts();
+      }
+
+      function doSetLock(sid, status) {
+        dbSetLock(sid, status);
+        renderDetail(sid); renderDashboard();
+      }
+
+      // ── MAP ─────────────────────────────────────────────────────────────────
+      function renderMap() {
+        const ships = dbShipments();
+
+        // "View All" link uses Google Maps directions with all shipments as waypoints
+        const waypoints = ships.map((s) => s.latitude + "," + s.longitude).join("/");
+        document.getElementById("maps-all-link").href =
+          "https://www.google.com/maps/dir/" + waypoints;
+
+        const riskColor = { LOW: "var(--green)", HIGH: "var(--amber)", CRITICAL: "var(--red)" };
+
+        document.getElementById("location-grid").innerHTML = ships.map((s) =>
+          '<div class="location-card">' +
+            '<div class="location-card-id">' +
+              '<span style="font-family:var(--mono);">' + s.shipmentId + "</span>" +
+              riskBadge(s.riskLevel) +
+              statusBadge(s.status) +
+            "</div>" +
+            '<div class="location-coord">Lat: ' + s.latitude + "</div>" +
+            '<div class="location-coord">Lng: ' + s.longitude + "</div>" +
+            '<div class="location-meta" style="margin-top:6px;">' +
+              "Temp: " + s.temperature + " C &nbsp;&middot;&nbsp; Lock: " + s.lockStatus +
+            "</div>" +
+            '<a href="https://www.google.com/maps?q=' + s.latitude + "," + s.longitude + '" target="_blank" rel="noopener">' +
+              '<button class="btn btn-sm btn-block" style="margin-top:2px; padding:7px 12px;">Open in Google Maps</button>' +
+            "</a>" +
+          "</div>"
+        ).join("");
+      }
+    </script>
+  </body>
 </html>
