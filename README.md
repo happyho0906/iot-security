@@ -1,10 +1,11 @@
-# LISA — Logistics Intelligence & Sentinel Assistant
+# LISA
+Logistics Intelligence & Sentinel Assistant
 
 A self-contained logistics monitoring platform with real-time shipment tracking, alert management, Discord bot integration, and a role-based web dashboard. Runs entirely in the browser in demo mode with no backend required. Designed to connect to AWS (DynamoDB + Lambda + API Gateway) when deployed.
 
 ---
 
-## Quick Start (Demo Mode — no AWS needed)
+## Quick Start (Demo Mode no AWS needed)
 
 ```bash
 git clone https://github.com/happyho0906/iot-security.git
@@ -16,7 +17,7 @@ Open [http://localhost:8080](http://localhost:8080) and sign in with one of the 
 
 | Role | Email | Password | Access |
 |------|-------|----------|--------|
-| Admin | admin@lisa.demo | admin123 | Full — trigger alerts, resolve, lock/unlock |
+| Admin | admin@lisa.demo | admin123 | Full  trigger alerts, resolve, lock/unlock |
 | Driver | driver@lisa.demo | driver123 | View only |
 | Customer | customer@lisa.demo | customer123 | View only |
 
@@ -26,15 +27,15 @@ No AWS credentials, no API keys, no dependencies to install.
 
 ## What It Does
 
-**Dashboard** — live stat cards (active shipments, alerts, critical count, offline devices), recent alerts panel, Discord status panel, full shipment table with status badges.
+**Dashboard** live stat cards (active shipments, alerts, critical count, offline devices), recent alerts panel, Discord status panel, full shipment table with status badges.
 
-**Alert Center** — filterable table of all alerts (active / resolved / all) with one-click resolve for admins.
+**Alert Center** filterable table of all alerts (active / resolved / all) with one-click resolve for admins.
 
-**Shipment Detail** — per-shipment view with all sensor fields (temperature, humidity, G-force, lock, device status, GPS coordinates) and admin controls: trigger temperature alert, trigger collision alert, resolve active alert, lock/unlock cargo.
+**Shipment Detail** per-shipment view with all sensor fields (temperature, humidity, G-force, lock, device status, GPS coordinates) and admin controls: trigger temperature alert, trigger collision alert, resolve active alert, lock/unlock cargo.
 
-**Map** — per-shipment "Open in Google Maps" links and a "View All" multi-waypoint directions link. No API key required.
+**Map** per-shipment "Open in Google Maps" links and a "View All" multi-waypoint directions link. No API key required.
 
-**Discord notifications** — when an alert is triggered, the dashboard sends a structured Discord embed directly from the browser via webhook (Discord webhooks support CORS). Set `DISCORD_WEBHOOK_URL` in the config block at the top of `index.html`.
+**Discord notifications** when an alert is triggered, the dashboard sends a structured Discord embed directly from the browser via webhook (Discord webhooks support CORS). Set `DISCORD_WEBHOOK_URL` in the config block at the top of `index.html`.
 
 ---
 
@@ -42,7 +43,7 @@ No AWS credentials, no API keys, no dependencies to install.
 
 ```
 iot-security/
-├── index.html                        # Entire frontend — single file, no build step
+├── index.html                        # Entire frontend  single file, no build step
 │
 ├── lambda/
 │   ├── list-shipments/               # GET /shipments
@@ -50,7 +51,7 @@ iot-security/
 │   ├── list-alerts/                  # GET /alerts
 │   ├── trigger-alert/                # POST /demo/trigger-alert (also handles LOCK_UPDATE)
 │   ├── resolve-alert/                # POST /alerts/{alertId}/resolve
-│   └── discord-commands/             # POST /discord/commands — Ed25519 verified slash commands
+│   └── discord-commands/             # POST /discord/commands  Ed25519 verified slash commands
 │       ├── lambda_function.py
 │       ├── requirements.txt          # PyNaCl==1.5.0
 │       └── discord-commands.zip      # Pre-built deployment bundle (ready to upload)
@@ -84,18 +85,18 @@ When any alert is triggered from the dashboard, an embed is posted to your chann
 
 The frontend is ready to switch from mock data to real API calls. All mock functions (`dbShipments`, `dbAlerts`, etc.) can be replaced by `fetch()` calls to the API Gateway.
 
-### Step 1 — Deploy the backend
+### Step 1  Deploy the backend
 
 Follow [DEPLOY.md](DEPLOY.md) for the full step-by-step guide. Summary:
 
 1. Create DynamoDB tables: `Shipments`, `AlertEvents`, `DiscordUsers`
 2. Seed initial data: `python scripts/seed_dynamodb.py`
-3. Deploy 6 Lambda functions (Python 3.12) — paste each file from `lambda/*/lambda_function.py`
+3. Deploy 6 Lambda functions (Python 3.12)  paste each file from `lambda/*/lambda_function.py`
 4. Upload `lambda/discord-commands/discord-commands.zip` for the bot (includes PyNaCl)
 5. Add API Gateway routes to the existing API (`d1rocl5xb9`)
 6. Deploy the API stage
 
-### Step 2 — Point the frontend at your API
+### Step 2  Point the frontend at your API
 
 In `index.html`, uncomment and fill in:
 
@@ -103,7 +104,7 @@ In `index.html`, uncomment and fill in:
 const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/prod';
 ```
 
-### Step 3 — Replace mock functions with real fetch calls
+### Step 3  Replace mock functions with real fetch calls
 
 Swap the mock `db*` functions in `index.html` with these patterns:
 
@@ -155,7 +156,7 @@ async function dbSetLock(shipmentId, lockStatus) {
 
 Make `renderDashboard`, `renderAlerts`, `renderDetail` async and `await` these calls. The render functions are already structured to accept the same data shape that the Lambda functions return.
 
-### Step 4 — Add real auth (optional)
+### Step 4  Add real auth (optional)
 
 The frontend currently uses hardcoded demo accounts in `DEMO_ACCOUNTS`. To switch to Cognito:
 
@@ -194,7 +195,7 @@ Then set the Interactions Endpoint URL in Discord Developer Portal → your app 
 https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{stage}/discord/commands
 ```
 
-Discord verifies the endpoint immediately via an Ed25519 PING — the Lambda handles this automatically.
+Discord verifies the endpoint immediately via an Ed25519 PING  the Lambda handles this automatically.
 
 > **Note:** Slash commands require the AWS backend (Lambda + API Gateway) to be deployed. The demo-mode frontend does not expose a bot endpoint.
 
@@ -210,7 +211,7 @@ Discord verifies the endpoint immediately via an Ed25519 PING — the Lambda han
 | POST | `/demo/trigger-alert` | lisa-trigger-alert | Create alert or update lock status |
 | POST | `/alerts/{alertId}/resolve` | lisa-resolve-alert | Resolve an alert |
 | POST | `/discord/commands` | lisa-discord-commands | Discord interaction endpoint |
-| POST | `/unlock` | Sentinel_NFC_Unlock | **Existing** — do not modify |
+| POST | `/unlock` | Sentinel_NFC_Unlock | **Existing**  do not modify |
 
 ### DynamoDB Schema
 
@@ -235,7 +236,7 @@ resolved, resolvedBy, createdAt, resolvedAt
 1. Add the field to `scripts/seed_dynamodb.py` and re-run it
 2. Add it to the `fields` array in `renderDetail()` in `index.html`
 3. Add a column to the shipment table in `renderDashboard()` if needed
-4. No Lambda changes needed — `list-shipments` and `get-shipment` return all DynamoDB attributes automatically
+4. No Lambda changes needed  `list-shipments` and `get-shipment` return all DynamoDB attributes automatically
 
 ### Adding a new alert type
 
@@ -255,26 +256,26 @@ resolved, resolvedBy, createdAt, resolvedAt
 
 ### Required for production
 
-- [ ] **Deploy Lambda functions** — upload each `lambda_function.py` to AWS Console (Python 3.12). Upload `discord-commands.zip` for the bot. See DEPLOY.md.
-- [ ] **Wire API Gateway routes** — add GET /shipments, GET /alerts, POST /demo/trigger-alert, POST /alerts/{id}/resolve, POST /discord/commands to the existing API (`d1rocl5xb9`). Deploy the stage.
-- [ ] **Discord bot activation** — set `DISCORD_PUBLIC_KEY` on `lisa-discord-commands` Lambda, run `register_discord_commands.py`, set Interactions Endpoint URL in Discord Developer Portal.
-- [ ] **Switch frontend to live API** — uncomment `API_BASE` in `index.html` and replace `db*` mock functions with `fetch()` calls (patterns in the section above).
+- [ ] **Deploy Lambda functions**  upload each `lambda_function.py` to AWS Console (Python 3.12). Upload `discord-commands.zip` for the bot. See DEPLOY.md.
+- [ ] **Wire API Gateway routes**  add GET /shipments, GET /alerts, POST /demo/trigger-alert, POST /alerts/{id}/resolve, POST /discord/commands to the existing API (`d1rocl5xb9`). Deploy the stage.
+- [ ] **Discord bot activation**  set `DISCORD_PUBLIC_KEY` on `lisa-discord-commands` Lambda, run `register_discord_commands.py`, set Interactions Endpoint URL in Discord Developer Portal.
+- [ ] **Switch frontend to live API**  uncomment `API_BASE` in `index.html` and replace `db*` mock functions with `fetch()` calls (patterns in the section above).
 
 ### Improves robustness
 
-- [ ] **Cognito auth** — replace hardcoded `DEMO_ACCOUNTS` with a Cognito User Pool. Skeleton config is in DEPLOY.md Step 4.
-- [ ] **API Gateway authorizer** — attach a Cognito JWT authorizer to all routes so unauthenticated calls are rejected at the gateway layer before reaching Lambda.
-- [ ] **Live polling** — add a `setInterval` (30 s) re-fetch of `/shipments` and `/alerts` so the dashboard updates without manual refresh. Remove the interval when the user navigates away.
-- [ ] **Re-seed after testing** — after trigger/resolve tests, run `python scripts/seed_dynamodb.py` to restore baseline data.
+- [ ] **Cognito auth**  replace hardcoded `DEMO_ACCOUNTS` with a Cognito User Pool. Skeleton config is in DEPLOY.md Step 4.
+- [ ] **API Gateway authorizer**  attach a Cognito JWT authorizer to all routes so unauthenticated calls are rejected at the gateway layer before reaching Lambda.
+- [ ] **Live polling**  add a `setInterval` (30 s) re-fetch of `/shipments` and `/alerts` so the dashboard updates without manual refresh. Remove the interval when the user navigates away.
+- [ ] **Re-seed after testing**  after trigger/resolve tests, run `python scripts/seed_dynamodb.py` to restore baseline data.
 
 ### Future integrations
 
-- [ ] **Real IoT sensor data** — replace the demo trigger path with an IoT Core rule that writes sensor readings (temperature, humidity, G-force) to DynamoDB and auto-triggers alerts on threshold breach.
-- [ ] **NFC unlock** — the existing `Sentinel_NFC_Unlock` Lambda already handles `POST /unlock`. Surface its lock/unlock response back in the dashboard's shipment detail lock status display.
-- [ ] **Image evidence** — `Sentinel_Image_Processor` Lambda (deployed, not in this repo) captures images to S3. Add an "Evidence" tab in Shipment Detail that lists S3 image URLs associated with a shipment's alert events.
-- [ ] **GPS real-time tracking** — replace static lat/long in DynamoDB with a live stream from a GPS tracker (IoT Core MQTT → Lambda → DynamoDB update). The Map page already reads `latitude`/`longitude` from each shipment object — no page changes needed.
-- [ ] **Multi-shipment Discord threads** — post each shipment's alerts into a dedicated Discord thread to keep channels organized.
-- [ ] **CloudWatch metrics** — add Lambda invocation counts, alert creation rate, and DynamoDB RCU/WCU as CloudWatch metrics for operational monitoring.
+- [ ] **Real IoT sensor data**  replace the demo trigger path with an IoT Core rule that writes sensor readings (temperature, humidity, G-force) to DynamoDB and auto-triggers alerts on threshold breach.
+- [ ] **NFC unlock**  the existing `Sentinel_NFC_Unlock` Lambda already handles `POST /unlock`. Surface its lock/unlock response back in the dashboard's shipment detail lock status display.
+- [ ] **Image evidence**  `Sentinel_Image_Processor` Lambda (deployed, not in this repo) captures images to S3. Add an "Evidence" tab in Shipment Detail that lists S3 image URLs associated with a shipment's alert events.
+- [ ] **GPS real-time tracking**  replace static lat/long in DynamoDB with a live stream from a GPS tracker (IoT Core MQTT → Lambda → DynamoDB update). The Map page already reads `latitude`/`longitude` from each shipment object  no page changes needed.
+- [ ] **Multi-shipment Discord threads**  post each shipment's alerts into a dedicated Discord thread to keep channels organized.
+- [ ] **CloudWatch metrics**  add Lambda invocation counts, alert creation rate, and DynamoDB RCU/WCU as CloudWatch metrics for operational monitoring.
 
 ---
 
@@ -294,7 +295,7 @@ Browser (index.html)
   └── POST /discord/commands     → lisa-discord-commands → DynamoDB Shipments + AlertEvents
                                    (Ed25519 verified)
 
-Discord webhook (browser fetch — no proxy needed, Discord sets Access-Control-Allow-Origin: *)
+Discord webhook (browser fetch  no proxy needed, Discord sets Access-Control-Allow-Origin: *)
   └── Sends embed on alert trigger: Severity / Type / Shipment / Temp / Location / Suggested commands
 
 Existing (do not modify):
@@ -308,11 +309,11 @@ Existing (do not modify):
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Vanilla HTML/CSS/JS — single file, no framework, no build step |
+| Frontend | Vanilla HTML/CSS/JS  single file, no framework, no build step |
 | Auth (demo) | Hardcoded accounts in `DEMO_ACCOUNTS`, `sessionStorage` for session |
 | Auth (production-ready) | Amazon Cognito User Pool + `amazon-cognito-identity-js` CDN |
 | Backend | AWS Lambda (Python 3.12) + API Gateway REST (us-east-1) |
-| Database | DynamoDB On-Demand — Shipments, AlertEvents, DiscordUsers |
+| Database | DynamoDB On-Demand  Shipments, AlertEvents, DiscordUsers |
 | Discord alerts | Webhook embed via browser `fetch()` |
 | Discord commands | Lambda with Ed25519 signature verification (PyNaCl) |
-| Map | Google Maps URL links — no API key required |
+| Map | Google Maps URL links  no API key required |
