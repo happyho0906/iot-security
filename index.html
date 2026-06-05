@@ -770,6 +770,16 @@
           grid-template-columns: 1fr;
         }
       }
+
+      .nav-link { display:inline-block; padding:6px 14px; border-radius:8px; font-size:14px; font-weight:600; color:var(--muted); text-decoration:none; transition:background .15s,color .15s; cursor:pointer; }
+      .nav-link:hover, .nav-link.active { background:var(--blue-soft); color:var(--blue); }
+      .page-section { display:none; }
+      .page-section.active { display:block; }
+      .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; }
+      .stat-label { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+      .stat-value { font-size:28px; font-weight:900; letter-spacing:-.04em; }
+      .filter-btn { border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:8px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; }
+      .filter-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
     </style>
   </head>
 
@@ -820,16 +830,22 @@
       <div class="brand">
         <div class="brand-mark">L</div>
         <div>
-          <div class="brand-title">Lab Item Sentinel Alert</div>
-          <div class="brand-sub">LISA</div>
+          <div class="brand-title">LISA</div>
+          <div class="brand-sub">Logistics Intelligence &amp; Sentinel Assistant</div>
         </div>
       </div>
-
-      <div id="connectionStatus" class="connection">
-        <span class="dot"></span>Connected
+      <nav style="display:flex;gap:4px;">
+        <span class="nav-link active" onclick="navigate('dashboard')">Dashboard</span>
+        <span class="nav-link" onclick="navigate('alerts')">Alert Center</span>
+        <span class="nav-link" onclick="navigate('map')">Map</span>
+      </nav>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <span style="font-size:13px;color:var(--muted);"><span id="nav-user-label"></span> &nbsp;·&nbsp; <span style="color:var(--blue);font-weight:600;">ADMIN</span></span>
+        <button onclick="handleLogout()" style="border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;">Logout</button>
       </div>
     </header>
 
+    <div id="page-dashboard" class="page-section active">
     <main>
       <section class="hero">
         <div>
@@ -1014,6 +1030,7 @@
         </div>
       </section>
     </main>
+    </div><!-- end page-dashboard -->
     </div><!-- end app-shell -->
 
     <script>
@@ -1413,6 +1430,49 @@
     }
 
     window.addEventListener('DOMContentLoaded', checkSession);
+
+    // ── ROUTING ──────────────────────────────────────────────────────────────
+    function navigate(page) {
+      document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+
+      if (page.startsWith('shipment-')) {
+        const sid = page.replace('shipment-', '');
+        const detailPage = document.getElementById('page-shipment-detail');
+        if (detailPage) detailPage.classList.add('active');
+        if (typeof loadShipmentDetail === 'function') loadShipmentDetail(sid);
+        return;
+      }
+
+      const section = document.getElementById('page-' + page);
+      if (section) section.classList.add('active');
+      document.querySelectorAll('.nav-link').forEach(el => {
+        if ((el.getAttribute('onclick') || '').includes("'" + page + "'")) el.classList.add('active');
+      });
+    }
+
+    let _pollInterval = null;
+
+    function initApp() {
+      const hash = location.hash.replace('#', '') || 'dashboard';
+      navigate(hash);
+      startPolling();
+    }
+
+    function startPolling() {
+      clearInterval(_pollInterval);
+      if (typeof loadDashboard === 'function') loadDashboard();
+      if (typeof loadAlerts === 'function') loadAlerts();
+      _pollInterval = setInterval(() => {
+        if (typeof loadDashboard === 'function') loadDashboard();
+        if (typeof loadAlerts === 'function') loadAlerts();
+      }, 30000);
+    }
+
+    window.addEventListener('hashchange', () => {
+      const hash = location.hash.replace('#', '') || 'dashboard';
+      navigate(hash);
+    });
     </script>
   </body>
 </html>
