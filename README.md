@@ -1,4 +1,4 @@
-# LISA — Logistics Intelligence & Sentinel Assistant
+# LISA: Logistics Intelligence & Sentinel Assistant
 
 Cold-chain logistics monitoring platform. Tracks shipments, sensor readings, and alerts in real time. Runs fully in the browser in demo mode; connects to AWS (DynamoDB + Lambda + API Gateway + IoT Core) for production.
 
@@ -24,7 +24,7 @@ Open [http://localhost:8080](http://localhost:8080). No AWS credentials required
 
 ```
 iot-security/
-├── index.html                         # Frontend — single file, no build step
+├── index.html                         # Frontend  single file, no build step
 ├── config.local.js                    # Local secrets (gitignored)
 ├── lambda/
 │   ├── list-shipments/                # GET /shipments
@@ -33,8 +33,8 @@ iot-security/
 │   ├── trigger-alert/                 # POST /demo/trigger-alert (+ LOCK_UPDATE)
 │   ├── resolve-alert/                 # POST /alerts/{alertId}/resolve
 │   ├── discord-commands/              # POST /discord/commands (Ed25519 verified)
-│   ├── get-me/                        # GET /me — Cognito identity
-│   └── shadow-processor/              # IoT Rule trigger — shadow → DynamoDB
+│   ├── get-me/                        # GET /me  Cognito identity
+│   └── shadow-processor/              # IoT Rule trigger  shadow → DynamoDB
 ├── pi/
 │   └── sensor_agent.py                # Raspberry Pi MQTT shadow agent
 ├── scripts/
@@ -65,7 +65,7 @@ window.LISA_CONFIG = {
 
 1. Discord → channel → Integrations → Webhooks → copy URL
 2. Add to `config.local.js` as `DISCORD_WEBHOOK_URL`
-3. Reload — Discord panel turns green, "Send Test Notification" appears
+3. Reload  Discord panel turns green, "Send Test Notification" appears
 
 Slash commands (`/status`, `/alerts`, `/resolve`, `/lock`, `/unlock`) require the AWS backend. See [DEPLOY.md](DEPLOY.md).
 
@@ -82,7 +82,7 @@ Slash commands (`/status`, `/alerts`, `/resolve`, `/lock`, `/unlock`) require th
 | POST | `/alerts/{alertId}/resolve` | lisa-resolve-alert | |
 | POST | `/discord/commands` | lisa-discord-commands | Ed25519 verified |
 | GET | `/me` | lisa-get-me | Cognito JWT identity |
-| POST | `/unlock` | Sentinel_NFC_Unlock | **Existing — do not modify** |
+| POST | `/unlock` | Sentinel_NFC_Unlock | **Existing  do not modify** |
 
 ---
 
@@ -90,10 +90,10 @@ Slash commands (`/status`, `/alerts`, `/resolve`, `/lock`, `/unlock`) require th
 
 See [DEPLOY.md](DEPLOY.md) for step-by-step instructions.
 
-**Phase 1 — Backend:** Deploy 6 Lambda functions, API Gateway routes, seed DynamoDB  
-**Phase 2 — Auth:** Cognito User Pool, update `config.local.js`, switch frontend auth  
-**Phase 3 — Live API:** Uncomment `API_BASE` in `index.html`, replace `db*` mocks with `fetch()`  
-**Phase 4 — IoT Core:** Deploy `shadow-processor` Lambda, run `pi/sensor_agent.py` on each device
+**Phase 1  Backend:** Deploy 6 Lambda functions, API Gateway routes, seed DynamoDB  
+**Phase 2  Auth:** Cognito User Pool, update `config.local.js`, switch frontend auth  
+**Phase 3  Live API:** Uncomment `API_BASE` in `index.html`, replace `db*` mocks with `fetch()`  
+**Phase 4  IoT Core:** Deploy `shadow-processor` Lambda, run `pi/sensor_agent.py` on each device
 
 ### Switching to live API (Phase 3)
 
@@ -119,7 +119,7 @@ async function dbAlerts() {
 
 **AlertEvents** (PK: `alertId`): `shipmentId`, `alertType`, `severity`, `message`, `source`, `resolved`, `resolvedBy`, `createdAt`, `resolvedAt`
 
-**Users** (PK: `userId`): `email`, `role`, `assignedShipments` — Cognito role mapping
+**Users** (PK: `userId`): `email`, `role`, `assignedShipments`  Cognito role mapping
 
 ---
 
