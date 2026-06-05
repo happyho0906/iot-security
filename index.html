@@ -70,7 +70,43 @@
         border-radius: var(--radius);
         box-shadow: var(--shadow-md);
         padding: 36px 40px;
-        width: 390px;
+        width: min(390px, calc(100% - 32px));
+      }
+      .auth-tabs {
+        display: flex;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+      .auth-tab {
+        flex: 1;
+        padding: 8px 0;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--muted);
+        border: none;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+      .auth-tab.active {
+        background: var(--blue);
+        color: #fff;
+      }
+      .auth-tab:not(.active):hover {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+      .form-success {
+        font-size: 12px;
+        color: var(--green);
+        background: var(--green-soft);
+        border-radius: var(--radius-sm);
+        padding: 8px 12px;
+        margin-bottom: 14px;
+        display: none;
       }
       .login-header {
         text-align: center;
@@ -737,53 +773,125 @@
           </div>
         </div>
 
+        <!-- Sign In / Sign Up tabs -->
+        <div class="auth-tabs" id="auth-tabs">
+          <button class="auth-tab active" id="tab-signin" onclick="switchAuthTab('signin')">Sign In</button>
+          <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+        </div>
+
         <div id="login-error" class="form-error"></div>
+        <div id="login-success" class="form-success"></div>
 
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input
-            id="login-email"
-            class="form-input"
-            type="email"
-            placeholder="user@lisa.demo"
-            autocomplete="username"
-          />
+        <!-- Sign In form -->
+        <div id="form-signin">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              id="login-email"
+              class="form-input"
+              type="email"
+              placeholder="user@example.com"
+              autocomplete="username"
+            />
+          </div>
+          <div class="form-group" style="margin-bottom: 16px">
+            <label class="form-label">Password</label>
+            <input
+              id="login-password"
+              class="form-input"
+              type="password"
+              placeholder="Password"
+              autocomplete="current-password"
+            />
+          </div>
+          <button class="btn btn-primary btn-full" id="btn-signin" onclick="handleLogin()">
+            Sign In
+          </button>
+
+          <!-- New password required (Cognito first-login challenge) -->
+          <div id="new-password-section" style="display:none; margin-top:14px;">
+            <div style="font-size:12px; color:var(--amber); font-weight:600; margin-bottom:10px;">
+              A new password is required for your account.
+            </div>
+            <div class="form-group" style="margin-bottom: 12px">
+              <label class="form-label">New Password</label>
+              <input
+                id="new-password"
+                class="form-input"
+                type="password"
+                placeholder="Set new password"
+                autocomplete="new-password"
+              />
+            </div>
+            <button class="btn btn-primary btn-full" id="btn-new-password" onclick="handleNewPassword()">
+              Set Password &amp; Sign In
+            </button>
+          </div>
+
+          <div class="login-divider"><span>Demo accounts</span></div>
+          <div class="demo-grid">
+            <button class="demo-btn" onclick="signInAs('admin@lisa.demo', 'admin123')">Admin</button>
+            <button class="demo-btn" onclick="signInAs('driver@lisa.demo', 'driver123')">Driver</button>
+            <button class="demo-btn" onclick="signInAs('customer@lisa.demo', 'customer123')">Customer</button>
+          </div>
         </div>
-        <div class="form-group" style="margin-bottom: 16px">
-          <label class="form-label">Password</label>
-          <input
-            id="login-password"
-            class="form-input"
-            type="password"
-            placeholder="Password"
-            autocomplete="current-password"
-          />
-        </div>
 
-        <button class="btn btn-primary btn-full" onclick="handleLogin()">
-          Sign In
-        </button>
+        <!-- Sign Up form -->
+        <div id="form-signup" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              id="signup-email"
+              class="form-input"
+              type="email"
+              placeholder="user@example.com"
+              autocomplete="username"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input
+              id="signup-password"
+              class="form-input"
+              type="password"
+              placeholder="Min. 8 characters"
+              autocomplete="new-password"
+            />
+          </div>
+          <div class="form-group" style="margin-bottom: 16px">
+            <label class="form-label">Confirm Password</label>
+            <input
+              id="signup-confirm"
+              class="form-input"
+              type="password"
+              placeholder="Repeat password"
+              autocomplete="new-password"
+            />
+          </div>
+          <button class="btn btn-primary btn-full" id="btn-signup" onclick="handleSignUp()">
+            Create Account
+          </button>
 
-        <div class="login-divider"><span>Demo accounts</span></div>
-        <div class="demo-grid">
-          <button
-            class="demo-btn"
-            onclick="signInAs('admin@lisa.demo', 'admin123')"
-          >
-            Admin
-          </button>
-          <button
-            class="demo-btn"
-            onclick="signInAs('driver@lisa.demo', 'driver123')"
-          >
-            Driver
-          </button>
-          <button
-            class="demo-btn"
-            onclick="signInAs('customer@lisa.demo', 'customer123')"
-          >
-            Customer
-          </button>
+          <!-- Email verification step -->
+          <div id="verify-section" style="display:none; margin-top:14px;">
+            <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">
+              A verification code was sent to your email address.
+            </div>
+            <div class="form-group" style="margin-bottom: 12px">
+              <label class="form-label">Verification Code</label>
+              <input
+                id="verify-code"
+                class="form-input"
+                type="text"
+                placeholder="6-digit code"
+                autocomplete="one-time-code"
+                maxlength="6"
+              />
+            </div>
+            <button class="btn btn-primary btn-full" id="btn-verify" onclick="handleVerifyEmail()">
+              Verify &amp; Sign In
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -996,34 +1104,102 @@
 
     <script>
       let _currentRole = null;
+      let _cognitoUser = null;
+      let _userPool    = null;
+
+      const _cognitoCfg = {
+        poolId:   (window.LISA_CONFIG || {}).COGNITO_USER_POOL_ID || "",
+        clientId: (window.LISA_CONFIG || {}).COGNITO_CLIENT_ID    || "",
+      };
+      const _cognitoEnabled = !!_cognitoCfg.poolId && !!_cognitoCfg.clientId;
+
+      // ── UI helpers ───────────────────────────────────────────────────────────
+
+      function _showErr(msg) {
+        const el = document.getElementById("login-error");
+        el.textContent    = msg;
+        el.style.display  = "block";
+        document.getElementById("login-success").style.display = "none";
+      }
+
+      function _showOk(msg) {
+        const el = document.getElementById("login-success");
+        el.textContent    = msg;
+        el.style.display  = "block";
+        document.getElementById("login-error").style.display = "none";
+      }
+
+      function _clearMessages() {
+        document.getElementById("login-error").style.display   = "none";
+        document.getElementById("login-success").style.display = "none";
+      }
+
+      function _setLoading(btnId, loading, label) {
+        const btn      = document.getElementById(btnId);
+        btn.disabled   = loading;
+        btn.textContent = loading ? "Please wait…" : label;
+      }
+
+      // ── Tab switching ────────────────────────────────────────────────────────
+
+      function switchAuthTab(tab) {
+        _clearMessages();
+        const isSignIn = tab === "signin";
+        document.getElementById("form-signin").style.display = isSignIn ? "block" : "none";
+        document.getElementById("form-signup").style.display = isSignIn ? "none"  : "block";
+        document.getElementById("tab-signin").classList.toggle("active", isSignIn);
+        document.getElementById("tab-signup").classList.toggle("active", !isSignIn);
+      }
+
+      // ── App shell ────────────────────────────────────────────────────────────
 
       function showLogin() {
         document.getElementById("page-login").style.cssText =
           "display:flex; min-height:100vh; align-items:center; justify-content:center; flex-direction:column; background:var(--bg);";
         document.getElementById("app-shell").style.display = "none";
+        switchAuthTab("signin");
+        document.getElementById("new-password-section").style.display = "none";
+        document.getElementById("verify-section").style.display = "none";
+        document.getElementById("btn-signup").style.display = "block";
       }
 
       function showApp(email, role) {
         _currentRole = role;
         sessionStorage.setItem("lisa_email", email);
-        sessionStorage.setItem("lisa_role", role);
+        sessionStorage.setItem("lisa_role",  role);
         document.getElementById("page-login").style.display = "none";
-        document.getElementById("app-shell").style.display = "block";
+        document.getElementById("app-shell").style.display  = "block";
         document.getElementById("nav-user-label").textContent = email;
         const badge = document.getElementById("nav-role-badge");
         badge.textContent = role;
         badge.style.color =
-          role === "ADMIN"
-            ? "var(--blue)"
-            : role === "DRIVER"
-              ? "var(--green)"
-              : "var(--muted)";
+          role === "ADMIN"   ? "var(--blue)"  :
+          role === "DRIVER"  ? "var(--green)" : "var(--muted)";
         initApp();
       }
 
+      // ── Session check ────────────────────────────────────────────────────────
+
       function checkSession() {
+        if (_cognitoEnabled && _userPool) {
+          const user = _userPool.getCurrentUser();
+          if (user) {
+            user.getSession((err, session) => {
+              if (!err && session && session.isValid()) {
+                _cognitoUser = user;
+                const payload = JSON.parse(atob(session.getIdToken().getJwtToken().split(".")[1]));
+                const role = (payload["custom:role"] || "CUSTOMER").toUpperCase();
+                showApp(payload.email || payload["cognito:username"], role);
+              } else {
+                showLogin();
+              }
+            });
+            return;
+          }
+        }
+        // Demo fallback
         const email = sessionStorage.getItem("lisa_email");
-        const role = sessionStorage.getItem("lisa_role");
+        const role  = sessionStorage.getItem("lisa_role");
         if (email && role && DEMO_ACCOUNTS[email]) {
           showApp(email, role);
         } else {
@@ -1031,42 +1207,169 @@
         }
       }
 
+      // ── Sign In ──────────────────────────────────────────────────────────────
+
       function handleLogin() {
-        const email = document
-          .getElementById("login-email")
-          .value.trim()
-          .toLowerCase();
+        const email    = document.getElementById("login-email").value.trim().toLowerCase();
         const password = document.getElementById("login-password").value;
-        const errEl = document.getElementById("login-error");
-        errEl.style.display = "none";
+        _clearMessages();
+
+        if (!email || !password) { _showErr("Email and password are required."); return; }
+
+        if (_cognitoEnabled && _userPool) {
+          _setLoading("btn-signin", true, "Sign In");
+          const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({ Username: email, Password: password });
+          const cogUser     = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: _userPool });
+          _cognitoUser = cogUser;
+          cogUser.authenticateUser(authDetails, {
+            onSuccess(session) {
+              _setLoading("btn-signin", false, "Sign In");
+              const payload = JSON.parse(atob(session.getIdToken().getJwtToken().split(".")[1]));
+              const role = (payload["custom:role"] || "CUSTOMER").toUpperCase();
+              showApp(payload.email || email, role);
+            },
+            onFailure(err) {
+              _setLoading("btn-signin", false, "Sign In");
+              _showErr(err.message || "Sign in failed.");
+            },
+            newPasswordRequired() {
+              _setLoading("btn-signin", false, "Sign In");
+              document.getElementById("new-password-section").style.display = "block";
+              document.getElementById("btn-signin").style.display = "none";
+            },
+          });
+          return;
+        }
+
+        // Demo fallback
         const account = DEMO_ACCOUNTS[email];
         if (!account || account.password !== password) {
-          errEl.textContent = "Invalid email or password.";
-          errEl.style.display = "block";
+          _showErr("Invalid email or password.");
           return;
         }
         showApp(email, account.role);
       }
 
+      function handleNewPassword() {
+        const newPw = document.getElementById("new-password").value;
+        if (!newPw) { _showErr("Enter a new password."); return; }
+        _setLoading("btn-new-password", true, "Set Password & Sign In");
+        _cognitoUser.completeNewPasswordChallenge(newPw, {}, {
+          onSuccess(session) {
+            _setLoading("btn-new-password", false, "Set Password & Sign In");
+            const payload = JSON.parse(atob(session.getIdToken().getJwtToken().split(".")[1]));
+            const role = (payload["custom:role"] || "CUSTOMER").toUpperCase();
+            showApp(payload.email, role);
+          },
+          onFailure(err) {
+            _setLoading("btn-new-password", false, "Set Password & Sign In");
+            _showErr(err.message || "Password change failed.");
+          },
+        });
+      }
+
       function signInAs(email, password) {
-        document.getElementById("login-email").value = email;
+        document.getElementById("login-email").value    = email;
         document.getElementById("login-password").value = password;
         handleLogin();
       }
 
+      // ── Sign Up ──────────────────────────────────────────────────────────────
+
+      function handleSignUp() {
+        if (!_cognitoEnabled || !_userPool) {
+          _showErr("Sign Up requires Cognito. Use a demo account instead.");
+          return;
+        }
+        const email    = document.getElementById("signup-email").value.trim().toLowerCase();
+        const password = document.getElementById("signup-password").value;
+        const confirm  = document.getElementById("signup-confirm").value;
+        _clearMessages();
+
+        if (!email || !password) { _showErr("Email and password are required."); return; }
+        if (password !== confirm) { _showErr("Passwords do not match.");          return; }
+        if (password.length < 8) { _showErr("Password must be at least 8 characters."); return; }
+
+        _setLoading("btn-signup", true, "Create Account");
+        const attrList = [
+          new AmazonCognitoIdentity.CognitoUserAttribute({ Name: "email", Value: email }),
+        ];
+        _userPool.signUp(email, password, attrList, null, (err, result) => {
+          _setLoading("btn-signup", false, "Create Account");
+          if (err) { _showErr(err.message || "Sign up failed."); return; }
+          _cognitoUser = result.user;
+          document.getElementById("btn-signup").style.display   = "none";
+          document.getElementById("verify-section").style.display = "block";
+          _showOk("Account created. Check your email for a verification code.");
+        });
+      }
+
+      function handleVerifyEmail() {
+        const code = document.getElementById("verify-code").value.trim();
+        if (!code) { _showErr("Enter the verification code."); return; }
+        _setLoading("btn-verify", true, "Verify & Sign In");
+        _cognitoUser.confirmRegistration(code, true, (err) => {
+          _setLoading("btn-verify", false, "Verify & Sign In");
+          if (err) { _showErr(err.message || "Verification failed."); return; }
+          _showOk("Email verified. Signing you in…");
+          // Auto sign in after verification
+          const email    = document.getElementById("signup-email").value.trim().toLowerCase();
+          const password = document.getElementById("signup-password").value;
+          const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({ Username: email, Password: password });
+          const cogUser     = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: _userPool });
+          cogUser.authenticateUser(authDetails, {
+            onSuccess(session) {
+              const payload = JSON.parse(atob(session.getIdToken().getJwtToken().split(".")[1]));
+              const role = (payload["custom:role"] || "CUSTOMER").toUpperCase();
+              showApp(payload.email || email, role);
+            },
+            onFailure() {
+              switchAuthTab("signin");
+              _showOk("Verified! Please sign in.");
+            },
+          });
+        });
+      }
+
+      // ── Sign Out ─────────────────────────────────────────────────────────────
+
       function handleLogout() {
+        if (_cognitoEnabled && _cognitoUser) _cognitoUser.signOut();
         sessionStorage.clear();
         _currentRole = null;
+        _cognitoUser = null;
         showLogin();
       }
 
-      document.addEventListener("DOMContentLoaded", () => {
-        checkSession();
-        document
-          .getElementById("login-password")
-          .addEventListener("keydown", (e) => {
-            if (e.key === "Enter") handleLogin();
+      // ── Bootstrap ────────────────────────────────────────────────────────────
+
+      function _initCognito(callback) {
+        if (!_cognitoEnabled) { callback(); return; }
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js";
+        script.onload = () => {
+          _userPool = new AmazonCognitoIdentity.CognitoUserPool({
+            UserPoolId: _cognitoCfg.poolId,
+            ClientId:   _cognitoCfg.clientId,
           });
+          callback();
+        };
+        script.onerror = () => callback();
+        document.head.appendChild(script);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        _initCognito(checkSession);
+
+        document.getElementById("login-password").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") handleLogin();
+        });
+        document.getElementById("signup-confirm").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") handleSignUp();
+        });
+        document.getElementById("verify-code").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") handleVerifyEmail();
+        });
       });
     </script>
 
@@ -1076,21 +1379,21 @@
         shipments: [
           {
             shipmentId: "SHIP-001", status: "IN_TRANSIT", riskLevel: "LOW",
-            temperature: 4.2, humidity: 65, gForce: 0.1,
+            temperature: 4.2, humidity: 65, gForce: 0.1, batteryLevel: 87,
             lockStatus: "LOCKED", deviceStatus: "ONLINE",
             latitude: 1.3521, longitude: 103.8198,
             lastUpdatedAt: "2025-06-05T07:00:00Z",
           },
           {
             shipmentId: "SHIP-002", status: "ALERT", riskLevel: "CRITICAL",
-            temperature: 11.2, humidity: 70, gForce: 0.3,
+            temperature: 11.2, humidity: 70, gForce: 0.3, batteryLevel: 62,
             lockStatus: "LOCKED", deviceStatus: "ONLINE",
             latitude: 1.3, longitude: 103.85,
             lastUpdatedAt: "2025-06-05T08:05:00Z",
           },
           {
             shipmentId: "SHIP-003", status: "IN_TRANSIT", riskLevel: "LOW",
-            temperature: 3.8, humidity: 62, gForce: 0.0,
+            temperature: 3.8, humidity: 62, gForce: 0.0, batteryLevel: 94,
             lockStatus: "LOCKED", deviceStatus: "ONLINE",
             latitude: 1.32, longitude: 103.78,
             lastUpdatedAt: "2025-06-05T07:30:00Z",
@@ -1402,6 +1705,7 @@
           ["Temperature",   s.temperature + " C"],
           ["Humidity",      s.humidity + " %"],
           ["G-Force",       s.gForce],
+          ["Battery",       s.batteryLevel != null ? s.batteryLevel + "%" : "–"],
           ["Lock Status",   s.lockStatus],
           ["Device Status", s.deviceStatus],
           ["Location",      s.latitude + ", " + s.longitude],
