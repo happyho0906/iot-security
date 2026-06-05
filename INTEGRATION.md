@@ -1,4 +1,4 @@
-# LISA — Integration & Team Collaboration Guide
+# LISA: Integration & Team Collaboration Guide
 
 This document is for developers integrating other hardware modules, Lambda functions, or services into the LISA platform. Read this before touching anything.
 
@@ -8,14 +8,14 @@ This document is for developers integrating other hardware modules, Lambda funct
 
 | Component | State | Notes |
 |-----------|-------|-------|
-| `index.html` frontend | **Working** — demo mode | Runs locally, no AWS needed |
+| `index.html` frontend | **Working**  demo mode | Runs locally, no AWS needed |
 | Lambda functions (6) | **Written, not deployed** | Code in `lambda/*/lambda_function.py` |
 | DynamoDB tables | **Not created** | Schema defined, seed script ready |
 | API Gateway routes | **Not wired** | Endpoint exists, new routes not added |
-| Discord webhook alerts | **Working** — browser-to-Discord | Set `DISCORD_WEBHOOK_URL` in `index.html` |
+| Discord webhook alerts | **Working**  browser-to-Discord | Set `DISCORD_WEBHOOK_URL` in `index.html` |
 | Discord slash commands | **Not active** | Needs Lambda deployment + Discord setup |
-| `Sentinel_NFC_Unlock` Lambda | **Deployed** (not in this repo) | Handles `POST /unlock` — do not touch |
-| `Sentinel_Image_Processor` Lambda | **Deployed** (not in this repo) | Camera capture → S3 — not yet surfaced in UI |
+| `Sentinel_NFC_Unlock` Lambda | **Deployed** (not in this repo) | Handles `POST /unlock`  do not touch |
+| `Sentinel_Image_Processor` Lambda | **Deployed** (not in this repo) | Camera capture → S3  not yet surfaced in UI |
 
 **The frontend runs in two modes:**
 - **Demo mode** (current): all data is in-memory in `index.html`. Works with no AWS at all.
@@ -63,15 +63,15 @@ Partition key: `shipmentId` (String)
 **Rules:**
 - `riskLevel` and `status` are updated automatically by `lisa-resolve-alert` when all alerts for a shipment are resolved (set to `LOW` / `IN_TRANSIT`)
 - `lisa-trigger-alert` sets `status = ALERT` and `riskLevel = <severity>` when a new alert is created
-- Any module can write additional fields to a Shipments record — the dashboard will ignore unknown fields unless you add them to the UI
-- `latitude` and `longitude` are strings in DynamoDB to match the seed data format — the Leaflet map parses them with `parseFloat`
+- Any module can write additional fields to a Shipments record  the dashboard will ignore unknown fields unless you add them to the UI
+- `latitude` and `longitude` are strings in DynamoDB to match the seed data format  the Leaflet map parses them with `parseFloat`
 
 ### Table: `AlertEvents`
 Partition key: `alertId` (String)
 
 ```json
 {
-  "alertId":    "ALERT-1749123456789",  // unique ID — use timestamp millis suffix
+  "alertId":    "ALERT-1749123456789",  // unique ID  use timestamp millis suffix
   "shipmentId": "SHIP-001",            // must match a Shipments record
   "alertType":  "TEMP_HIGH",           // see alert types below
   "severity":   "CRITICAL",            // LOW | HIGH | CRITICAL
@@ -93,15 +93,15 @@ Partition key: `alertId` (String)
 | `LOCK_TAMPER` | Lock opened without authorization |
 | `HUMIDITY_HIGH` | Humidity out of range |
 | `DEVICE_OFFLINE` | Sensor lost connectivity |
-| `LOCK_UPDATE` | Special type — updates `lockStatus` only, no alert record created |
+| `LOCK_UPDATE` | Special type  updates `lockStatus` only, no alert record created |
 
-You can add new types freely — the dashboard will display any string in the `alertType` field. Add it to this table when you do.
+You can add new types freely  the dashboard will display any string in the `alertType` field. Add it to this table when you do.
 
 ---
 
 ## How to Trigger an Alert from Any Module
 
-### Option A — Call the API Gateway (recommended for external services)
+### Option A  Call the API Gateway (recommended for external services)
 
 ```bash
 curl -X POST https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{stage}/demo/trigger-alert \
@@ -124,7 +124,7 @@ Side effects (handled automatically by `lisa-trigger-alert` Lambda):
 2. Updates `Shipments.riskLevel` and `Shipments.status = ALERT`
 3. Posts a Discord embed to the webhook channel (if `DISCORD_WEBHOOK_URL` env var is set on the Lambda)
 
-### Option B — Write directly to DynamoDB (for Lambda-to-Lambda or IoT Core rules)
+### Option B  Write directly to DynamoDB (for Lambda-to-Lambda or IoT Core rules)
 
 ```python
 import boto3
@@ -156,7 +156,7 @@ dynamodb.Table('Shipments').update_item(
 
 Note: Option B bypasses the Discord notification. Call the API Gateway instead if you want the Discord alert.
 
-### Option C — Update sensor readings without creating an alert
+### Option C  Update sensor readings without creating an alert
 
 Use DynamoDB `update_item` directly to push new sensor readings:
 
@@ -195,7 +195,7 @@ The dashboard will show updated values on next load / refresh.
        ExpressionAttributeValues={':l': 'UNLOCKED', ':t': now},
    )
    ```
-2. The dashboard Shipment Detail page reads `lockStatus` directly — no frontend change needed.
+2. The dashboard Shipment Detail page reads `lockStatus` directly  no frontend change needed.
 3. If you want the dashboard Lock/Unlock buttons to call `POST /unlock` instead of the demo trigger, update `doSetLock()` in `index.html`:
    ```javascript
    async function doSetLock(sid, status) {
@@ -230,7 +230,7 @@ dynamodb.Table('AlertEvents').update_item(
 )
 ```
 
-Then in `renderDetail()` in `index.html`, read `latestAlert.images` and render `<img>` tags. The data shape is already designed for this — just needs the UI section added.
+Then in `renderDetail()` in `index.html`, read `latestAlert.images` and render `<img>` tags. The data shape is already designed for this  just needs the UI section added.
 
 ### Real IoT Sensor Integration
 
@@ -274,9 +274,9 @@ The Leaflet map reads `latitude` and `longitude` from each Shipments record. To 
        ExpressionAttributeValues={':lat': str(lat), ':lon': str(lon), ':t': now},
    )
    ```
-3. The map page re-plots markers on every `navigate('map')` call — add a 30-second poll in the frontend if you want live updates without navigation.
+3. The map page re-plots markers on every `navigate('map')` call  add a 30-second poll in the frontend if you want live updates without navigation.
 
-**Note:** `latitude` and `longitude` are stored as strings in DynamoDB (matching the seed data). Leaflet reads them as `parseFloat(s.latitude)` — keep this format.
+**Note:** `latitude` and `longitude` are stored as strings in DynamoDB (matching the seed data). Leaflet reads them as `parseFloat(s.latitude)`  keep this format.
 
 ---
 
@@ -341,7 +341,7 @@ If your module writes a new field to DynamoDB (e.g., `batteryLevel`):
    ];
    ```
 3. Optionally add it to the mock data `_db.shipments` array so demo mode shows it
-4. No Lambda changes — `list-shipments` and `get-shipment` return all attributes
+4. No Lambda changes  `list-shipments` and `get-shipment` return all attributes
 
 ---
 
@@ -380,7 +380,7 @@ Any new Lambda that needs to read/write these tables must use this role or have 
 | `lisa-trigger-alert` | `DISCORD_WEBHOOK_URL` | Discord channel webhook URL |
 | `lisa-discord-commands` | `DISCORD_PUBLIC_KEY` | From Discord Developer Portal |
 
-The `DISCORD_WEBHOOK_URL` in `index.html` (frontend) is separate from the one on the Lambda. Both can be set independently — the frontend sends embeds from the browser, the Lambda sends plain text from the server side.
+The `DISCORD_WEBHOOK_URL` in `index.html` (frontend) is separate from the one on the Lambda. Both can be set independently  the frontend sends embeds from the browser, the Lambda sends plain text from the server side.
 
 ---
 
@@ -388,7 +388,7 @@ The `DISCORD_WEBHOOK_URL` in `index.html` (frontend) is separate from the one on
 
 Base URL: `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{stage}`
 
-Current deployed stage: `unlock` (existing, do not rename — NFC hardware is hardcoded to it)
+Current deployed stage: `unlock` (existing, do not rename  NFC hardware is hardcoded to it)
 
 When adding new routes, deploy to the same stage so new paths are available at the same base URL. The frontend `API_BASE` constant points to this.
 
@@ -400,9 +400,9 @@ Before calling LISA "integrated", verify:
 
 - [ ] Your module writes valid `shipmentId` values that exist in the `Shipments` table
 - [ ] Alert records include all required fields (`alertId`, `shipmentId`, `alertType`, `severity`, `message`, `resolved`, `resolvedBy`, `createdAt`, `resolvedAt`)
-- [ ] `resolved` is a **boolean** (`false`), not a string (`"false"`) — DynamoDB filter expressions are type-sensitive
-- [ ] `severity` is one of `LOW`, `HIGH`, `CRITICAL` — the dashboard badge colors depend on exact case
-- [ ] `lastUpdatedAt` is ISO 8601 UTC (`datetime.now(timezone.utc).isoformat()`) — the frontend parses it with `new Date()`
+- [ ] `resolved` is a **boolean** (`false`), not a string (`"false"`)  DynamoDB filter expressions are type-sensitive
+- [ ] `severity` is one of `LOW`, `HIGH`, `CRITICAL`  the dashboard badge colors depend on exact case
+- [ ] `lastUpdatedAt` is ISO 8601 UTC (`datetime.now(timezone.utc).isoformat()`)  the frontend parses it with `new Date()`
 - [ ] Your Lambda has CORS headers on all responses: `'Access-Control-Allow-Origin': '*'`
 - [ ] New API Gateway resources have CORS enabled (Actions → Enable CORS) and the stage is redeployed
 - [ ] The existing `POST /unlock` route is untouched
