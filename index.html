@@ -1,0 +1,1418 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lab Item Sentinel Alert</title>
+
+    <style>
+      :root {
+        --bg: #f4f7fb;
+        --surface: #ffffff;
+        --border: #d9e4f2;
+        --border-soft: #edf2f7;
+
+        --text: #0f172a;
+        --muted: #64748b;
+
+        --blue: #2563eb;
+        --blue-soft: #eff6ff;
+        --green: #16a34a;
+        --green-soft: #ecfdf3;
+        --red: #dc2626;
+        --red-soft: #fff1f2;
+        --amber: #d97706;
+        --amber-soft: #fffbeb;
+
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+        --radius: 18px;
+
+        --font:
+          Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
+          sans-serif;
+        --mono:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(37, 99, 235, 0.1),
+            transparent 34%
+          ),
+          linear-gradient(180deg, #fbfdff 0%, var(--bg) 44%);
+        color: var(--text);
+        font-family: var(--font);
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      .topbar {
+        height: 68px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 34px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+        border-radius: 13px;
+        background: linear-gradient(135deg, #0f172a, #1d4ed8);
+        color: white;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .brand-title {
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+      }
+
+      .brand-sub {
+        margin-top: 1px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .connection {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid #bbf7d0;
+        background: var(--green-soft);
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .connection.error {
+        border-color: #fecaca;
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .connection.pending {
+        border-color: #bfdbfe;
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+        flex: 0 0 auto;
+      }
+
+      main {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 36px 32px 48px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 28px;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 36px;
+        line-height: 1.12;
+        letter-spacing: -0.045em;
+      }
+
+      .subtitle {
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+        max-width: 780px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      button {
+        height: 44px;
+        min-width: 124px;
+        border-radius: 11px;
+        border: 1px solid var(--border);
+        background: white;
+        color: var(--text);
+        padding: 0 18px;
+        font-weight: 800;
+        cursor: pointer;
+        white-space: nowrap;
+        box-shadow: var(--shadow-sm);
+        transition: 0.15s ease;
+        letter-spacing: -0.01em;
+      }
+
+      button:hover {
+        background: #f8fafc;
+        box-shadow: 0 5px 16px rgba(15, 23, 42, 0.08);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      button:disabled {
+        opacity: 0.72;
+        cursor: default;
+        pointer-events: none;
+      }
+
+      .btn-enable,
+      .btn-enable:hover,
+      .btn-enable:active {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        border-color: #16a34a;
+        color: white;
+      }
+
+      .btn-pause,
+      .btn-pause:hover,
+      .btn-pause:active {
+        background: #ffffff;
+        border: 1px solid #93c5fd;
+        color: var(--blue);
+      }
+
+      .btn-pause:hover {
+        background: var(--blue-soft);
+      }
+
+      .btn-test,
+      .btn-test:hover,
+      .btn-test:active {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border-color: #dc2626;
+        color: white;
+      }
+
+      .btn-resolve,
+      .btn-resolve:hover,
+      .btn-resolve:active {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        border-color: #f59e0b;
+        color: #111827;
+      }
+
+      .context-bar {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+
+      .context-item {
+        min-height: 72px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 14px 16px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .context-label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .context-value {
+        margin-top: 5px;
+        font-weight: 900;
+        font-size: 15px;
+        letter-spacing: -0.015em;
+      }
+
+      .notice {
+        width: 100%;
+        min-height: 72px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px;
+        border-radius: 16px;
+        padding: 0 20px;
+        margin: 0 0 22px;
+        box-shadow: var(--shadow-sm);
+        line-height: 1.4;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .notice::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: currentColor;
+      }
+
+      .notice.normal {
+        color: #166534;
+        border-color: #bbf7d0;
+        background: linear-gradient(135deg, #f8fffb, #ffffff);
+      }
+
+      .notice.test {
+        color: #991b1b;
+        border-color: #fecaca;
+        background: linear-gradient(135deg, #fffafa, #ffffff);
+      }
+
+      .notice.paused {
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+        background: linear-gradient(135deg, #f8fbff, #ffffff);
+      }
+
+      .notice.resolved {
+        color: #92400e;
+        border-color: #fde68a;
+        background: linear-gradient(135deg, #fffdf5, #ffffff);
+      }
+
+      .notice-content {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+      }
+
+      .notice-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 850;
+        letter-spacing: -0.01em;
+        line-height: 1.3;
+        padding-left: 2px;
+      }
+
+      .notice-title::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+        flex: 0 0 auto;
+      }
+
+      .notice-text {
+        display: none;
+      }
+
+      .notice-action {
+        width: 132px;
+        min-width: 132px;
+        height: 40px;
+        justify-self: end;
+        align-self: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0 16px;
+        box-shadow: none;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr 0.95fr 0.95fr;
+        gap: 18px;
+        margin-bottom: 22px;
+        align-items: stretch;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+      }
+
+      .status-card {
+        padding: 20px;
+        position: relative;
+        min-height: 132px;
+      }
+
+      .status-card::after {
+        content: "";
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        bottom: 0;
+        height: 4px;
+        border-radius: 999px 999px 0 0;
+        background: var(--border-soft);
+      }
+
+      .status-card.normal-card::after,
+      .status-card.mode-enabled-card::after,
+      .status-card.action-card::after {
+        background: var(--green);
+      }
+
+      .status-card.test-card::after {
+        background: var(--red);
+      }
+
+      .status-card.paused-card::after,
+      .status-card.location-card::after {
+        background: var(--blue);
+      }
+
+      .status-card.resolved-card::after {
+        background: var(--amber);
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: 0.075em;
+      }
+
+      .big-value {
+        margin-top: 12px;
+        font-size: 30px;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+      }
+
+      .support-text {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.55;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        padding: 7px 12px;
+        border: 1px solid;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+
+      .pill-test {
+        background: var(--red-soft);
+        color: var(--red);
+        border-color: #fecaca;
+      }
+
+      .pill-normal {
+        background: var(--green-soft);
+        color: var(--green);
+        border-color: #bbf7d0;
+      }
+
+      .pill-paused {
+        background: var(--blue-soft);
+        color: var(--blue);
+        border-color: #bfdbfe;
+      }
+
+      .pill-resolved {
+        background: var(--amber-soft);
+        color: #b45309;
+        border-color: #fde68a;
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
+        gap: 22px;
+        align-items: stretch;
+      }
+
+      .panel {
+        display: flex;
+        flex-direction: column;
+        min-height: 450px;
+      }
+
+      .panel-head {
+        padding: 18px 20px;
+        min-height: 78px;
+        border-bottom: 1px solid var(--border-soft);
+        background: linear-gradient(180deg, #ffffff, #fbfdff);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .panel-title {
+        font-size: 16px;
+        font-weight: 850;
+        letter-spacing: -0.015em;
+      }
+
+      .panel-sub {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.45;
+      }
+
+      .panel-body {
+        padding: 18px 20px 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .event-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .event-item {
+        display: grid;
+        grid-template-columns: 92px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 15px 14px;
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        background: #ffffff;
+        line-height: 1.45;
+      }
+
+      .event-time {
+        font-family: var(--mono);
+        color: var(--muted);
+        font-size: 12.5px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .event-main {
+        min-width: 0;
+      }
+
+      .event-title {
+        font-size: 14px;
+        line-height: 1.35;
+        font-weight: 850;
+        color: var(--text);
+        letter-spacing: -0.01em;
+      }
+
+      .help-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .help-item {
+        display: grid;
+        grid-template-columns: 40px 1fr;
+        gap: 14px;
+        padding: 16px;
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+        background: #ffffff;
+        align-items: start;
+      }
+
+      .help-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        flex: 0 0 auto;
+      }
+
+      .help-icon.red {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .help-icon.green {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .help-icon.blue {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .help-icon.amber {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .help-title {
+        font-weight: 850;
+        font-size: 14px;
+        letter-spacing: -0.01em;
+      }
+
+      .help-text {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.55;
+      }
+
+      .system-log {
+        margin-top: 22px;
+      }
+
+      .log-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+      }
+
+      .log-head {
+        min-height: 66px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-soft);
+        background: linear-gradient(180deg, #ffffff, #fbfdff);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .log-title {
+        font-size: 16px;
+        font-weight: 850;
+        letter-spacing: -0.015em;
+      }
+
+      .log-sub {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+
+      .log-count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12.5px;
+        white-space: nowrap;
+      }
+
+      .log-body {
+        max-height: 170px;
+        overflow: auto;
+        padding: 8px 20px;
+        background: #ffffff;
+      }
+
+      .log-entry {
+        display: grid;
+        grid-template-columns: 96px 170px 1fr;
+        gap: 14px;
+        align-items: center;
+        padding: 13px 0;
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      .log-entry:last-child {
+        border-bottom: none;
+      }
+
+      .log-time {
+        font-family: var(--mono);
+        color: var(--muted);
+        font-size: 12.5px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .log-type {
+        font-weight: 850;
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .log-message {
+        color: #334155;
+        font-size: 13.5px;
+        line-height: 1.55;
+      }
+
+      .log-body::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .log-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+      }
+
+      @media (max-width: 1080px) {
+        .status-grid,
+        .context-bar {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 960px) {
+        .topbar {
+          padding: 0 18px;
+        }
+
+        main {
+          padding: 24px 18px 36px;
+        }
+
+        .hero {
+          grid-template-columns: 1fr;
+        }
+
+        .actions {
+          justify-content: flex-start;
+        }
+
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .panel {
+          min-height: auto;
+        }
+
+        .event-item {
+          grid-template-columns: 1fr;
+        }
+
+        .log-entry {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+
+        .notice {
+          grid-template-columns: 1fr;
+          align-items: center;
+          min-height: 72px;
+          padding: 16px 18px;
+        }
+
+        .notice-action {
+          justify-self: start;
+          width: 100%;
+          min-width: 100%;
+          margin-top: 8px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .status-grid,
+        .context-bar {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js"></script>
+    <script>
+      const COGNITO_CONFIG = {
+        userPoolId: 'us-east-1_XXXXXXX',       // ← fill in after Cognito User Pool is created
+        clientId:   'XXXXXXXXXXXXXXXXXXXXXXXXX', // ← fill in after Cognito App Client is created
+      };
+      const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/unlock'; // ← update stage after API Gateway deploy
+    </script>
+
+    <!-- ── LISA LOGIN PAGE ── -->
+    <div id="page-login" style="display:none; min-height:100vh; align-items:center; justify-content:center; flex-direction:column;">
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:40px 48px; width:360px; box-shadow:var(--shadow-sm);">
+        <div style="text-align:center; margin-bottom:28px;">
+          <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#0f172a,#1d4ed8);color:#fff;display:grid;place-items:center;font-weight:900;font-size:18px;margin:0 auto 12px;">L</div>
+          <div style="font-size:20px;font-weight:900;letter-spacing:-0.03em;">LISA</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:4px;">Logistics Intelligence &amp; Sentinel Assistant</div>
+        </div>
+        <div id="login-error" style="display:none;background:var(--red-soft);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;"></div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <input id="login-email" type="email" placeholder="Email address" autocomplete="username"
+            style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;font-family:var(--font);outline:none;width:100%;box-sizing:border-box;" />
+          <input id="login-password" type="password" placeholder="Password" autocomplete="current-password"
+            style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;font-family:var(--font);outline:none;width:100%;box-sizing:border-box;" />
+          <button onclick="handleLogin()" id="login-btn"
+            style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">
+            Sign In
+          </button>
+        </div>
+        <div id="new-password-section" style="display:none;margin-top:16px;flex-direction:column;gap:10px;">
+          <div style="color:var(--amber);font-size:13px;font-weight:600;">⚠ New password required</div>
+          <input id="new-password" type="password" placeholder="Set new password"
+            style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;font-family:var(--font);outline:none;width:100%;box-sizing:border-box;" />
+          <button onclick="handleNewPassword()"
+            style="background:var(--green);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;">
+            Set Password
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- ── END LOGIN PAGE ── -->
+
+    <div id="app-shell" style="display:none;">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">L</div>
+        <div>
+          <div class="brand-title">Lab Item Sentinel Alert</div>
+          <div class="brand-sub">LISA</div>
+        </div>
+      </div>
+
+      <div id="connectionStatus" class="connection">
+        <span class="dot"></span>Connected
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <h1>Lab Item Sentinel Alert</h1>
+          <div class="subtitle">Security Monitor</div>
+        </div>
+
+        <div class="actions">
+          <button id="testBtn" class="btn-test" onclick="testAlert()">
+            Run Test
+          </button>
+          <button id="armBtn" class="btn-enable" onclick="enableMonitoring()">
+            Enable Monitoring
+          </button>
+          <button id="disarmBtn" class="btn-pause" onclick="pauseMonitoring()">
+            Pause Monitoring
+          </button>
+          <button id="clearBtn" class="btn-resolve" onclick="resolveAlert()">
+            Resolve Alert
+          </button>
+        </div>
+      </section>
+
+      <section class="context-bar" aria-label="Protected asset context">
+        <div class="context-item">
+          <div class="context-label">Protected Area</div>
+          <div id="areaValue" class="context-value">Research Lab B204</div>
+        </div>
+
+        <div class="context-item">
+          <div class="context-label">Device ID</div>
+          <div id="deviceValue" class="context-value">Sentinel Device 01</div>
+        </div>
+
+        <div class="context-item">
+          <div class="context-label">Site</div>
+          <div id="locationValue" class="context-value">NTHU Campus</div>
+        </div>
+
+        <div class="context-item">
+          <div class="context-label">Notifications</div>
+          <div class="context-value">Discord #alert</div>
+        </div>
+      </section>
+
+      <section id="noticeBox" class="notice normal">
+        <div class="notice-content">
+          <div id="noticeTitle" class="notice-title">Monitoring active</div>
+          <div id="noticeText" class="notice-text"></div>
+        </div>
+        <button
+          id="noticeAction"
+          class="btn-resolve notice-action"
+          onclick="resolveAlert()"
+          style="display: none"
+        >
+          Resolve Alert
+        </button>
+      </section>
+
+      <section class="status-grid">
+        <div id="securityCard" class="card status-card normal-card">
+          <div class="label">Current Status</div>
+          <div class="big-value">
+            <span id="status" class="pill pill-normal">
+              <span class="dot"></span>Normal
+            </span>
+          </div>
+          <div id="statusHelp" class="support-text">No active incidents.</div>
+        </div>
+
+        <div id="modeCard" class="card status-card mode-enabled-card">
+          <div class="label">Monitoring</div>
+          <div id="mode" class="big-value">Enabled</div>
+          <div class="support-text">Alerts are active.</div>
+        </div>
+
+        <div class="card status-card location-card">
+          <div class="label">Site</div>
+          <div class="big-value" style="font-size: 22px">Lab B204</div>
+          <div class="support-text">NTHU Campus.</div>
+        </div>
+
+        <div class="card status-card action-card">
+          <div class="label">Last Update</div>
+          <div id="lastNotify" class="big-value" style="font-size: 22px">
+            Ready
+          </div>
+          <div class="support-text">Latest system response time.</div>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="card panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Recent Activity</div>
+            </div>
+            <span id="timelineBadge" class="pill pill-normal">Normal</span>
+          </div>
+
+          <div class="panel-body">
+            <div id="eventList" class="event-list">
+              <div class="event-item">
+                <div class="event-time">--:--:--</div>
+                <div class="event-main">
+                  <div class="event-title">Monitoring ready</div>
+                </div>
+                <span class="pill pill-normal">Normal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="card panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Action Guide</div>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <div class="help-list">
+              <div class="help-item">
+                <div class="help-icon red">!</div>
+                <div>
+                  <div class="help-title">Run Test</div>
+                  <div class="help-text">
+                    Sends a simulated security event for testing.
+                  </div>
+                </div>
+              </div>
+
+              <div class="help-item">
+                <div class="help-icon green">✓</div>
+                <div>
+                  <div class="help-title">Enable Monitoring</div>
+                  <div class="help-text">Turns monitoring on.</div>
+                </div>
+              </div>
+
+              <div class="help-item">
+                <div class="help-icon blue">Ⅱ</div>
+                <div>
+                  <div class="help-title">Pause Monitoring</div>
+                  <div class="help-text">Temporarily stops alerts.</div>
+                </div>
+              </div>
+
+              <div class="help-item">
+                <div class="help-icon amber">✓</div>
+                <div>
+                  <div class="help-title">Resolve Alert</div>
+                  <div class="help-text">
+                    Marks the current event as resolved.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="system-log">
+        <div class="log-panel">
+          <div class="log-head">
+            <div>
+              <div class="log-title">System Activity Log</div>
+            </div>
+            <div id="logCount" class="log-count">0 events</div>
+          </div>
+
+          <div id="logBody" class="log-body">
+            <div class="log-entry">
+              <div class="log-time">--:--:--</div>
+              <div class="log-type">System</div>
+              <div class="log-message">
+                Monitoring ready for Sentinel Device 01 at Research Lab B204.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    </div><!-- end app-shell -->
+
+    <script>
+      const API_URL =
+        "https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/unlock";
+
+      const DEVICE_NAME = "Sentinel Device 01";
+      const AREA_NAME = "Research Lab B204";
+      const ALERT_CHANNEL = "Discord #ialert";
+
+      const buttonIds = ["testBtn", "armBtn", "disarmBtn", "clearBtn"];
+      let logEvents = 0;
+
+      const ACTION_TO_API = {
+        test: "test_alert",
+        enable: "arm",
+        pause: "disarm",
+        resolve: "clear_alarm",
+      };
+
+      function nowTime() {
+        return new Date().toLocaleTimeString("en-US", { hour12: false });
+      }
+
+      function setConnection(text, type) {
+        const el = document.getElementById("connectionStatus");
+        el.className = "connection " + (type || "");
+        el.innerHTML = '<span class="dot"></span>' + text;
+      }
+
+      function setButtonsDisabled(disabled) {
+        buttonIds.forEach((id) => {
+          const button = document.getElementById(id);
+          if (button) button.disabled = disabled;
+        });
+      }
+
+      function setNotice(state, title, text, showResolveButton) {
+        const box = document.getElementById("noticeBox");
+        const noticeTitle = document.getElementById("noticeTitle");
+        const action = document.getElementById("noticeAction");
+
+        box.className = "notice " + state;
+        noticeTitle.innerText = title;
+        action.style.display = showResolveButton ? "inline-flex" : "none";
+      }
+
+      function setStatusState(label, pillClass, cardClass, helpText) {
+        const status = document.getElementById("status");
+        const card = document.getElementById("securityCard");
+        const help = document.getElementById("statusHelp");
+
+        status.className = "pill " + pillClass;
+        status.innerHTML = '<span class="dot"></span>' + label;
+
+        card.className = "card status-card " + cardClass;
+        help.innerText = helpText;
+      }
+
+      function setModeState(modeText, helperText, modeClass) {
+        const mode = document.getElementById("mode");
+        const modeCard = document.getElementById("modeCard");
+        const helper = modeCard.querySelector(".support-text");
+
+        mode.innerText = modeText;
+        helper.innerText = helperText;
+        modeCard.className = "card status-card " + modeClass;
+      }
+
+      function addEvent(title, source, pillClass, label) {
+        const list = document.getElementById("eventList");
+        const item = document.createElement("div");
+
+        item.className = "event-item";
+        item.innerHTML =
+          '<div class="event-time">' +
+          nowTime() +
+          "</div>" +
+          '<div class="event-main">' +
+          '<div class="event-title">' +
+          title +
+          "</div>" +
+          "</div>" +
+          '<span class="pill ' +
+          pillClass +
+          '">' +
+          label +
+          "</span>";
+
+        list.prepend(item);
+
+        while (list.children.length > 6) {
+          list.removeChild(list.lastElementChild);
+        }
+      }
+
+      function addLog(type, message) {
+        const body = document.getElementById("logBody");
+        const count = document.getElementById("logCount");
+        const entry = document.createElement("div");
+
+        entry.className = "log-entry";
+        entry.innerHTML =
+          '<div class="log-time">' +
+          nowTime() +
+          "</div>" +
+          '<div class="log-type">' +
+          type +
+          "</div>" +
+          '<div class="log-message">' +
+          message +
+          "</div>";
+
+        body.prepend(entry);
+
+        logEvents += 1;
+        count.innerText = logEvents + (logEvents === 1 ? " event" : " events");
+
+        while (body.children.length > 8) {
+          body.removeChild(body.lastElementChild);
+        }
+      }
+
+      async function sendAwsAction(apiAction) {
+        setButtonsDisabled(true);
+        setConnection("Updating...", "pending");
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: apiAction }),
+          });
+
+          const rawText = await response.text();
+          let data = {};
+
+          try {
+            data = rawText ? JSON.parse(rawText) : {};
+          } catch (error) {
+            data = { raw: rawText };
+          }
+
+          if (!response.ok) {
+            throw new Error(
+              data.error ||
+                data.message ||
+                "Request failed: " + response.status,
+            );
+          }
+
+          document.getElementById("lastNotify").innerText = nowTime();
+          setConnection("Connected", "");
+
+          addLog("System", "System updated.");
+          if (data.discord_result && data.discord_result.sent) {
+            addLog(
+              "Notify",
+              "Notification delivered to " + ALERT_CHANNEL + ".",
+            );
+          }
+
+          return data;
+        } catch (error) {
+          setConnection("Connection issue", "error");
+          addLog("Error", "Update failed. Check the cloud connection.");
+          alert("Update failed. Check API Gateway / CORS / Lambda logs.");
+          return null;
+        } finally {
+          setButtonsDisabled(false);
+        }
+      }
+
+      async function testAlert() {
+        setModeState("Enabled", "Alerts are active.", "mode-enabled-card");
+        setNotice(
+          "test",
+          "Test notification sent",
+          "A simulated security event was sent to the notification channel.",
+          true,
+        );
+
+        document.getElementById("timelineBadge").className = "pill pill-test";
+        document.getElementById("timelineBadge").innerText = "Test Mode";
+
+        setStatusState(
+          "Test Mode",
+          "pill-test",
+          "test-card",
+          "Simulated event for testing.",
+        );
+
+        addEvent(
+          "Test notification sent",
+          AREA_NAME + " · " + DEVICE_NAME,
+          "pill-test",
+          "Test Mode",
+        );
+
+        addLog(
+          "Test",
+          "Test notification sent for " +
+            DEVICE_NAME +
+            " at " +
+            AREA_NAME +
+            ".",
+        );
+
+        await sendAwsAction(ACTION_TO_API.test);
+      }
+
+      async function enableMonitoring() {
+        setModeState("Enabled", "Alerts are active.", "mode-enabled-card");
+        setNotice(
+          "normal",
+          "Monitoring active",
+          DEVICE_NAME +
+            " is monitoring " +
+            AREA_NAME +
+            ". No active incidents detected.",
+          false,
+        );
+
+        document.getElementById("timelineBadge").className = "pill pill-normal";
+        document.getElementById("timelineBadge").innerText = "Normal";
+
+        setStatusState(
+          "Normal",
+          "pill-normal",
+          "normal-card",
+          "No active incidents.",
+        );
+
+        addEvent(
+          "Monitoring enabled",
+          AREA_NAME + " · " + DEVICE_NAME,
+          "pill-normal",
+          "Normal",
+        );
+
+        addLog(
+          "Mode",
+          "Monitoring enabled for " + DEVICE_NAME + " at " + AREA_NAME + ".",
+        );
+
+        await sendAwsAction(ACTION_TO_API.enable);
+      }
+
+      async function pauseMonitoring() {
+        setModeState("Paused", "Alerts are paused.", "paused-card");
+        setNotice(
+          "paused",
+          "Monitoring paused",
+          "Monitoring is temporarily paused for " +
+            AREA_NAME +
+            ". Alerts will not trigger until monitoring resumes.",
+          false,
+        );
+
+        document.getElementById("timelineBadge").className = "pill pill-paused";
+        document.getElementById("timelineBadge").innerText = "Paused";
+
+        setStatusState(
+          "Paused",
+          "pill-paused",
+          "paused-card",
+          "Monitoring is paused.",
+        );
+
+        addEvent(
+          "Monitoring paused",
+          AREA_NAME + " · " + DEVICE_NAME,
+          "pill-paused",
+          "Paused",
+        );
+
+        addLog(
+          "Mode",
+          "Monitoring paused for " + DEVICE_NAME + " at " + AREA_NAME + ".",
+        );
+
+        await sendAwsAction(ACTION_TO_API.pause);
+      }
+
+      async function resolveAlert() {
+        setNotice(
+          "resolved",
+          "Incident resolved",
+          "The security event was marked as resolved. Monitoring remains enabled.",
+          false,
+        );
+
+        document.getElementById("timelineBadge").className =
+          "pill pill-resolved";
+        document.getElementById("timelineBadge").innerText = "Resolved";
+
+        setStatusState(
+          "Resolved",
+          "pill-resolved",
+          "resolved-card",
+          "Event marked as resolved.",
+        );
+
+        addEvent(
+          "Incident resolved",
+          AREA_NAME + " · " + DEVICE_NAME,
+          "pill-resolved",
+          "Resolved",
+        );
+
+        addLog(
+          "Resolved",
+          "Incident resolved for " + DEVICE_NAME + " at " + AREA_NAME + ".",
+        );
+
+        await sendAwsAction(ACTION_TO_API.resolve);
+      }
+    </script>
+
+    <script>
+    // ── LISA AUTH ────────────────────────────────────────────────────────────
+    let _cognitoUser = null;
+    const _userPool = new AmazonCognitoIdentity.CognitoUserPool({
+      UserPoolId: COGNITO_CONFIG.userPoolId,
+      ClientId:   COGNITO_CONFIG.clientId,
+    });
+
+    function showLogin() {
+      document.getElementById('page-login').style.cssText =
+        'display:flex;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;';
+      document.getElementById('app-shell').style.display = 'none';
+    }
+
+    function showApp(session) {
+      document.getElementById('page-login').style.display = 'none';
+      document.getElementById('app-shell').style.display = 'block';
+      try {
+        const payload = JSON.parse(atob(session.getIdToken().getJwtToken().split('.')[1]));
+        const emailEl = document.getElementById('nav-user-label');
+        if (emailEl) emailEl.textContent = payload.email || 'User';
+      } catch(_) {}
+      if (typeof initApp === 'function') initApp();
+    }
+
+    function checkSession() {
+      const user = _userPool.getCurrentUser();
+      if (!user) { showLogin(); return; }
+      user.getSession((err, session) => {
+        if (err || !session || !session.isValid()) { showLogin(); return; }
+        _cognitoUser = user;
+        showApp(session);
+      });
+    }
+
+    function handleLogin() {
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errEl    = document.getElementById('login-error');
+      errEl.style.display = 'none';
+      document.getElementById('login-btn').textContent = 'Signing in…';
+
+      const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({ Username: email, Password: password });
+      const cognitoUser = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: _userPool });
+      _cognitoUser = cognitoUser;
+
+      cognitoUser.authenticateUser(authDetails, {
+        onSuccess(session) {
+          document.getElementById('login-btn').textContent = 'Sign In';
+          showApp(session);
+        },
+        onFailure(err) {
+          document.getElementById('login-btn').textContent = 'Sign In';
+          errEl.textContent   = err.message || 'Login failed';
+          errEl.style.display = 'block';
+        },
+        newPasswordRequired() {
+          document.getElementById('login-btn').textContent = 'Sign In';
+          document.getElementById('new-password-section').style.display = 'flex';
+        },
+      });
+    }
+
+    function handleNewPassword() {
+      const newPw = document.getElementById('new-password').value;
+      _cognitoUser.completeNewPasswordChallenge(newPw, {}, {
+        onSuccess(session) { showApp(session); },
+        onFailure(err) {
+          document.getElementById('login-error').textContent   = err.message;
+          document.getElementById('login-error').style.display = 'block';
+        },
+      });
+    }
+
+    function handleLogout() {
+      if (_cognitoUser) _cognitoUser.signOut();
+      showLogin();
+    }
+
+    window.addEventListener('DOMContentLoaded', checkSession);
+    </script>
+  </body>
+</html>
