@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LISA: Logistics Intelligence Sentinel Assistant</title>
-    <!-- config.local.js is gitignored — set window.LISA_CONFIG there for local secrets -->
-    <script src="config.local.js" onerror="window.LISA_CONFIG={}"></script>
+    <!-- config.local.js is gitignored set window.LISA_CONFIG there for local secrets -->
+    <script src="config.local.js" onerror="window.LISA_CONFIG = {}"></script>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -705,15 +705,16 @@
   <body>
     <!-- ── CONFIG ── -->
     <script>
-      // DEMO MODE — hardcoded accounts (no AWS auth required)
+      // DEMO MODE hardcoded accounts (no AWS auth required)
       const DEMO_ACCOUNTS = {
         "admin@lisa.demo": { password: "admin123", role: "ADMIN" },
         "driver@lisa.demo": { password: "driver123", role: "DRIVER" },
         "customer@lisa.demo": { password: "customer123", role: "CUSTOMER" },
       };
 
-      // Loaded from config.local.js (gitignored) — never hardcode this here.
-      const DISCORD_WEBHOOK_URL = (window.LISA_CONFIG || {}).DISCORD_WEBHOOK_URL || "";
+      // Loaded from config.local.js (gitignored) never hardcode this here.
+      const DISCORD_WEBHOOK_URL =
+        (window.LISA_CONFIG || {}).DISCORD_WEBHOOK_URL || "";
 
       // AWS-READY: when Cognito + API Gateway are deployed, uncomment and
       // swap the mock functions below for real fetch() calls.
@@ -995,7 +996,7 @@
         <div class="page-content">
           <div class="section-header">
             <div class="section-title">Shipment Locations</div>
-            <span style="font-size: 12px; color: var(--muted);">
+            <span style="font-size: 12px; color: var(--muted)">
               Click a marker to view shipment details
             </span>
           </div>
@@ -1089,176 +1090,103 @@
       const _db = {
         shipments: [
           {
-            shipmentId: "SHIP-001",
-            status: "IN_TRANSIT",
-            riskLevel: "LOW",
-            temperature: 4.2,
-            humidity: 65,
-            gForce: 0.1,
-            lockStatus: "LOCKED",
-            deviceStatus: "ONLINE",
-            latitude: 1.3521,
-            longitude: 103.8198,
+            shipmentId: "SHIP-001", status: "IN_TRANSIT", riskLevel: "LOW",
+            temperature: 4.2, humidity: 65, gForce: 0.1,
+            lockStatus: "LOCKED", deviceStatus: "ONLINE",
+            latitude: 1.3521, longitude: 103.8198,
             lastUpdatedAt: "2025-06-05T07:00:00Z",
           },
           {
-            shipmentId: "SHIP-002",
-            status: "ALERT",
-            riskLevel: "CRITICAL",
-            temperature: 11.2,
-            humidity: 70,
-            gForce: 0.3,
-            lockStatus: "LOCKED",
-            deviceStatus: "ONLINE",
-            latitude: 1.3,
-            longitude: 103.85,
+            shipmentId: "SHIP-002", status: "ALERT", riskLevel: "CRITICAL",
+            temperature: 11.2, humidity: 70, gForce: 0.3,
+            lockStatus: "LOCKED", deviceStatus: "ONLINE",
+            latitude: 1.3, longitude: 103.85,
             lastUpdatedAt: "2025-06-05T08:05:00Z",
           },
           {
-            shipmentId: "SHIP-003",
-            status: "IN_TRANSIT",
-            riskLevel: "LOW",
-            temperature: 3.8,
-            humidity: 62,
-            gForce: 0.0,
-            lockStatus: "LOCKED",
-            deviceStatus: "ONLINE",
-            latitude: 1.32,
-            longitude: 103.78,
+            shipmentId: "SHIP-003", status: "IN_TRANSIT", riskLevel: "LOW",
+            temperature: 3.8, humidity: 62, gForce: 0.0,
+            lockStatus: "LOCKED", deviceStatus: "ONLINE",
+            latitude: 1.32, longitude: 103.78,
             lastUpdatedAt: "2025-06-05T07:30:00Z",
           },
         ],
         alerts: [
           {
-            alertId: "ALERT-001",
-            shipmentId: "SHIP-002",
-            alertType: "TEMP_HIGH",
-            severity: "CRITICAL",
+            alertId: "ALERT-001", shipmentId: "SHIP-002",
+            alertType: "TEMP_HIGH", severity: "CRITICAL",
             message: "Temperature exceeded 8C limit: reading 11.2C",
-            resolved: false,
-            resolvedBy: null,
-            createdAt: "2025-06-05T08:00:00Z",
-            resolvedAt: null,
+            resolved: false, resolvedBy: null,
+            createdAt: "2025-06-05T08:00:00Z", resolvedAt: null,
           },
         ],
         lastDiscordAt: null,
-        lastDiscordCmd: null,
       };
 
-      function dbShipments() {
-        return _db.shipments;
-      }
-      function dbShipment(id) {
-        return _db.shipments.find((s) => s.shipmentId === id) || null;
-      }
-      function dbAlerts() {
-        return _db.alerts;
-      }
+      function dbShipments()    { return _db.shipments; }
+      function dbShipment(id)   { return _db.shipments.find((s) => s.shipmentId === id) || null; }
+      function dbAlerts()       { return _db.alerts; }
 
       function dbResolveAlert(alertId, resolvedBy) {
         const a = _db.alerts.find((x) => x.alertId === alertId);
         if (!a || a.resolved) return;
-        a.resolved = true;
+        a.resolved   = true;
         a.resolvedBy = resolvedBy;
         a.resolvedAt = new Date().toISOString();
-        if (
-          !_db.alerts.some((x) => x.shipmentId === a.shipmentId && !x.resolved)
-        ) {
+        const hasMore = _db.alerts.some((x) => x.shipmentId === a.shipmentId && !x.resolved);
+        if (!hasMore) {
           const s = _db.shipments.find((x) => x.shipmentId === a.shipmentId);
-          if (s) {
-            s.riskLevel = "LOW";
-            s.status = "IN_TRANSIT";
-            s.lastUpdatedAt = new Date().toISOString();
-          }
+          if (s) { s.riskLevel = "LOW"; s.status = "IN_TRANSIT"; s.lastUpdatedAt = new Date().toISOString(); }
         }
       }
 
       function dbTriggerAlert(shipmentId, alertType, severity, temperature) {
         const alertId = "ALERT-" + Date.now();
-        const msg =
-          alertType +
-          " on " +
-          shipmentId +
-          (temperature ? ": " + temperature + "C" : "");
         _db.alerts.push({
-          alertId,
-          shipmentId,
-          alertType,
-          severity,
-          message: msg,
-          resolved: false,
-          resolvedBy: null,
-          createdAt: new Date().toISOString(),
-          resolvedAt: null,
+          alertId, shipmentId, alertType, severity,
+          message: alertType + " on " + shipmentId + (temperature ? ": " + temperature + "C" : ""),
+          resolved: false, resolvedBy: null,
+          createdAt: new Date().toISOString(), resolvedAt: null,
         });
         const s = _db.shipments.find((x) => x.shipmentId === shipmentId);
         if (s) {
           s.riskLevel = severity;
           s.status = "ALERT";
           s.lastUpdatedAt = new Date().toISOString();
-          if (temperature !== undefined)
-            s.temperature = parseFloat(temperature);
+          if (temperature !== undefined) s.temperature = parseFloat(temperature);
+          postDiscordAlert(s, alertType, severity, alertId);
         }
-        if (s) postDiscordAlert(s, alertType, severity, alertId);
         return alertId;
       }
 
       function dbSetLock(shipmentId, lockStatus) {
         const s = _db.shipments.find((x) => x.shipmentId === shipmentId);
-        if (s) {
-          s.lockStatus = lockStatus;
-          s.lastUpdatedAt = new Date().toISOString();
-        }
+        if (s) { s.lockStatus = lockStatus; s.lastUpdatedAt = new Date().toISOString(); }
       }
 
       // ── DISCORD ─────────────────────────────────────────────────────────────
-      // Discord webhook execution supports CORS — fetch runs from the browser.
-      const DISCORD_EMBED_COLOR = {
-        CRITICAL: 14427686,
-        HIGH: 11817737,
-        LOW: 1483594,
-      };
+      const DISCORD_EMBED_COLOR = { CRITICAL: 14427686, HIGH: 11817737, LOW: 1483594 };
 
       async function postDiscordAlert(ship, alertType, severity, alertId) {
         if (!DISCORD_WEBHOOK_URL) return;
-        const payload = {
-          embeds: [
-            {
-              title: "LISA Alert",
-              color: DISCORD_EMBED_COLOR[severity] || 9807270,
-              fields: [
-                { name: "Severity", value: severity, inline: true },
-                { name: "Type", value: alertType, inline: true },
-                { name: "Shipment", value: ship.shipmentId, inline: true },
-                {
-                  name: "Temperature",
-                  value: ship.temperature + " C",
-                  inline: true,
-                },
-                {
-                  name: "Location",
-                  value: ship.latitude + ", " + ship.longitude,
-                  inline: true,
-                },
-                { name: "​", value: "​", inline: true },
-                {
-                  name: "Suggested Commands",
-                  value:
-                    "`/status " +
-                    ship.shipmentId +
-                    "`\n" +
-                    "`/alerts`\n" +
-                    "`/resolve " +
-                    alertId +
-                    "`",
-                },
-              ],
-              timestamp: new Date().toISOString(),
-              footer: { text: "LISA Logistics Operations" },
-            },
-          ],
-        };
-        const ok = await _discordPost(payload);
+        const ok = await _discordPost({
+          embeds: [{
+            title: "LISA Alert",
+            color: DISCORD_EMBED_COLOR[severity] || 9807270,
+            fields: [
+              { name: "Severity",    value: severity,          inline: true },
+              { name: "Type",        value: alertType,         inline: true },
+              { name: "Shipment",    value: ship.shipmentId,   inline: true },
+              { name: "Temperature", value: ship.temperature + " C", inline: true },
+              { name: "Location",    value: ship.latitude + ", " + ship.longitude, inline: true },
+              { name: "​",      value: "​",          inline: true },
+              { name: "Suggested Commands",
+                value: "`/status " + ship.shipmentId + "`\n`/alerts`\n`/resolve " + alertId + "`" },
+            ],
+            timestamp: new Date().toISOString(),
+            footer: { text: "LISA Logistics Operations" },
+          }],
+        });
         if (ok) {
           _db.lastDiscordAt = new Date().toLocaleTimeString();
           const el = document.getElementById("discord-last-alert");
@@ -1272,7 +1200,7 @@
         const payload = {
           embeds: [
             {
-              title: "LISA — Test Notification",
+              title: "LISA: Test Notification",
               color: 1483594,
               description:
                 "Webhook is active. Alert notifications will appear here when triggered.",
@@ -1314,76 +1242,50 @@
       }
 
       function renderDiscordPreview(ship, alertType, severity, alertId) {
-        const borderColor =
-          severity === "CRITICAL"
-            ? "#dc2626"
-            : severity === "HIGH"
-              ? "#b45309"
-              : "#16a34a";
-        document.getElementById("discord-preview-area").innerHTML =
-          '<div class="discord-preview" style="border-left-color:' +
-          borderColor +
-          '">' +
-          '<div class="dp-time">LISA &middot; Today at ' +
-          new Date().toLocaleTimeString() +
-          "</div>" +
-          '<div class="dp-title">LISA Alert</div>' +
-          '<div class="dp-fields">' +
-          '<div class="dp-field"><div class="dp-field-label">Severity</div><div class="dp-field-value">' +
-          severity +
-          "</div></div>" +
-          '<div class="dp-field"><div class="dp-field-label">Type</div><div class="dp-field-value">' +
-          alertType +
-          "</div></div>" +
-          '<div class="dp-field"><div class="dp-field-label">Shipment</div><div class="dp-field-value">' +
-          ship.shipmentId +
-          "</div></div>" +
-          '<div class="dp-field"><div class="dp-field-label">Temperature</div><div class="dp-field-value">' +
-          ship.temperature +
-          " C</div></div>" +
-          "</div>" +
-          '<div class="dp-commands">' +
-          "/status " +
-          ship.shipmentId +
-          " &nbsp;&middot;&nbsp; /alerts &nbsp;&middot;&nbsp; /resolve " +
-          alertId +
-          "</div>" +
-          "</div>";
+        const borderColor = { CRITICAL: "#dc2626", HIGH: "#b45309" }[severity] || "#16a34a";
+        const field = (label, val) =>
+          `<div><div class="dp-field-label">${label}</div><div class="dp-field-value">${val}</div></div>`;
+        document.getElementById("discord-preview-area").innerHTML = `
+          <div class="discord-preview" style="border-left-color:${borderColor}">
+            <div class="dp-time">LISA &middot; Today at ${new Date().toLocaleTimeString()}</div>
+            <div class="dp-title">LISA Alert</div>
+            <div class="dp-fields">
+              ${field("Severity", severity)}
+              ${field("Type", alertType)}
+              ${field("Shipment", ship.shipmentId)}
+              ${field("Temperature", ship.temperature + " C")}
+            </div>
+            <div class="dp-commands">/status ${ship.shipmentId} &nbsp;&middot;&nbsp; /alerts &nbsp;&middot;&nbsp; /resolve ${alertId}</div>
+          </div>`;
       }
 
       // ── ROUTING ─────────────────────────────────────────────────────────────
       function navigate(page) {
-        document
-          .querySelectorAll(".page-section")
-          .forEach((el) => el.classList.remove("active"));
-        document
-          .querySelectorAll(".nav-link")
-          .forEach((el) => el.classList.remove("active"));
+        document.querySelectorAll(".page-section").forEach((el) => el.classList.remove("active"));
+        const navLinks = document.querySelectorAll(".nav-link");
+        navLinks.forEach((el) => el.classList.remove("active"));
 
         if (page.startsWith("shipment-")) {
-          document
-            .getElementById("page-shipment-detail")
-            .classList.add("active");
+          document.getElementById("page-shipment-detail").classList.add("active");
           renderDetail(page.replace("shipment-", ""));
           return;
         }
 
         const section = document.getElementById("page-" + page);
         if (section) section.classList.add("active");
-        document.querySelectorAll(".nav-link").forEach((el) => {
-          if ((el.getAttribute("onclick") || "").includes("'" + page + "'")) {
+        navLinks.forEach((el) => {
+          if ((el.getAttribute("onclick") || "").includes("'" + page + "'"))
             el.classList.add("active");
-          }
         });
 
         if (page === "map") renderMap();
       }
 
       function initApp() {
-        navigate(location.hash.replace("#", "") || "dashboard");
         renderDashboard();
         renderAlerts();
         renderDiscordStatus();
+        navigate(location.hash.replace("#", "") || "dashboard");
       }
 
       window.addEventListener("hashchange", () =>
@@ -1392,210 +1294,109 @@
 
       // ── HELPERS ─────────────────────────────────────────────────────────────
       function badge(cls, text) {
-        return '<span class="badge badge-' + cls + '">' + text + "</span>";
+        return `<span class="badge badge-${cls}">${text}</span>`;
       }
       function riskBadge(r) {
-        return badge(
-          { CRITICAL: "red", HIGH: "amber", LOW: "green" }[r] || "muted",
-          r,
-        );
+        return badge({ CRITICAL: "red", HIGH: "amber", LOW: "green" }[r] || "muted", r);
       }
+      // riskBadge doubles as severityBadge — identical mapping
+      const severityBadge = riskBadge;
       function statusBadge(s) {
         return badge(
-          { ALERT: "red", IN_TRANSIT: "blue", DELIVERED: "green" }[s] ||
-            "muted",
-          s.replace("_", " "),
-        );
-      }
-      function severityBadge(s) {
-        return badge(
-          { CRITICAL: "red", HIGH: "amber", LOW: "green" }[s] || "muted",
-          s,
+          { ALERT: "red", IN_TRANSIT: "blue", DELIVERED: "green" }[s] || "muted",
+          s.replaceAll("_", " "),
         );
       }
       function fmtTime(iso) {
-        const d = new Date(iso);
-        return d.toLocaleString([], {
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        return new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
       }
 
       // ── DASHBOARD ──────────────────────────────────────────────────────────
       function renderDashboard() {
-        const ships = dbShipments();
+        const ships  = dbShipments();
         const active = dbAlerts().filter((a) => !a.resolved);
-        const crit = active.filter((a) => a.severity === "CRITICAL");
+        const crit   = active.filter((a) => a.severity === "CRITICAL");
 
         document.getElementById("stat-shipments").textContent = ships.length;
-        document.getElementById("stat-alerts").textContent = active.length;
-        document.getElementById("stat-critical").textContent = crit.length;
-        document.getElementById("stat-offline").textContent = ships.filter(
-          (s) => s.deviceStatus !== "ONLINE",
-        ).length;
+        document.getElementById("stat-alerts").textContent    = active.length;
+        document.getElementById("stat-critical").textContent  = crit.length;
+        document.getElementById("stat-offline").textContent   = ships.filter((s) => s.deviceStatus !== "ONLINE").length;
 
-        // Recent alerts panel
-        const listEl = document.getElementById("dash-alert-list");
-        if (!active.length) {
-          listEl.innerHTML =
-            '<div style="padding:16px; color:var(--muted); font-size:12px;">No active alerts</div>';
-        } else {
-          listEl.innerHTML = active
-            .slice(0, 6)
-            .map(
-              (a) =>
-                '<div class="alert-row">' +
-                severityBadge(a.severity) +
-                '<div class="alert-row-info">' +
-                '<div class="alert-row-title">' +
-                a.alertType +
-                " &middot; " +
-                a.shipmentId +
-                "</div>" +
-                '<div class="alert-row-sub">' +
-                fmtTime(a.createdAt) +
-                "</div>" +
-                "</div>" +
-                (_currentRole === "ADMIN"
-                  ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' +
-                    a.alertId +
-                    "')\">Resolve</button>"
-                  : "") +
-                "</div>",
-            )
-            .join("");
-        }
+        document.getElementById("dash-alert-list").innerHTML = active.length
+          ? active.slice(0, 6).map((a) => `
+              <div class="alert-row">
+                ${riskBadge(a.severity)}
+                <div class="alert-row-info">
+                  <div class="alert-row-title">${a.alertType} &middot; ${a.shipmentId}</div>
+                  <div class="alert-row-sub">${fmtTime(a.createdAt)}</div>
+                </div>
+                ${_currentRole === "ADMIN" ? `<button class="btn btn-success btn-sm" onclick="resolveAlertUI('${a.alertId}')">Resolve</button>` : ""}
+              </div>`).join("")
+          : '<div style="padding:16px; color:var(--muted); font-size:12px;">No active alerts</div>';
 
-        // Shipment table
-        document.getElementById("shipment-table-body").innerHTML = ships
-          .map(
-            (s) =>
-              "<tr>" +
-              '<td style="font-family:var(--mono); font-size:12px; font-weight:600;">' +
-              s.shipmentId +
-              "</td>" +
-              "<td>" +
-              statusBadge(s.status) +
-              "</td>" +
-              "<td>" +
-              riskBadge(s.riskLevel) +
-              "</td>" +
-              "<td>" +
-              s.temperature +
-              "</td>" +
-              "<td>" +
-              s.lockStatus +
-              "</td>" +
-              "<td>" +
-              s.deviceStatus +
-              "</td>" +
-              '<td style="font-size:11px; color:var(--muted);">' +
-              fmtTime(s.lastUpdatedAt) +
-              "</td>" +
-              '<td><button class="btn btn-sm" onclick="navigate(\'shipment-' +
-              s.shipmentId +
-              "')\">View</button></td>" +
-              "</tr>",
-          )
-          .join("");
+        document.getElementById("shipment-table-body").innerHTML = ships.map((s) => `
+          <tr>
+            <td style="font-family:var(--mono); font-size:12px; font-weight:600;">${s.shipmentId}</td>
+            <td>${statusBadge(s.status)}</td>
+            <td>${riskBadge(s.riskLevel)}</td>
+            <td>${s.temperature}</td>
+            <td>${s.lockStatus}</td>
+            <td>${s.deviceStatus}</td>
+            <td style="font-size:11px; color:var(--muted);">${fmtTime(s.lastUpdatedAt)}</td>
+            <td><button class="btn btn-sm" onclick="navigate('shipment-${s.shipmentId}')">View</button></td>
+          </tr>`).join("");
       }
 
       function renderDiscordStatus() {
-        const dot = document.getElementById("discord-sdot");
-        const text = document.getElementById("discord-status-text");
-        const note = document.getElementById("discord-note");
-        const wrap = document.getElementById("discord-test-wrap");
-        const last = document.getElementById("discord-last-alert");
-        if (DISCORD_WEBHOOK_URL) {
-          dot.className = "sdot sdot-green";
-          text.textContent = "Webhook active";
-          text.style.color = "var(--green)";
-          note.style.display = "none";
-          wrap.style.display = "block";
-        } else {
-          dot.className = "sdot sdot-muted";
-          text.textContent = "Not configured";
-          text.style.color = "var(--muted)";
-          note.style.display = "block";
-          wrap.style.display = "none";
-        }
-        if (last) last.textContent = _db.lastDiscordAt || "–";
+        const connected = !!DISCORD_WEBHOOK_URL;
+        document.getElementById("discord-sdot").className      = connected ? "sdot sdot-green" : "sdot sdot-muted";
+        document.getElementById("discord-status-text").textContent  = connected ? "Webhook active" : "Not configured";
+        document.getElementById("discord-status-text").style.color  = connected ? "var(--green)" : "var(--muted)";
+        document.getElementById("discord-note").style.display       = connected ? "none" : "block";
+        document.getElementById("discord-test-wrap").style.display  = connected ? "block" : "none";
+        document.getElementById("discord-last-alert").textContent   = _db.lastDiscordAt || "–";
       }
 
       // ── ALERT CENTER ───────────────────────────────────────────────────────
       let _alertFilter = "all";
 
       function renderAlerts() {
-        const all = dbAlerts();
-        const data =
-          _alertFilter === "active"
-            ? all.filter((a) => !a.resolved)
-            : _alertFilter === "resolved"
-              ? all.filter((a) => a.resolved)
-              : all;
+        const all  = dbAlerts();
+        const data = _alertFilter === "active"   ? all.filter((a) => !a.resolved)
+                   : _alertFilter === "resolved" ? all.filter((a) =>  a.resolved)
+                   : all;
         const tbody = document.getElementById("alerts-table-body");
         if (!data.length) {
-          tbody.innerHTML =
-            '<tr><td colspan="7" style="color:var(--muted); padding:14px 12px;">No alerts</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted); padding:14px 12px;">No alerts</td></tr>';
           return;
         }
-        tbody.innerHTML = data
-          .map(
-            (a) =>
-              "<tr>" +
-              '<td style="font-family:var(--mono); font-size:11px;">' +
-              a.alertId +
-              "</td>" +
-              '<td style="font-weight:600;">' +
-              a.shipmentId +
-              "</td>" +
-              "<td>" +
-              a.alertType +
-              "</td>" +
-              "<td>" +
-              severityBadge(a.severity) +
-              "</td>" +
-              "<td>" +
-              (a.resolved
-                ? badge("green", "Resolved")
-                : badge("red", "Active")) +
-              "</td>" +
-              '<td style="font-size:11px; color:var(--muted);">' +
-              fmtTime(a.createdAt) +
-              "</td>" +
-              "<td>" +
-              (!a.resolved && _currentRole === "ADMIN"
-                ? '<button class="btn btn-success btn-sm" onclick="resolveAlertUI(\'' +
-                  a.alertId +
-                  "')\">Resolve</button>"
-                : "") +
-              "</td>" +
-              "</tr>",
-          )
-          .join("");
+        tbody.innerHTML = data.map((a) => `
+          <tr>
+            <td style="font-family:var(--mono); font-size:11px;">${a.alertId}</td>
+            <td style="font-weight:600;">${a.shipmentId}</td>
+            <td>${a.alertType}</td>
+            <td>${riskBadge(a.severity)}</td>
+            <td>${a.resolved ? badge("green", "Resolved") : badge("red", "Active")}</td>
+            <td style="font-size:11px; color:var(--muted);">${fmtTime(a.createdAt)}</td>
+            <td>${!a.resolved && _currentRole === "ADMIN"
+              ? `<button class="btn btn-success btn-sm" onclick="resolveAlertUI('${a.alertId}')">Resolve</button>`
+              : ""}</td>
+          </tr>`).join("");
       }
 
       function filterAlerts(f) {
         _alertFilter = f;
-        document
-          .querySelectorAll(".filter-btn")
-          .forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
         document.getElementById("filter-" + f).classList.add("active");
         renderAlerts();
       }
 
       function resolveAlertUI(alertId) {
         if (!confirm("Mark alert " + alertId + " as resolved?")) return;
-        dbResolveAlert(
-          alertId,
-          document.getElementById("nav-user-label").textContent,
-        );
+        dbResolveAlert(alertId, document.getElementById("nav-user-label").textContent);
         renderDashboard();
         renderAlerts();
-        const detailPage = document.getElementById("page-shipment-detail");
-        if (detailPage.classList.contains("active")) {
+        if (document.getElementById("page-shipment-detail").classList.contains("active")) {
           const a = _db.alerts.find((x) => x.alertId === alertId);
           if (a) renderDetail(a.shipmentId);
         }
@@ -1604,114 +1405,78 @@
       // ── SHIPMENT DETAIL ────────────────────────────────────────────────────
       function renderDetail(sid) {
         const el = document.getElementById("shipment-detail-content");
-        const s = dbShipment(sid);
-        if (!s) {
-          el.innerHTML =
-            '<div style="color:var(--muted);">Shipment not found.</div>';
-          return;
-        }
+        const s  = dbShipment(sid);
+        if (!s) { el.innerHTML = '<div style="color:var(--muted);">Shipment not found.</div>'; return; }
 
-        const active = dbAlerts().filter(
-          (a) => a.shipmentId === sid && !a.resolved,
-        );
-        const latestAlert = active[0] || null;
-        const isAdmin = _currentRole === "ADMIN";
+        const latestAlert = dbAlerts().find((a) => a.shipmentId === sid && !a.resolved) || null;
+        const isAdmin     = _currentRole === "ADMIN";
 
-        const fields = [
-          ["Shipment ID", s.shipmentId],
-          ["Status", s.status.replace("_", " ")],
-          ["Risk Level", s.riskLevel],
-          ["Temperature", s.temperature + " C"],
-          ["Humidity", s.humidity + " %"],
-          ["G-Force", s.gForce],
-          ["Lock Status", s.lockStatus],
+        const rows = [
+          ["Shipment ID",   s.shipmentId],
+          ["Status",        s.status.replaceAll("_", " ")],
+          ["Risk Level",    s.riskLevel],
+          ["Temperature",   s.temperature + " C"],
+          ["Humidity",      s.humidity + " %"],
+          ["G-Force",       s.gForce],
+          ["Lock Status",   s.lockStatus],
           ["Device Status", s.deviceStatus],
-          ["Location", s.latitude + ", " + s.longitude],
-          ["Last Updated", fmtTime(s.lastUpdatedAt)],
+          ["Location",      s.latitude + ", " + s.longitude],
+          ["Last Updated",  fmtTime(s.lastUpdatedAt)],
         ];
 
-        el.innerHTML =
-          '<div class="detail-header">' +
-          '<div class="detail-title">' +
-          s.shipmentId +
-          "</div>" +
-          riskBadge(s.riskLevel) +
-          statusBadge(s.status) +
-          "</div>" +
-          '<div class="detail-grid">' +
-          '<div class="panel">' +
-          '<div class="panel-header">Shipment Details</div>' +
-          '<table class="kv-table">' +
-          fields
-            .map((f) => "<tr><th>" + f[0] + "</th><td>" + f[1] + "</td></tr>")
-            .join("") +
-          "</table>" +
-          "</div>" +
-          '<div style="display:flex; flex-direction:column; gap:12px;">' +
-          (isAdmin
-            ? '<div class="panel">' +
-              '<div class="panel-header">Controls</div>' +
-              '<div class="panel-body controls-stack">' +
-              '<button class="btn btn-danger control-btn" onclick="doTriggerTemp(\'' +
-              sid +
-              "')\">Trigger Temperature Alert</button>" +
-              '<button class="btn btn-warning control-btn" onclick="doTriggerCollision(\'' +
-              sid +
-              "')\">Trigger Collision Alert</button>" +
-              (latestAlert
-                ? '<button class="btn btn-success control-btn" onclick="resolveAlertUI(\'' +
-                  latestAlert.alertId +
-                  "')\">Resolve Active Alert</button>"
-                : "") +
-              '<button class="btn btn-primary control-btn" onclick="doSetLock(\'' +
-              sid +
-              "','LOCKED')\">Lock Cargo</button>" +
-              '<button class="btn control-btn" onclick="doSetLock(\'' +
-              sid +
-              "','UNLOCKED')\">Unlock Cargo</button>" +
-              "</div>" +
-              "</div>"
-            : "") +
-          '<div class="panel">' +
-          '<div class="panel-header">Latest Alert</div>' +
-          '<div class="panel-body">' +
-          (latestAlert
-            ? '<div style="font-size:12px; font-weight:600; color:var(--red); margin-bottom:4px;">' +
-              latestAlert.alertType +
-              "</div>" +
-              '<div style="font-size:12px; color:var(--muted);">' +
-              latestAlert.message +
-              "</div>" +
-              '<div style="font-size:11px; color:var(--muted); margin-top:6px;">' +
-              fmtTime(latestAlert.createdAt) +
-              "</div>"
-            : '<div style="font-size:12px; color:var(--muted);">No active alerts</div>') +
-          "</div>" +
-          "</div>" +
-          "</div>" +
-          "</div>";
+        el.innerHTML = `
+          <div class="detail-header">
+            <div class="detail-title">${s.shipmentId}</div>
+            ${riskBadge(s.riskLevel)} ${statusBadge(s.status)}
+          </div>
+          <div class="detail-grid">
+            <div class="panel">
+              <div class="panel-header">Shipment Details</div>
+              <table class="kv-table">
+                ${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}
+              </table>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${isAdmin ? `
+                <div class="panel">
+                  <div class="panel-header">Controls</div>
+                  <div class="panel-body controls-stack">
+                    <button class="btn btn-danger control-btn" onclick="doTriggerTemp('${sid}')">Trigger Temperature Alert</button>
+                    <button class="btn btn-warning control-btn" onclick="doTriggerCollision('${sid}')">Trigger Collision Alert</button>
+                    ${latestAlert ? `<button class="btn btn-success control-btn" onclick="resolveAlertUI('${latestAlert.alertId}')">Resolve Active Alert</button>` : ""}
+                    <button class="btn btn-primary control-btn" onclick="doSetLock('${sid}','LOCKED')">Lock Cargo</button>
+                    <button class="btn control-btn" onclick="doSetLock('${sid}','UNLOCKED')">Unlock Cargo</button>
+                  </div>
+                </div>` : ""}
+              <div class="panel">
+                <div class="panel-header">Latest Alert</div>
+                <div class="panel-body">
+                  ${latestAlert ? `
+                    <div style="font-size:12px; font-weight:600; color:var(--red); margin-bottom:4px;">${latestAlert.alertType}</div>
+                    <div style="font-size:12px; color:var(--muted);">${latestAlert.message}</div>
+                    <div style="font-size:11px; color:var(--muted); margin-top:6px;">${fmtTime(latestAlert.createdAt)}</div>`
+                  : '<div style="font-size:12px; color:var(--muted);">No active alerts</div>'}
+                </div>
+              </div>
+            </div>
+          </div>`;
       }
 
       function doTriggerTemp(sid) {
         const temp = prompt("Enter simulated temperature (C):", "12.0");
         if (temp === null) return;
         dbTriggerAlert(sid, "TEMP_HIGH", "CRITICAL", temp);
-        renderDetail(sid);
-        renderDashboard();
-        renderAlerts();
+        renderDetail(sid); renderDashboard(); renderAlerts();
       }
 
       function doTriggerCollision(sid) {
         dbTriggerAlert(sid, "COLLISION", "HIGH");
-        renderDetail(sid);
-        renderDashboard();
-        renderAlerts();
+        renderDetail(sid); renderDashboard(); renderAlerts();
       }
 
       function doSetLock(sid, status) {
         dbSetLock(sid, status);
-        renderDetail(sid);
-        renderDashboard();
+        renderDetail(sid); renderDashboard();
       }
 
       // ── MAP ─────────────────────────────────────────────────────────────────
@@ -1722,17 +1487,11 @@
         const ships = dbShipments();
 
         if (!_leafletMap) {
-          _leafletMap = L.map("leaflet-map").setView(
-            [1.3521, 103.8198],
-            13,
-          );
-          L.tileLayer(
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            {
-              attribution: "© OpenStreetMap contributors",
-              maxZoom: 18,
-            },
-          ).addTo(_leafletMap);
+          _leafletMap = L.map("leaflet-map").setView([1.3521, 103.8198], 13);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors",
+            maxZoom: 18,
+          }).addTo(_leafletMap);
         }
 
         // Leaflet needs the container to be visible before it can size itself
@@ -1761,19 +1520,32 @@
 
           marker.bindPopup(
             '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif; min-width:170px; padding:2px 0;">' +
-              '<div style="font-weight:700; font-size:13px; margin-bottom:8px;">' + s.shipmentId + "</div>" +
-              '<div style="font-size:12px; line-height:1.9; color:#374151;">' +
-                "Risk: <strong style=\"color:" + color + "\">" + s.riskLevel + "</strong><br>" +
-                "Status: " + s.status.replace("_", " ") + "<br>" +
-                "Temp: " + s.temperature + " C<br>" +
-                "Lock: " + s.lockStatus +
+              '<div style="font-weight:700; font-size:13px; margin-bottom:8px;">' +
+              s.shipmentId +
               "</div>" +
-              '<button onclick="navigate(\'shipment-' + s.shipmentId + '\')" ' +
-                'style="margin-top:10px; width:100%; padding:5px 0; font-size:12px; font-weight:600; ' +
-                "border:1px solid #dde3ec; border-radius:6px; cursor:pointer; background:#f5f7fa; color:#0f172a;\">" +
-                "View Detail" +
+              '<div style="font-size:12px; line-height:1.9; color:#374151;">' +
+              'Risk: <strong style="color:' +
+              color +
+              '">' +
+              s.riskLevel +
+              "</strong><br>" +
+              "Status: " +
+              s.status.replace("_", " ") +
+              "<br>" +
+              "Temp: " +
+              s.temperature +
+              " C<br>" +
+              "Lock: " +
+              s.lockStatus +
+              "</div>" +
+              "<button onclick=\"navigate('shipment-" +
+              s.shipmentId +
+              "')\" " +
+              'style="margin-top:10px; width:100%; padding:5px 0; font-size:12px; font-weight:600; ' +
+              'border:1px solid #dde3ec; border-radius:6px; cursor:pointer; background:#f5f7fa; color:#0f172a;">' +
+              "View Detail" +
               "</button>" +
-            "</div>",
+              "</div>",
           );
 
           marker.addTo(_leafletMap);
