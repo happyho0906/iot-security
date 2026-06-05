@@ -1,6 +1,6 @@
 # LISA: Integration & Team Collaboration Guide
 
-This document is for developers integrating other hardware modules, Lambda functions, or services into the LISA platform. Read this before touching anything.
+This document is for developers integrating other hardware modules, Lambda functions, or services into the LISA platform. 
 
 ---
 
