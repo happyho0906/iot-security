@@ -1,5 +1,4 @@
-# LISA
-Logistics Intelligence & Sentinel Assistant
+# LISA: Logistics Intelligence & Sentinel Assistant
 
 A self-contained logistics monitoring platform with real-time shipment tracking, alert management, Discord bot integration, and a role-based web dashboard. Runs entirely in the browser in demo mode with no backend required. Designed to connect to AWS (DynamoDB + Lambda + API Gateway) when deployed.
 
