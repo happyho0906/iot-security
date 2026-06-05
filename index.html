@@ -7,7 +7,6 @@
 
     <style>
       :root {
-        --bg: #f4f7fb;
         --surface: #ffffff;
         --border: #d9e4f2;
         --border-soft: #edf2f7;
@@ -784,13 +783,17 @@
   </head>
 
   <body>
-    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js"></script>
     <script>
-      const COGNITO_CONFIG = {
-        userPoolId: 'us-east-1_XXXXXXX',       // ← fill in after Cognito User Pool is created
-        clientId:   'XXXXXXXXXXXXXXXXXXXXXXXXX', // ← fill in after Cognito App Client is created
+      // AWS-READY: uncomment and fill in when Cognito is configured
+      // const COGNITO_CONFIG = { userPoolId: 'us-east-1_XXXXXXX', clientId: 'XXXXXXXXXXXXXXXXXX' };
+      // const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/prod';
+
+      // DEMO MODE: hardcoded accounts (frontend only, intentional)
+      const DEMO_ACCOUNTS = {
+        'admin@lisa.demo':    { password: 'admin123',    role: 'ADMIN' },
+        'driver@lisa.demo':   { password: 'driver123',   role: 'DRIVER' },
+        'customer@lisa.demo': { password: 'customer123', role: 'CUSTOMER' },
       };
-      const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/unlock'; // ← update stage after API Gateway deploy
     </script>
 
     <!-- ── LISA LOGIN PAGE ── -->
@@ -812,15 +815,6 @@
             Sign In
           </button>
         </div>
-        <div id="new-password-section" style="display:none;margin-top:16px;flex-direction:column;gap:10px;">
-          <div style="color:var(--amber);font-size:13px;font-weight:600;">⚠ New password required</div>
-          <input id="new-password" type="password" placeholder="Set new password"
-            style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;font-family:var(--font);outline:none;width:100%;box-sizing:border-box;" />
-          <button onclick="handleNewPassword()"
-            style="background:var(--green);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;">
-            Set Password
-          </button>
-        </div>
       </div>
     </div>
     <!-- ── END LOGIN PAGE ── -->
@@ -840,7 +834,7 @@
         <span class="nav-link" onclick="navigate('map')">Map</span>
       </nav>
       <div style="display:flex;align-items:center;gap:16px;">
-        <span style="font-size:13px;color:var(--muted);"><span id="nav-user-label"></span> &nbsp;·&nbsp; <span style="color:var(--blue);font-weight:600;">ADMIN</span></span>
+        <span style="font-size:13px;color:var(--muted);"><span id="nav-user-label"></span> &nbsp;·&nbsp; <span id="nav-role-badge" style="color:var(--blue);font-weight:700;">ADMIN</span></span>
         <button onclick="handleLogout()" style="border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;">Logout</button>
       </div>
     </header>
@@ -878,11 +872,15 @@
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
               <div style="font-weight:700;margin-bottom:14px;">Discord Status</div>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                <div id="discord-dot" style="width:10px;height:10px;border-radius:50%;background:var(--muted);"></div>
-                <span id="discord-status-text" style="font-size:13px;color:var(--muted);">Not configured</span>
+                <div id="discord-dot" style="width:10px;height:10px;border-radius:50%;background:var(--green);"></div>
+                <span id="discord-status-text" style="font-size:13px;color:var(--green);">Webhook active</span>
               </div>
-              <div style="font-size:12px;color:var(--muted);">Last alert sent: <span id="discord-last-alert">–</span></div>
-              <div style="font-size:12px;color:var(--muted);">Last command: <span id="discord-last-cmd">–</span></div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Last alert sent: <span id="discord-last-alert">–</span></div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Last command: <span id="discord-last-cmd">–</span></div>
+              <button onclick="simulateDiscordMessage()" style="background:var(--blue-soft);color:var(--blue);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%;">
+                Simulate Discord Message
+              </button>
+              <div id="discord-preview" style="display:none;margin-top:12px;background:#36393f;color:#dcddde;border-radius:8px;padding:14px;font-size:13px;font-family:var(--mono);line-height:1.6;"></div>
             </div>
           </div>
 
@@ -1292,12 +1290,15 @@
     </script>
 
     <script>
-    // ── LISA AUTH ────────────────────────────────────────────────────────────
-    let _cognitoUser = null;
-    const _userPool = new AmazonCognitoIdentity.CognitoUserPool({
-      UserPoolId: COGNITO_CONFIG.userPoolId,
-      ClientId:   COGNITO_CONFIG.clientId,
-    });
+    // ── LISA DEMO AUTH ───────────────────────────────────────────────────────
+    // AWS-READY: swap these functions for Cognito versions when backend is live
+    let _currentRole = null;
+
+    const _roleBadgeStyle = {
+      ADMIN:    'color:var(--blue);font-weight:700;',
+      DRIVER:   'color:var(--green);font-weight:700;',
+      CUSTOMER: 'color:var(--muted);font-weight:700;',
+    };
 
     function showLogin() {
       document.getElementById('page-login').style.cssText =
@@ -1305,72 +1306,124 @@
       document.getElementById('app-shell').style.display = 'none';
     }
 
-    function showApp(session) {
+    function showApp(email, role) {
+      _currentRole = role;
+      sessionStorage.setItem('lisa_email', email);
+      sessionStorage.setItem('lisa_role', role);
       document.getElementById('page-login').style.display = 'none';
       document.getElementById('app-shell').style.display = 'block';
-      try {
-        const payload = JSON.parse(atob(session.getIdToken().getJwtToken().split('.')[1]));
-        const emailEl = document.getElementById('nav-user-label');
-        if (emailEl) emailEl.textContent = payload.email || 'User';
-      } catch(_) {}
+      const emailEl = document.getElementById('nav-user-label');
+      if (emailEl) emailEl.textContent = email;
+      const badgeEl = document.getElementById('nav-role-badge');
+      if (badgeEl) { badgeEl.textContent = role; badgeEl.style.cssText = _roleBadgeStyle[role] || ''; }
       if (typeof initApp === 'function') initApp();
     }
 
     function checkSession() {
-      const user = _userPool.getCurrentUser();
-      if (!user) { showLogin(); return; }
-      user.getSession((err, session) => {
-        if (err || !session || !session.isValid()) { showLogin(); return; }
-        _cognitoUser = user;
-        showApp(session);
-      });
+      const email = sessionStorage.getItem('lisa_email');
+      const role  = sessionStorage.getItem('lisa_role');
+      if (email && role && DEMO_ACCOUNTS[email]) {
+        showApp(email, role);
+      } else {
+        showLogin();
+      }
     }
 
     function handleLogin() {
-      const email    = document.getElementById('login-email').value.trim();
+      const email    = document.getElementById('login-email').value.trim().toLowerCase();
       const password = document.getElementById('login-password').value;
       const errEl    = document.getElementById('login-error');
       errEl.style.display = 'none';
-      document.getElementById('login-btn').textContent = 'Signing in…';
 
-      const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({ Username: email, Password: password });
-      const cognitoUser = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: _userPool });
-      _cognitoUser = cognitoUser;
-
-      cognitoUser.authenticateUser(authDetails, {
-        onSuccess(session) {
-          document.getElementById('login-btn').textContent = 'Sign In';
-          showApp(session);
-        },
-        onFailure(err) {
-          document.getElementById('login-btn').textContent = 'Sign In';
-          errEl.textContent   = err.message || 'Login failed';
-          errEl.style.display = 'block';
-        },
-        newPasswordRequired() {
-          document.getElementById('login-btn').textContent = 'Sign In';
-          document.getElementById('new-password-section').style.display = 'flex';
-        },
-      });
-    }
-
-    function handleNewPassword() {
-      const newPw = document.getElementById('new-password').value;
-      _cognitoUser.completeNewPasswordChallenge(newPw, {}, {
-        onSuccess(session) { showApp(session); },
-        onFailure(err) {
-          document.getElementById('login-error').textContent   = err.message;
-          document.getElementById('login-error').style.display = 'block';
-        },
-      });
+      const account = DEMO_ACCOUNTS[email];
+      if (!account || account.password !== password) {
+        errEl.textContent   = 'Invalid email or password.';
+        errEl.style.display = 'block';
+        return;
+      }
+      showApp(email, account.role);
     }
 
     function handleLogout() {
-      if (_cognitoUser) _cognitoUser.signOut();
+      sessionStorage.removeItem('lisa_email');
+      sessionStorage.removeItem('lisa_role');
+      _currentRole = null;
       showLogin();
     }
 
-    window.addEventListener('DOMContentLoaded', checkSession);
+    // Allow pressing Enter in password field to submit
+    document.addEventListener('DOMContentLoaded', () => {
+      checkSession();
+      const pwInput = document.getElementById('login-password');
+      if (pwInput) pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    });
+
+    // ── MOCK DATA (demo mode — swap fetch() for real API when AWS is live) ───
+    const _mockDB = {
+      shipments: [
+        { shipmentId: 'SHIP-001', status: 'IN_TRANSIT', riskLevel: 'LOW',
+          temperature: 4.2, humidity: 65, gForce: 0.1, lockStatus: 'LOCKED',
+          deviceStatus: 'ONLINE', latitude: '1.3521', longitude: '103.8198',
+          lastUpdatedAt: '2025-06-05T07:00:00Z' },
+        { shipmentId: 'SHIP-002', status: 'ALERT', riskLevel: 'CRITICAL',
+          temperature: 11.2, humidity: 70, gForce: 0.3, lockStatus: 'LOCKED',
+          deviceStatus: 'ONLINE', latitude: '1.3000', longitude: '103.8500',
+          lastUpdatedAt: '2025-06-05T08:05:00Z' },
+        { shipmentId: 'SHIP-003', status: 'IN_TRANSIT', riskLevel: 'LOW',
+          temperature: 3.8, humidity: 62, gForce: 0.0, lockStatus: 'LOCKED',
+          deviceStatus: 'ONLINE', latitude: '1.3200', longitude: '103.7800',
+          lastUpdatedAt: '2025-06-05T07:30:00Z' },
+      ],
+      alerts: [
+        { alertId: 'ALERT-001', shipmentId: 'SHIP-002', alertType: 'TEMP_HIGH',
+          severity: 'CRITICAL', message: 'Temperature exceeded threshold: 11.2°C (limit: 8°C)',
+          resolved: false, resolvedBy: null,
+          createdAt: '2025-06-05T08:00:00Z', resolvedAt: null },
+      ],
+      lastDiscordAlert: null,
+      lastDiscordCmd: null,
+    };
+
+    function mockGetShipments() { return _mockDB.shipments; }
+    function mockGetShipment(id) { return _mockDB.shipments.find(s => s.shipmentId === id) || null; }
+    function mockGetAlerts() { return _mockDB.alerts; }
+
+    function mockResolveAlert(alertId, resolvedBy) {
+      const alert = _mockDB.alerts.find(a => a.alertId === alertId);
+      if (!alert) return;
+      alert.resolved   = true;
+      alert.resolvedBy = resolvedBy;
+      alert.resolvedAt = new Date().toISOString();
+      const hasMore = _mockDB.alerts.some(a => a.shipmentId === alert.shipmentId && !a.resolved);
+      if (!hasMore) {
+        const ship = _mockDB.shipments.find(s => s.shipmentId === alert.shipmentId);
+        if (ship) { ship.riskLevel = 'LOW'; ship.status = 'IN_TRANSIT'; ship.lastUpdatedAt = new Date().toISOString(); }
+      }
+    }
+
+    function mockTriggerAlert(shipmentId, alertType, severity, temperature) {
+      const alertId = 'ALERT-' + Date.now();
+      _mockDB.alerts.push({
+        alertId, shipmentId, alertType, severity,
+        message: alertType + ' on ' + shipmentId + (temperature ? ': ' + temperature + '°C' : ''),
+        resolved: false, resolvedBy: null,
+        createdAt: new Date().toISOString(), resolvedAt: null,
+      });
+      const ship = _mockDB.shipments.find(s => s.shipmentId === shipmentId);
+      if (ship) {
+        ship.riskLevel = severity;
+        ship.status = 'ALERT';
+        ship.lastUpdatedAt = new Date().toISOString();
+        if (temperature !== undefined) ship.temperature = parseFloat(temperature);
+      }
+      _mockDB.lastDiscordAlert = new Date().toLocaleTimeString();
+      return alertId;
+    }
+
+    function mockSetLock(shipmentId, lockStatus) {
+      const ship = _mockDB.shipments.find(s => s.shipmentId === shipmentId);
+      if (ship) { ship.lockStatus = lockStatus; ship.lastUpdatedAt = new Date().toISOString(); }
+    }
 
     // ── ROUTING ──────────────────────────────────────────────────────────────
     function navigate(page) {
@@ -1392,22 +1445,12 @@
       });
     }
 
-    let _pollInterval = null;
-
     function initApp() {
       const hash = location.hash.replace('#', '') || 'dashboard';
       navigate(hash);
-      startPolling();
-    }
-
-    function startPolling() {
-      clearInterval(_pollInterval);
-      if (typeof loadDashboard === 'function') loadDashboard();
-      if (typeof loadAlerts === 'function') loadAlerts();
-      _pollInterval = setInterval(() => {
-        if (typeof loadDashboard === 'function') loadDashboard();
-        if (typeof loadAlerts === 'function') loadAlerts();
-      }, 30000);
+      // Demo mode: load once on login, no polling (no live API)
+      loadDashboard();
+      loadAlerts();
     }
 
     window.addEventListener('hashchange', () => {
@@ -1416,11 +1459,9 @@
     });
 
     // ── DASHBOARD ─────────────────────────────────────────────────────────────
-    async function loadDashboard() {
-      const [shipments, alerts] = await Promise.all([
-        fetch(API_BASE + '/shipments').then(r => r.json()).catch(() => []),
-        fetch(API_BASE + '/alerts?resolved=false').then(r => r.json()).catch(() => []),
-      ]);
+    function loadDashboard() {
+      const shipments = mockGetShipments();
+      const alerts    = mockGetAlerts().filter(a => !a.resolved);
 
       document.getElementById('stat-shipments').textContent = shipments.length;
       document.getElementById('stat-alerts').textContent    = alerts.length;
@@ -1446,43 +1487,46 @@
       const riskColor = { LOW: 'var(--green)', HIGH: 'var(--amber)', CRITICAL: 'var(--red)' };
       const tbody = document.getElementById('shipment-table-body');
       if (tbody) {
-        tbody.innerHTML = shipments.length === 0
-          ? '<tr><td colspan="6" style="color:var(--muted);padding:12px 0;">No shipments</td></tr>'
-          : shipments.map(s =>
-              '<tr style="border-bottom:1px solid var(--border-soft);">' +
-                '<td style="padding:10px 0;font-weight:600;">' + s.shipmentId + '</td>' +
-                '<td style="padding:10px 0;">' + s.status + '</td>' +
-                '<td style="padding:10px 0;color:' + (riskColor[s.riskLevel] || 'var(--muted)') + ';font-weight:700;">' + s.riskLevel + '</td>' +
-                '<td style="padding:10px 0;">' + s.temperature + '</td>' +
-                '<td style="padding:10px 0;">' + s.lockStatus + '</td>' +
-                '<td style="padding:10px 0;">' +
-                  '<button onclick="navigate(\'shipment-' + s.shipmentId + '\')" ' +
-                    'style="background:var(--blue-soft);color:var(--blue);border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;">View</button>' +
-                '</td>' +
-              '</tr>'
-            ).join('');
+        tbody.innerHTML = shipments.map(s =>
+          '<tr style="border-bottom:1px solid var(--border-soft);">' +
+            '<td style="padding:10px 0;font-weight:600;">' + s.shipmentId + '</td>' +
+            '<td style="padding:10px 0;">' + s.status + '</td>' +
+            '<td style="padding:10px 0;color:' + (riskColor[s.riskLevel] || 'var(--muted)') + ';font-weight:700;">' + s.riskLevel + '</td>' +
+            '<td style="padding:10px 0;">' + s.temperature + '</td>' +
+            '<td style="padding:10px 0;">' + s.lockStatus + '</td>' +
+            '<td style="padding:10px 0;">' +
+              '<button onclick="navigate(\'shipment-' + s.shipmentId + '\')" ' +
+                'style="background:var(--blue-soft);color:var(--blue);border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;">View</button>' +
+            '</td>' +
+          '</tr>'
+        ).join('');
       }
 
-      const discordDot  = document.getElementById('discord-dot');
-      const discordText = document.getElementById('discord-status-text');
-      if (discordDot)  discordDot.style.background  = 'var(--amber)';
-      if (discordText) discordText.textContent       = 'Webhook active (set DISCORD_WEBHOOK_URL env var)';
+      // Discord status — green in demo mode
+      const dot  = document.getElementById('discord-dot');
+      const text = document.getElementById('discord-status-text');
+      if (dot)  dot.style.background = 'var(--green)';
+      if (text) { text.style.color = 'var(--green)'; text.textContent = 'Webhook active'; }
+      const lastAlertEl = document.getElementById('discord-last-alert');
+      const lastCmdEl   = document.getElementById('discord-last-cmd');
+      if (lastAlertEl) lastAlertEl.textContent = _mockDB.lastDiscordAlert || '–';
+      if (lastCmdEl)   lastCmdEl.textContent   = _mockDB.lastDiscordCmd   || '–';
     }
 
     // ── ALERT CENTER ─────────────────────────────────────────────────────────
     let _allAlerts   = [];
     let _alertFilter = 'all';
 
-    async function loadAlerts() {
-      _allAlerts = await fetch(API_BASE + '/alerts').then(r => r.json()).catch(() => []);
+    function loadAlerts() {
+      _allAlerts = mockGetAlerts();
       renderAlerts();
     }
 
     function filterAlerts(f) {
       _alertFilter = f;
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      const filterBtn = document.getElementById('filter-' + f);
-      if (filterBtn) filterBtn.classList.add('active');
+      const btn = document.getElementById('filter-' + f);
+      if (btn) btn.classList.add('active');
       renderAlerts();
     }
 
@@ -1512,7 +1556,7 @@
           '</td>' +
           '<td style="padding:12px 16px;color:var(--muted);font-size:12px;">' + new Date(a.createdAt).toLocaleString() + '</td>' +
           '<td style="padding:12px 16px;">' +
-            (!a.resolved
+            (!a.resolved && _currentRole === 'ADMIN'
               ? '<button onclick="resolveAlertUI(\'' + a.alertId + '\')" ' +
                   'style="background:var(--green-soft);color:var(--green);border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;">Resolve</button>'
               : '') +
@@ -1521,47 +1565,40 @@
       ).join('');
     }
 
-    async function resolveAlertUI(alertId) {
+    function resolveAlertUI(alertId) {
       if (!confirm('Resolve alert ' + alertId + '?')) return;
       const userLabel = document.getElementById('nav-user-label');
-      const resolvedBy = userLabel ? userLabel.textContent : 'web-user';
-      await fetch(API_BASE + '/alerts/' + alertId + '/resolve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resolvedBy: resolvedBy }),
-      });
-      await loadAlerts();
-      if (typeof loadDashboard === 'function') loadDashboard();
+      mockResolveAlert(alertId, userLabel ? userLabel.textContent : 'web-user');
+      loadAlerts();
+      loadDashboard();
     }
 
     // ── SHIPMENT DETAIL ───────────────────────────────────────────────────────
-    async function loadShipmentDetail(sid) {
+    function loadShipmentDetail(sid) {
       const el = document.getElementById('shipment-detail-content');
       if (!el) return;
-      el.innerHTML = '<div style="color:var(--muted);">Loading…</div>';
 
-      const [shipment, alerts] = await Promise.all([
-        fetch(API_BASE + '/shipments/' + sid).then(r => r.json()).catch(() => null),
-        fetch(API_BASE + '/alerts?resolved=false').then(r => r.json()).catch(() => []),
-      ]);
+      const shipment    = mockGetShipment(sid);
+      const activeAlerts = mockGetAlerts().filter(a => a.shipmentId === sid && !a.resolved);
+      const latestAlert  = activeAlerts[0] || null;
 
-      if (!shipment || shipment.error) {
+      if (!shipment) {
         el.innerHTML = '<div style="color:var(--red);">Shipment not found.</div>';
         return;
       }
 
-      const latestAlert = alerts.find(a => a.shipmentId === sid);
       const rc = { LOW: 'var(--green)', HIGH: 'var(--amber)', CRITICAL: 'var(--red)' };
+      const isAdmin = _currentRole === 'ADMIN';
 
       const fields = [
-        ['Temperature', (shipment.temperature !== undefined ? shipment.temperature + ' °C' : 'N/A')],
-        ['Humidity',    (shipment.humidity    !== undefined ? shipment.humidity    + ' %'  : 'N/A')],
-        ['G-Force',     (shipment.gForce      !== undefined ? shipment.gForce              : 'N/A')],
-        ['Lock Status', shipment.lockStatus   || 'N/A'],
-        ['Device',      shipment.deviceStatus || 'N/A'],
-        ['Latitude',    shipment.latitude     || 'N/A'],
-        ['Longitude',   shipment.longitude    || 'N/A'],
-        ['Updated',     shipment.lastUpdatedAt ? new Date(shipment.lastUpdatedAt).toLocaleString() : 'N/A'],
+        ['Temperature', shipment.temperature + ' °C'],
+        ['Humidity',    shipment.humidity    + ' %'],
+        ['G-Force',     shipment.gForce],
+        ['Lock Status', shipment.lockStatus],
+        ['Device',      shipment.deviceStatus],
+        ['Latitude',    shipment.latitude],
+        ['Longitude',   shipment.longitude],
+        ['Updated',     new Date(shipment.lastUpdatedAt).toLocaleString()],
       ];
 
       el.innerHTML =
@@ -1569,88 +1606,96 @@
           '<div style="flex:1;min-width:280px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">' +
             '<div style="font-size:18px;font-weight:900;margin-bottom:4px;">' + shipment.shipmentId + '</div>' +
             '<div style="color:' + (rc[shipment.riskLevel] || 'var(--muted)') + ';font-weight:700;font-size:13px;margin-bottom:20px;">' +
-              (shipment.riskLevel || 'N/A') + ' RISK · ' + (shipment.status || 'N/A') +
+              shipment.riskLevel + ' RISK · ' + shipment.status +
             '</div>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">' +
-              fields.map(function(f) {
-                return '<div>' +
+              fields.map(f =>
+                '<div>' +
                   '<div style="color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;">' + f[0] + '</div>' +
                   '<div style="font-weight:600;margin-top:2px;">' + f[1] + '</div>' +
-                '</div>';
-              }).join('') +
+                '</div>'
+              ).join('') +
             '</div>' +
           '</div>' +
 
           '<div style="display:flex;flex-direction:column;gap:12px;min-width:220px;">' +
-            '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">' +
-              '<div style="font-weight:700;margin-bottom:14px;">Admin Controls</div>' +
-              '<div style="display:flex;flex-direction:column;gap:8px;">' +
-                '<button onclick="triggerTempAlert(\'' + sid + '\')" ' +
-                  'style="background:var(--red-soft);color:var(--red);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
-                  '🌡 Trigger Temp Alert' +
-                '</button>' +
-                '<button onclick="triggerCollisionAlert(\'' + sid + '\')" ' +
-                  'style="background:var(--amber-soft);color:var(--amber);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
-                  '💥 Trigger Collision Alert' +
-                '</button>' +
-                (latestAlert
-                  ? '<button onclick="resolveAlertUI(\'' + latestAlert.alertId + '\')" ' +
+
+            (isAdmin ?
+              '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">' +
+                '<div style="font-weight:700;margin-bottom:14px;">Admin Controls</div>' +
+                '<div style="display:flex;flex-direction:column;gap:8px;">' +
+                  '<button onclick="triggerTempAlert(\'' + sid + '\')" ' +
+                    'style="background:var(--red-soft);color:var(--red);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                    '🌡 Trigger Temp Alert</button>' +
+                  '<button onclick="triggerCollisionAlert(\'' + sid + '\')" ' +
+                    'style="background:var(--amber-soft);color:var(--amber);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                    '💥 Trigger Collision Alert</button>' +
+                  (latestAlert ?
+                    '<button onclick="resolveAlertUI(\'' + latestAlert.alertId + '\')" ' +
                       'style="background:var(--green-soft);color:var(--green);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
-                      '✅ Resolve Alert' +
-                    '</button>'
-                  : '') +
-                '<button onclick="setLock(\'' + sid + '\',\'LOCKED\')" ' +
-                  'style="background:var(--blue-soft);color:var(--blue);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
-                  '🔒 Lock' +
-                '</button>' +
-                '<button onclick="setLock(\'' + sid + '\',\'UNLOCKED\')" ' +
-                  'style="background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
-                  '🔓 Unlock' +
-                '</button>' +
-              '</div>' +
-            '</div>' +
+                      '✅ Resolve Alert</button>' : '') +
+                  '<button onclick="setLock(\'' + sid + '\',\'LOCKED\')" ' +
+                    'style="background:var(--blue-soft);color:var(--blue);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                    '🔒 Lock</button>' +
+                  '<button onclick="setLock(\'' + sid + '\',\'UNLOCKED\')" ' +
+                    'style="background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;">' +
+                    '🔓 Unlock</button>' +
+                '</div>' +
+              '</div>'
+            : '') +
 
             '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">' +
               '<div style="font-weight:700;margin-bottom:10px;">Latest Alert</div>' +
               (latestAlert
                 ? '<div style="font-size:13px;">' +
                     '<div style="font-weight:600;color:var(--red);">' + latestAlert.alertType + '</div>' +
-                    '<div style="color:var(--muted);margin-top:4px;">' + (latestAlert.message || '') + '</div>' +
+                    '<div style="color:var(--muted);margin-top:4px;">' + latestAlert.message + '</div>' +
                     '<div style="color:var(--muted);font-size:12px;margin-top:6px;">' + new Date(latestAlert.createdAt).toLocaleString() + '</div>' +
                   '</div>'
                 : '<div style="color:var(--muted);font-size:13px;">No active alerts ✅</div>') +
             '</div>' +
+
           '</div>' +
         '</div>';
     }
 
-    async function triggerTempAlert(sid) {
+    function triggerTempAlert(sid) {
       const temp = prompt('Simulated temperature (°C):', '12.0');
       if (!temp) return;
-      await fetch(API_BASE + '/demo/trigger-alert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shipmentId: sid, alertType: 'TEMP_HIGH', severity: 'CRITICAL', temperature: temp }),
-      });
+      mockTriggerAlert(sid, 'TEMP_HIGH', 'CRITICAL', temp);
       loadShipmentDetail(sid);
+      loadDashboard();
+      loadAlerts();
     }
 
-    async function triggerCollisionAlert(sid) {
-      await fetch(API_BASE + '/demo/trigger-alert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shipmentId: sid, alertType: 'COLLISION', severity: 'HIGH' }),
-      });
+    function triggerCollisionAlert(sid) {
+      mockTriggerAlert(sid, 'COLLISION', 'HIGH');
       loadShipmentDetail(sid);
+      loadDashboard();
+      loadAlerts();
     }
 
-    async function setLock(sid, lockStatus) {
-      await fetch(API_BASE + '/demo/trigger-alert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shipmentId: sid, alertType: 'LOCK_UPDATE', lockStatus: lockStatus }),
-      });
+    function setLock(sid, lockStatus) {
+      mockSetLock(sid, lockStatus);
       loadShipmentDetail(sid);
+      loadDashboard();
+    }
+
+    function simulateDiscordMessage() {
+      const critical = mockGetAlerts().filter(a => !a.resolved && a.severity === 'CRITICAL');
+      const alert = critical[0] || { alertId: 'ALERT-DEMO', shipmentId: 'SHIP-002', alertType: 'TEMP_HIGH', severity: 'CRITICAL' };
+      const preview = document.getElementById('discord-preview');
+      preview.style.display = 'block';
+      preview.innerHTML =
+        '<div style="color:#b9bbbe;font-size:11px;margin-bottom:6px;">LISA Bot • Today at ' + new Date().toLocaleTimeString() + '</div>' +
+        '<div>🚨 <strong style="color:#fff;">CRITICAL ALERT</strong></div>' +
+        '<div>Shipment: <strong style="color:#fff;">' + alert.shipmentId + '</strong></div>' +
+        '<div>Type: <strong style="color:#fff;">' + alert.alertType + '</strong></div>' +
+        '<div>Severity: <strong style="color:#f04747;">' + alert.severity + '</strong></div>' +
+        '<div style="margin-top:6px;color:#72767d;">Use <code style="background:#2f3136;padding:1px 4px;border-radius:3px;">/status ' + alert.shipmentId + '</code> or <code style="background:#2f3136;padding:1px 4px;border-radius:3px;">/resolve ' + alert.alertId + '</code> to respond.</div>';
+      _mockDB.lastDiscordAlert = new Date().toLocaleTimeString();
+      const lastEl = document.getElementById('discord-last-alert');
+      if (lastEl) lastEl.textContent = _mockDB.lastDiscordAlert;
     }
     </script>
   </body>
