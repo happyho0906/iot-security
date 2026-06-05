@@ -10,15 +10,15 @@ def seed():
 
     for item in [
         {'shipmentId': 'SHIP-001', 'status': 'IN_TRANSIT', 'riskLevel': 'LOW',
-         'temperature': '4.2', 'humidity': '65', 'gForce': '0.1',
+         'temperature': 4.2, 'humidity': 65, 'gForce': 0.1,
          'lockStatus': 'LOCKED', 'deviceStatus': 'ONLINE',
          'latitude': '1.3521', 'longitude': '103.8198', 'lastUpdatedAt': now},
         {'shipmentId': 'SHIP-002', 'status': 'ALERT', 'riskLevel': 'CRITICAL',
-         'temperature': '11.2', 'humidity': '70', 'gForce': '0.3',
+         'temperature': 11.2, 'humidity': 70, 'gForce': 0.3,
          'lockStatus': 'LOCKED', 'deviceStatus': 'ONLINE',
          'latitude': '1.3000', 'longitude': '103.8500', 'lastUpdatedAt': now},
         {'shipmentId': 'SHIP-003', 'status': 'IN_TRANSIT', 'riskLevel': 'LOW',
-         'temperature': '3.8', 'humidity': '62', 'gForce': '0.0',
+         'temperature': 3.8, 'humidity': 62, 'gForce': 0.0,
          'lockStatus': 'LOCKED', 'deviceStatus': 'ONLINE',
          'latitude': '1.3200', 'longitude': '103.7800', 'lastUpdatedAt': now},
     ]:
