@@ -1447,6 +1447,9 @@
         document.getElementById("new-password-section").style.display = "none";
         document.getElementById("verify-section").style.display = "none";
         document.getElementById("btn-signup").style.display = "block";
+        if (_resendTimer) { clearInterval(_resendTimer); _resendTimer = null; }
+        const _rb = document.getElementById("btn-resend");
+        if (_rb) { _rb.disabled = false; _rb.textContent = "Resend code"; }
       }
 
       function showApp(email, role) {
@@ -1561,8 +1564,11 @@
         handleLogin();
       }
 
+      let _resendTimer = null;
+
       function handleResendCode() {
         if (!_cognitoUser) { _showErr("No account to resend to. Please sign up again."); return; }
+        if (_resendTimer) { clearInterval(_resendTimer); _resendTimer = null; }
         const btn = document.getElementById("btn-resend");
         btn.disabled = true;
         _cognitoUser.resendConfirmationCode((err) => {
@@ -1570,10 +1576,10 @@
           _showOk("Verification code resent. Check your email.");
           let secs = 30;
           btn.textContent = "Resend in " + secs + "s…";
-          const t = setInterval(() => {
+          _resendTimer = setInterval(() => {
             secs--;
             if (secs <= 0) {
-              clearInterval(t);
+              clearInterval(_resendTimer); _resendTimer = null;
               btn.disabled = false;
               btn.textContent = "Resend code";
             } else {
