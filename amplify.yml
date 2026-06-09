@@ -1,6 +1,11 @@
 version: 1
 frontend:
   phases:
+    preBuild:
+      commands:
+        - test -n "$COGNITO_USER_POOL_ID" || (echo "Missing COGNITO_USER_POOL_ID" && exit 1)
+        - test -n "$COGNITO_CLIENT_ID" || (echo "Missing COGNITO_CLIENT_ID" && exit 1)
+        - test -n "$DISCORD_WEBHOOK_URL" || (echo "Missing DISCORD_WEBHOOK_URL" && exit 1)
     build:
       commands:
         - >
