@@ -1081,6 +1081,13 @@
             <button class="btn btn-primary btn-full" id="btn-verify" onclick="handleVerifyEmail()">
               Verify &amp; Sign In
             </button>
+            <div style="margin-top:10px; text-align:center; font-size:13px; color:var(--muted);">
+              Didn't receive it?
+              <button id="btn-resend" onclick="handleResendCode()"
+                style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;padding:0;text-decoration:underline;">
+                Resend code
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1552,6 +1559,28 @@
         document.getElementById("login-email").value    = email;
         document.getElementById("login-password").value = password;
         handleLogin();
+      }
+
+      function handleResendCode() {
+        if (!_cognitoUser) { _showErr("No account to resend to. Please sign up again."); return; }
+        const btn = document.getElementById("btn-resend");
+        btn.disabled = true;
+        _cognitoUser.resendConfirmationCode((err) => {
+          if (err) { _showErr(err.message || "Failed to resend code."); btn.disabled = false; return; }
+          _showOk("Verification code resent. Check your email.");
+          let secs = 30;
+          btn.textContent = "Resend in " + secs + "s…";
+          const t = setInterval(() => {
+            secs--;
+            if (secs <= 0) {
+              clearInterval(t);
+              btn.disabled = false;
+              btn.textContent = "Resend code";
+            } else {
+              btn.textContent = "Resend in " + secs + "s…";
+            }
+          }, 1000);
+        });
       }
 
       function _validatePassword(pw) {
