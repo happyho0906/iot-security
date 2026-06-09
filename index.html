@@ -129,6 +129,12 @@
         font-weight: 700;
         letter-spacing: -0.02em;
       }
+      .login-sub {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--muted);
+        margin-top: 2px;
+      }
       .login-desc {
         font-size: 12px;
         color: var(--muted);
@@ -917,9 +923,9 @@
   <body>
     <script>
       const DEMO_ACCOUNTS = {
-        "admin@lisa.demo":    { password: "admin123",    role: "ADMIN" },
-        "driver@lisa.demo":   { password: "driver123",   role: "DRIVER" },
-        "customer@lisa.demo": { password: "customer123", role: "CUSTOMER" },
+        "admin@lisa.demo":    { password: "Admin123_",    role: "ADMIN" },
+        "driver@lisa.demo":   { password: "Driver123_",   role: "DRIVER" },
+        "customer@lisa.demo": { password: "Customer123_", role: "CUSTOMER" },
       };
 
       // Read from config.local.js (gitignored)
@@ -944,6 +950,7 @@
         <div class="login-header">
           <div class="login-mark">L</div>
           <div class="login-title">LISA</div>
+          <div class="login-sub">Logistics Intelligence Sentinel Assistant</div>
         </div>
 
         <!-- Sign In / Sign Up tabs -->
@@ -1003,9 +1010,9 @@
 
           <div class="login-divider"><span>Demo accounts</span></div>
           <div class="demo-grid">
-            <button class="demo-btn" onclick="signInAs('admin@lisa.demo', 'admin123')">Admin</button>
-            <button class="demo-btn" onclick="signInAs('driver@lisa.demo', 'driver123')">Driver</button>
-            <button class="demo-btn" onclick="signInAs('customer@lisa.demo', 'customer123')">Customer</button>
+            <button class="demo-btn" onclick="signInAs('admin@lisa.demo', 'Admin123_')">Admin</button>
+            <button class="demo-btn" onclick="signInAs('driver@lisa.demo', 'Driver123_')">Driver</button>
+            <button class="demo-btn" onclick="signInAs('customer@lisa.demo', 'Customer123_')">Customer</button>
           </div>
         </div>
 
