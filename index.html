@@ -1012,6 +1012,14 @@
         <!-- Sign Up form -->
         <div id="form-signup" style="display:none;">
           <div class="form-group">
+            <label class="form-label">Role</label>
+            <select id="signup-role" class="form-input">
+              <option value="CUSTOMER">Customer</option>
+              <option value="DRIVER">Driver</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label class="form-label">Email</label>
             <input
               id="signup-email"
@@ -1590,8 +1598,10 @@
         if (_pwErr) { _showErr(_pwErr); return; }
 
         _setLoading("btn-signup", true, "Create Account");
+        const role = document.getElementById("signup-role").value;
         const attrList = [
-          new AmazonCognitoIdentity.CognitoUserAttribute({ Name: "email", Value: email }),
+          new AmazonCognitoIdentity.CognitoUserAttribute({ Name: "email",       Value: email }),
+          new AmazonCognitoIdentity.CognitoUserAttribute({ Name: "custom:role", Value: role  }),
         ];
         _userPool.signUp(email, password, attrList, null, (err, result) => {
           _setLoading("btn-signup", false, "Create Account");
