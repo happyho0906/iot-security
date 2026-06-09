@@ -915,6 +915,11 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
       }
+      .pw-requirements { margin: 6px 0 12px; display: flex; flex-direction: column; gap: 3px; }
+      .pw-req { font-size: 11px; color: var(--muted); padding-left: 14px; position: relative; }
+      .pw-req::before { content: '·'; position: absolute; left: 0; }
+      .pw-req.met { color: var(--green); }
+      .pw-req.met::before { content: '✓'; }
     </style>
   </head>
   <body>
@@ -1036,6 +1041,12 @@
               placeholder="Min. 8 characters"
               autocomplete="new-password"
             />
+          </div>
+          <div class="pw-requirements" id="pw-requirements">
+            <div class="pw-req" id="req-length">At least 8 characters</div>
+            <div class="pw-req" id="req-upper">At least 1 uppercase letter</div>
+            <div class="pw-req" id="req-number">At least 1 number</div>
+            <div class="pw-req" id="req-symbol">At least 1 symbol character</div>
           </div>
           <div class="form-group" style="margin-bottom: 16px">
             <label class="form-label">Confirm Password</label>
@@ -1543,6 +1554,14 @@
         handleLogin();
       }
 
+      function _validatePassword(pw) {
+        if (pw.length < 8)             return "Password must be at least 8 characters.";
+        if (!/[A-Z]/.test(pw))         return "Password must contain at least 1 uppercase letter.";
+        if (!/[0-9]/.test(pw))         return "Password must contain at least 1 number.";
+        if (!/[^A-Za-z0-9]/.test(pw))  return "Password must contain at least 1 symbol character.";
+        return null;
+      }
+
       // ── Sign Up ──────────────────────────────────────────────────────────────
 
       function handleSignUp() {
@@ -1557,7 +1576,8 @@
 
         if (!email || !password) { _showErr("Email and password are required."); return; }
         if (password !== confirm) { _showErr("Passwords do not match.");          return; }
-        if (password.length < 8) { _showErr("Password must be at least 8 characters."); return; }
+        const _pwErr = _validatePassword(password);
+        if (_pwErr) { _showErr(_pwErr); return; }
 
         _setLoading("btn-signup", true, "Create Account");
         const attrList = [
@@ -1635,6 +1655,13 @@
         });
         document.getElementById("signup-confirm").addEventListener("keydown", (e) => {
           if (e.key === "Enter") handleSignUp();
+        });
+        document.getElementById("signup-password").addEventListener("input", function () {
+          const pw = this.value;
+          document.getElementById("req-length").classList.toggle("met", pw.length >= 8);
+          document.getElementById("req-upper").classList.toggle("met", /[A-Z]/.test(pw));
+          document.getElementById("req-number").classList.toggle("met", /[0-9]/.test(pw));
+          document.getElementById("req-symbol").classList.toggle("met", /[^A-Za-z0-9]/.test(pw));
         });
         document.getElementById("verify-code").addEventListener("keydown", (e) => {
           if (e.key === "Enter") handleVerifyEmail();
