@@ -1845,6 +1845,35 @@
           _leafletMap.fitBounds(bounds, { padding: [50, 50] });
         }
       }
+
+      async function startNfcScan() {
+  if (!("NDEFReader" in window)) {
+    alert("您的裝置或瀏覽器不支援 Web NFC（請確認使用 Android Chrome）。");
+    return;
+  }
+
+  try {
+    const ndef = new NDEFReader();
+    await ndef.scan();
+    alert("請將 NFC 卡片/磁扣靠近手機背面...");
+
+    ndef.onreading = async (event) => {
+      // 取得 NFC 標籤的唯一序號 (UID)
+      const tagId = event.serialNumber; 
+      
+      // 呼叫您剛剛建立的 API，將 tagId 存入資料庫
+      await fetch(API_BASE + '/nfc/whitelist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagId: tagId, action: 'add' })
+      });
+      
+      alert(`成功將標籤 ${tagId} 加入白名單！`);
+    };
+  } catch (error) {
+    console.error("NFC 掃描失敗:", error);
+  }
+}
     </script>
   </body>
 </html>
