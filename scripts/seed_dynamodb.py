@@ -52,7 +52,17 @@ def seed():
     ]:
         users.put_item(Item=u)
 
-    print('Seed complete: 3 shipments, 1 alert, 3 users')
+    # Seed NFCWhitelist table
+    nfc = dynamodb.Table('NFCWhitelist')
+    for entry in [
+        {'tagId': '04:AB:12:CD:34:EF:00', 'label': 'Driver Device A',
+         'addedBy': 'admin@lisa.demo', 'addedAt': now, 'active': True},
+        {'tagId': '04:CD:56:EF:78:01:02', 'label': 'Warehouse Scanner',
+         'addedBy': 'admin@lisa.demo', 'addedAt': now, 'active': True},
+    ]:
+        nfc.put_item(Item=entry)
+
+    print('Seed complete: 3 shipments, 1 alert, 3 users, 2 NFC whitelist entries')
 
 if __name__ == '__main__':
     seed()
