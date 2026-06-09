@@ -1,0 +1,16 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        - >
+          printf 'window.LISA_CONFIG = {\n  COGNITO_USER_POOL_ID: "%s",\n  COGNITO_CLIENT_ID: "%s",\n  DISCORD_WEBHOOK_URL: "%s",\n};\n'
+          "$COGNITO_USER_POOL_ID" "$COGNITO_CLIENT_ID" "$DISCORD_WEBHOOK_URL"
+          > config.local.js
+  artifacts:
+    baseDirectory: .
+    files:
+      - index.html
+      - config.local.js
+  cache:
+    paths: []
