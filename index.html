@@ -909,11 +909,9 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
       }
-      .pw-requirements { margin: 6px 0 12px; display: flex; flex-direction: column; gap: 3px; }
-      .pw-req { font-size: 11px; color: var(--muted); padding-left: 14px; position: relative; }
-      .pw-req::before { content: '·'; position: absolute; left: 0; }
-      .pw-req.met { color: var(--green); }
-      .pw-req.met::before { content: '✓'; }
+      .pw-requirements { margin: 4px 0 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+      .pw-req { font-size: 10px; color: var(--muted); padding: 2px 7px; border-radius: 20px; border: 1px solid var(--border); }
+      .pw-req.met { color: var(--green); border-color: var(--green); background: var(--green-soft); }
     </style>
   </head>
   <body>
@@ -1034,10 +1032,10 @@
             />
           </div>
           <div class="pw-requirements" id="pw-requirements">
-            <div class="pw-req" id="req-length">At least 8 characters</div>
-            <div class="pw-req" id="req-upper">At least 1 uppercase letter</div>
-            <div class="pw-req" id="req-number">At least 1 number</div>
-            <div class="pw-req" id="req-symbol">At least 1 symbol character</div>
+            <div class="pw-req" id="req-length">8+ chars</div>
+            <div class="pw-req" id="req-upper">Uppercase</div>
+            <div class="pw-req" id="req-number">Number</div>
+            <div class="pw-req" id="req-symbol">Symbol</div>
           </div>
           <div class="form-group" style="margin-bottom: 16px">
             <label class="form-label">Confirm Password</label>
