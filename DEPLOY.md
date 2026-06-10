@@ -7,6 +7,19 @@
 
 ---
 
+## Note: AWS Amplify only deploys the frontend
+
+This repo is connected to **AWS Amplify Hosting** (see `amplify.yml`). On every
+push to a connected branch, Amplify builds and deploys `index.html` +
+`config.local.js` (generated from the `COGNITO_USER_POOL_ID`,
+`COGNITO_CLIENT_ID`, `DISCORD_WEBHOOK_URL` environment variables set in the
+Amplify Console). **Amplify does not create or manage DynamoDB tables, Lambda
+functions, or API Gateway routes** — those are separate AWS resources, deployed
+once via the steps below (or the script in Step 2b), independent of any git
+push/Amplify build.
+
+---
+
 ## Step 1: DynamoDB Tables
 
 Create these tables in AWS Console → DynamoDB → Create table:
@@ -57,6 +70,38 @@ Create these 4 additional functions, also **Runtime: Python 3.12**:
 | lisa-list-nfc-devices | lambda/list-nfc-devices/lambda_function.py | lambda_function.lambda_handler |
 | lisa-update-nfc-whitelist | lambda/update-nfc-whitelist/lambda_function.py | lambda_function.lambda_handler |
 | lisa-check-nfc-device | lambda/check-nfc-device/lambda_function.py | lambda_function.lambda_handler |
+
+### Step 2b (alternative): scripted deploy of the NFC backend
+
+Instead of clicking through the console for the `NFCDevices` table, the 4 NFC
+Lambdas, and their API Gateway routes (Steps 1, 2, and 3 for the NFC pieces),
+you can run `scripts/deploy_nfc_backend.sh`. It is idempotent — safe to re-run
+after editing a Lambda's code.
+
+```bash
+export AWS_REGION=us-east-1
+export API_ID=d1rocl5xb9        # existing REST API, see "API Reference" in README.md
+export STAGE=unlock             # existing deployed stage — do not rename
+export LAMBDA_ROLE_ARN=arn:aws:iam::<account-id>:role/<shared-lambda-role>
+export COGNITO_AUTHORIZER_ID=<id>   # optional — omit if you'll attach it manually later
+
+bash scripts/deploy_nfc_backend.sh
+python scripts/seed_dynamodb.py
+```
+
+Find `LAMBDA_ROLE_ARN` (the role used by `lisa-list-shipments` etc.) and
+`COGNITO_AUTHORIZER_ID` (the authorizer used by `/shipments`) in the Lambda /
+API Gateway consoles, or via:
+
+```bash
+aws lambda get-function-configuration --function-name lisa-list-shipments \
+  --query Role --output text
+aws apigateway get-authorizers --rest-api-id $API_ID --query 'items[*].{id:id,name:name}'
+```
+
+If `LAMBDA_ROLE_ARN` doesn't yet have access to `NFCDevices`, attach the IAM
+policy from ARCHITECTURE.md §6 (includes `NFCDevices` and
+`NFCDevices/index/*`).
 
 ### discord-commands bundle (requires PyNaCl)
 
