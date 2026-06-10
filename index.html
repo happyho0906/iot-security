@@ -69,7 +69,7 @@
         border: 1px solid var(--border);
         border-radius: var(--radius);
         box-shadow: var(--shadow-md);
-        padding: 36px 40px;
+        padding: 24px 28px;
         width: min(390px, calc(100% - 32px));
       }
       .auth-tabs {
@@ -110,30 +110,30 @@
       }
       .login-header {
         text-align: center;
-        margin-bottom: 28px;
+        margin-bottom: 16px;
       }
       .login-mark {
-        width: 46px;
-        height: 46px;
-        border-radius: 10px;
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
         background: var(--blue);
         color: #fff;
-        font-size: 20px;
+        font-size: 16px;
         font-weight: 800;
         display: grid;
         place-items: center;
-        margin: 0 auto 14px;
+        margin: 0 auto 8px;
       }
       .login-title {
-        font-size: 20px;
+        font-size: 16px;
         font-weight: 700;
         letter-spacing: -0.02em;
       }
       .login-sub {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 500;
         color: var(--muted);
-        margin-top: 3px;
+        margin-top: 2px;
       }
       .login-desc {
         font-size: 12px;
@@ -1107,9 +1107,9 @@
   <body>
     <script>
       const DEMO_ACCOUNTS = {
-        "admin@lisa.demo":    { password: "admin123",    role: "ADMIN" },
-        "driver@lisa.demo":   { password: "driver123",   role: "DRIVER" },
-        "customer@lisa.demo": { password: "customer123", role: "CUSTOMER" },
+        "admin@lisa.demo":    { password: "Admin123_",    role: "ADMIN" },
+        "driver@lisa.demo":   { password: "Driver123_",   role: "DRIVER" },
+        "customer@lisa.demo": { password: "Customer123_", role: "CUSTOMER" },
       };
 
       // Read from config.local.js (gitignored)
@@ -1134,9 +1134,7 @@
         <div class="login-header">
           <div class="login-mark">L</div>
           <div class="login-title">LISA</div>
-          <div class="login-sub">
-            Logistics Intelligence &amp; Sentinel Assistant
-          </div>
+          <div class="login-sub">Logistics Intelligence Sentinel Assistant</div>
         </div>
 
         <!-- Sign In / Sign Up tabs -->
@@ -1196,14 +1194,22 @@
 
           <div class="login-divider"><span>Demo accounts</span></div>
           <div class="demo-grid">
-            <button class="demo-btn" onclick="signInAs('admin@lisa.demo', 'admin123')">Admin</button>
-            <button class="demo-btn" onclick="signInAs('driver@lisa.demo', 'driver123')">Driver</button>
-            <button class="demo-btn" onclick="signInAs('customer@lisa.demo', 'customer123')">Customer</button>
+            <button class="demo-btn" onclick="signInAs('admin@lisa.demo', 'Admin123_')">Admin</button>
+            <button class="demo-btn" onclick="signInAs('driver@lisa.demo', 'Driver123_')">Driver</button>
+            <button class="demo-btn" onclick="signInAs('customer@lisa.demo', 'Customer123_')">Customer</button>
           </div>
         </div>
 
         <!-- Sign Up form -->
         <div id="form-signup" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select id="signup-role" class="form-input">
+              <option value="CUSTOMER">Customer</option>
+              <option value="DRIVER">Driver</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
           <div class="form-group">
             <label class="form-label">Email</label>
             <input
@@ -1224,6 +1230,12 @@
               autocomplete="new-password"
             />
           </div>
+          <div class="pw-requirements" id="pw-requirements">
+            <div class="pw-req" id="req-length">8+ chars</div>
+            <div class="pw-req" id="req-upper">Uppercase</div>
+            <div class="pw-req" id="req-number">Number</div>
+            <div class="pw-req" id="req-symbol">Symbol</div>
+          </div>
           <div class="form-group" style="margin-bottom: 16px">
             <label class="form-label">Confirm Password</label>
             <input
@@ -1242,6 +1254,7 @@
           <div id="verify-section" style="display:none; margin-top:14px;">
             <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">
               A verification code was sent to your email address.
+              If you don't see it, check your <strong>Spam / Junk</strong> folder.
             </div>
             <div class="form-group" style="margin-bottom: 12px">
               <label class="form-label">Verification Code</label>
@@ -1257,6 +1270,13 @@
             <button class="btn btn-primary btn-full" id="btn-verify" onclick="handleVerifyEmail()">
               Verify &amp; Sign In
             </button>
+            <div style="margin-top:10px; text-align:center; font-size:13px; color:var(--muted);">
+              Didn't receive it?
+              <button id="btn-resend" onclick="handleResendCode()"
+                style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;padding:0;text-decoration:underline;">
+                Resend code
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1673,6 +1693,8 @@
         document.getElementById("new-password-section").style.display = "none";
         document.getElementById("verify-section").style.display = "none";
         document.getElementById("btn-signup").style.display = "block";
+        const _rb = document.getElementById("btn-resend");
+        if (_rb) { _rb.disabled = false; }
       }
 
       function showApp(email, role) {
@@ -1787,6 +1809,25 @@
         handleLogin();
       }
 
+      function handleResendCode() {
+        if (!_cognitoUser) { _showErr("No account to resend to. Please sign up again."); return; }
+        const btn = document.getElementById("btn-resend");
+        btn.disabled = true;
+        _cognitoUser.resendConfirmationCode((err) => {
+          btn.disabled = false;
+          if (err) { _showErr(err.message || "Failed to resend code."); return; }
+          _showOk("Verification code resent. Check your email.");
+        });
+      }
+
+      function _validatePassword(pw) {
+        if (pw.length < 8)             return "Password must be at least 8 characters.";
+        if (!/[A-Z]/.test(pw))         return "Password must contain at least 1 uppercase letter.";
+        if (!/[0-9]/.test(pw))         return "Password must contain at least 1 number.";
+        if (!/[^A-Za-z0-9]/.test(pw))  return "Password must contain at least 1 symbol character.";
+        return null;
+      }
+
       // ── Sign Up ──────────────────────────────────────────────────────────────
 
       function handleSignUp() {
@@ -1801,11 +1842,14 @@
 
         if (!email || !password) { _showErr("Email and password are required."); return; }
         if (password !== confirm) { _showErr("Passwords do not match.");          return; }
-        if (password.length < 8) { _showErr("Password must be at least 8 characters."); return; }
+        const _pwErr = _validatePassword(password);
+        if (_pwErr) { _showErr(_pwErr); return; }
 
         _setLoading("btn-signup", true, "Create Account");
+        const role = document.getElementById("signup-role").value;
         const attrList = [
-          new AmazonCognitoIdentity.CognitoUserAttribute({ Name: "email", Value: email }),
+          new AmazonCognitoIdentity.CognitoUserAttribute({ Name: "email",       Value: email }),
+          new AmazonCognitoIdentity.CognitoUserAttribute({ Name: "custom:role", Value: role  }),
         ];
         _userPool.signUp(email, password, attrList, null, (err, result) => {
           _setLoading("btn-signup", false, "Create Account");
@@ -1879,6 +1923,13 @@
         });
         document.getElementById("signup-confirm").addEventListener("keydown", (e) => {
           if (e.key === "Enter") handleSignUp();
+        });
+        document.getElementById("signup-password").addEventListener("input", function () {
+          const pw = this.value;
+          document.getElementById("req-length").classList.toggle("met", pw.length >= 8);
+          document.getElementById("req-upper").classList.toggle("met", /[A-Z]/.test(pw));
+          document.getElementById("req-number").classList.toggle("met", /[0-9]/.test(pw));
+          document.getElementById("req-symbol").classList.toggle("met", /[^A-Za-z0-9]/.test(pw));
         });
         document.getElementById("verify-code").addEventListener("keydown", (e) => {
           if (e.key === "Enter") handleVerifyEmail();
