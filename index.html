@@ -736,6 +736,150 @@
         font-family: var(--mono);
         margin-bottom: 6px;
       }
+
+      /* hamburger (mobile nav toggle) */
+      .hamburger {
+        display: none;
+        width: 32px;
+        height: 32px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        color: var(--text);
+        flex-shrink: 0;
+      }
+
+      /* scrollable table wrapper for narrow screens */
+      .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* ============================================================
+         Responsive: tablet (<=1024px)
+         ============================================================ */
+      @media (max-width: 1024px) {
+        .page-content {
+          padding: 20px;
+        }
+        .dash-grid,
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+        nav {
+          gap: 0;
+        }
+        .nav-link {
+          padding: 6px 8px;
+          font-size: 12px;
+        }
+      }
+
+      /* ============================================================
+         Responsive: mobile (<=768px)
+         ============================================================ */
+      @media (max-width: 768px) {
+        .topbar {
+          padding: 0 14px;
+          justify-content: flex-start;
+          gap: 10px;
+        }
+        .hamburger {
+          display: flex;
+        }
+        nav {
+          display: none;
+          position: absolute;
+          top: 52px;
+          left: 0;
+          right: 0;
+          flex-direction: column;
+          gap: 0;
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
+          box-shadow: var(--shadow-md);
+          padding: 6px;
+          z-index: 99;
+        }
+        nav.mobile-open {
+          display: flex;
+        }
+        .nav-link {
+          padding: 10px 12px;
+          font-size: 13px;
+        }
+        .topbar-right {
+          margin-left: auto;
+          gap: 8px;
+          font-size: 11px;
+        }
+        .page-content {
+          padding: 14px;
+        }
+        .stat-strip {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
+        .stat-card {
+          padding: 12px 14px;
+        }
+        .stat-value {
+          font-size: 22px;
+        }
+        .section-header {
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+        table {
+          min-width: 640px;
+        }
+        .kv-table {
+          min-width: 0;
+        }
+        #leaflet-map {
+          height: 380px;
+        }
+        .login-card {
+          padding: 28px 22px;
+        }
+      }
+
+      /* ============================================================
+         Responsive: small mobile (<=480px)
+         ============================================================ */
+      @media (max-width: 480px) {
+        body {
+          font-size: 12px;
+        }
+        .stat-strip {
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .stat-value {
+          font-size: 20px;
+        }
+        .topbar-email,
+        .topbar-dot {
+          display: none;
+        }
+        .demo-grid {
+          grid-template-columns: 1fr;
+        }
+        .dp-fields {
+          grid-template-columns: 1fr;
+        }
+        #leaflet-map {
+          height: 300px;
+        }
+        .detail-header {
+          flex-wrap: wrap;
+        }
+      }
     </style>
   </head>
   <body>
@@ -904,7 +1048,15 @@
           <div class="brand-mark">L</div>
           <span class="brand-name">LISA</span>
         </div>
-        <nav>
+        <button
+          class="hamburger"
+          id="hamburger-btn"
+          onclick="toggleMobileNav()"
+          aria-label="Toggle navigation"
+        >
+          &#9776;
+        </button>
+        <nav id="main-nav">
           <span class="nav-link active" onclick="navigate('dashboard')"
             >Dashboard</span
           >
@@ -914,8 +1066,8 @@
           <span class="nav-link" onclick="navigate('map')">Map</span>
         </nav>
         <div class="topbar-right">
-          <span id="nav-user-label"></span>
-          &middot;
+          <span id="nav-user-label" class="topbar-email"></span>
+          <span class="topbar-dot">&middot;</span>
           <span id="nav-role-badge" style="font-weight: 600; color: var(--blue)"
             >ADMIN</span
           >
@@ -1014,21 +1166,23 @@
           <!-- Shipment table -->
           <div class="panel">
             <div class="panel-header">All Shipments</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Shipment ID</th>
-                  <th>Status</th>
-                  <th>Risk</th>
-                  <th>Temp (C)</th>
-                  <th>Lock</th>
-                  <th>Device</th>
-                  <th>Last Update</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="shipment-table-body"></tbody>
-            </table>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Shipment ID</th>
+                    <th>Status</th>
+                    <th>Risk</th>
+                    <th>Temp (C)</th>
+                    <th>Lock</th>
+                    <th>Device</th>
+                    <th>Last Update</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="shipment-table-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -1062,20 +1216,22 @@
             </div>
           </div>
           <div class="panel">
-            <table>
-              <thead>
-                <tr>
-                  <th>Alert ID</th>
-                  <th>Shipment</th>
-                  <th>Type</th>
-                  <th>Severity</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="alerts-table-body"></tbody>
-            </table>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Alert ID</th>
+                    <th>Shipment</th>
+                    <th>Type</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="alerts-table-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -1547,8 +1703,26 @@
           </div>`;
       }
 
+      // MOBILE NAV
+      function toggleMobileNav() {
+        document.getElementById("main-nav").classList.toggle("mobile-open");
+      }
+
+      document.addEventListener("click", (e) => {
+        const nav = document.getElementById("main-nav");
+        const btn = document.getElementById("hamburger-btn");
+        if (
+          nav.classList.contains("mobile-open") &&
+          !nav.contains(e.target) &&
+          e.target !== btn
+        ) {
+          nav.classList.remove("mobile-open");
+        }
+      });
+
       // ROUTING
       function navigate(page) {
+        document.getElementById("main-nav").classList.remove("mobile-open");
         document.querySelectorAll(".page-section").forEach((el) => el.classList.remove("active"));
         const navLinks = document.querySelectorAll(".nav-link");
         navLinks.forEach((el) => el.classList.remove("active"));
