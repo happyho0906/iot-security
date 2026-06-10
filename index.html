@@ -737,6 +737,208 @@
         margin-bottom: 6px;
       }
 
+      /* ── NFC Whitelist ─────────────────────────────────────────────────── */
+      .nfc-info-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        background: var(--blue-soft);
+        border: 1px solid #bfdbfe;
+        border-radius: var(--radius);
+        font-size: 12px;
+        color: var(--text);
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+      .nfc-info-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .nfc-scan-zone {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 28px 16px;
+        background: var(--blue-soft);
+        border: 1.5px dashed var(--blue);
+        border-radius: var(--radius);
+        margin-bottom: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+      .nfc-scan-zone.scanning {
+        background: #eff6ff;
+        border-style: solid;
+      }
+      .nfc-scan-icon {
+        font-size: 36px;
+        line-height: 1;
+        position: relative;
+        z-index: 1;
+      }
+      @keyframes nfc-pulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.6;
+        }
+        50% {
+          transform: scale(1.18);
+          opacity: 0.2;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 0.6;
+        }
+      }
+      .nfc-pulse-ring {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--blue);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .nfc-scan-zone.scanning .nfc-pulse-ring {
+        animation: nfc-pulse 1.4s ease-in-out infinite;
+      }
+      .nfc-scan-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--blue);
+        position: relative;
+        z-index: 1;
+      }
+      .nfc-status-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 8px 12px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 12px;
+      }
+      .nfc-status-bar.ok {
+        color: var(--green);
+        border-color: #bbf7d0;
+        background: var(--green-soft);
+      }
+      .nfc-status-bar.error {
+        color: var(--red);
+        border-color: #fecaca;
+        background: var(--red-soft);
+      }
+      .nfc-status-bar.scan {
+        color: var(--blue);
+        border-color: #bfdbfe;
+        background: var(--blue-soft);
+      }
+      .nfc-whitelist-empty {
+        padding: 20px 16px;
+        font-size: 12px;
+        color: var(--muted);
+        text-align: center;
+      }
+      .nfc-wl-row {
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border-soft);
+        gap: 10px;
+      }
+      .nfc-wl-row:last-child {
+        border-bottom: none;
+      }
+      .nfc-wl-id {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        flex: 0 0 auto;
+        width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .nfc-wl-label {
+        font-size: 12px;
+        font-weight: 600;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .nfc-wl-meta {
+        font-size: 11px;
+        color: var(--muted);
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+      .nfc-wl-del {
+        flex: 0 0 auto;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--red);
+        font-size: 12px;
+        padding: 3px 8px;
+        cursor: pointer;
+        font-family: var(--font);
+        transition: background 0.12s;
+      }
+      .nfc-wl-del:hover {
+        background: var(--red-soft);
+      }
+
+      /* ── Modal (NFC device registration) ─────────────────────────────────── */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        padding: 16px;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        padding: 24px;
+        width: min(380px, 100%);
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .modal-sub {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 14px;
+      }
+      .modal-tagid {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 700;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 8px 12px;
+        word-break: break-all;
+        margin-bottom: 12px;
+      }
+
       /* hamburger (mobile nav toggle) */
       .hamburger {
         display: none;
@@ -846,6 +1048,26 @@
         }
         .login-card {
           padding: 28px 22px;
+        }
+        .nfc-wl-row {
+          flex-wrap: wrap;
+          align-items: flex-start;
+        }
+        .nfc-wl-label {
+          order: -2;
+          flex: 1 1 100%;
+          white-space: normal;
+        }
+        .nfc-wl-id {
+          order: -1;
+          width: auto;
+          flex: 1 1 auto;
+        }
+        .nfc-wl-meta {
+          flex: 1 1 auto;
+        }
+        .modal-card {
+          padding: 20px;
         }
       }
 
@@ -1084,7 +1306,13 @@
             >Alert Center</span
           >
           <span class="nav-link" onclick="navigate('map')">Map</span>
-          <span class="nav-link" id="nav-nfc" style="display:none" onclick="navigate('nfc-whitelist')">NFC Whitelist</span>
+          <span
+            class="nav-link"
+            id="nav-nfc"
+            style="display: none"
+            onclick="navigate('nfc-whitelist')"
+            >NFC Whitelist</span
+          >
         </nav>
         <div class="topbar-right">
           <span id="nav-user-label" class="topbar-email"></span>
@@ -1277,92 +1505,131 @@
           <div id="leaflet-map"></div>
         </div>
       </div>
-
-      <!-- NFC Whitelist (admin + mobile only) -->
+      <!-- nfc whitelist (admin only) -->
       <div id="page-nfc-whitelist" class="page-section">
         <div class="page-content">
           <div class="section-header">
             <div class="section-title">NFC Device Whitelist</div>
-            <span id="nfc-mobile-badge" style="font-size:11px; padding:3px 8px; border-radius:99px; background:var(--green-soft); color:var(--green); font-weight:700; display:none;">Android NFC Ready</span>
+            <span
+              id="nfc-mobile-badge"
+              class="badge badge-green"
+              style="display: none"
+              >Mobile NFC Ready</span
+            >
           </div>
 
-          <!-- guard panel: shown when device is not mobile/Android -->
-          <div id="nfc-desktop-guard" class="panel" style="display:none;">
-            <div class="nfc-guard">
-              <div class="nfc-guard-icon">📵</div>
-              <div class="nfc-guard-title">Mobile Device Required</div>
-              <div class="nfc-guard-sub">
-                This page must be opened on an Android phone with Chrome.<br>
-                NFC scanning is not available on desktop browsers.
-              </div>
-            </div>
+          <!-- Shown when this device can't perform NFC scanning (desktop or unsupported mobile browser) -->
+          <div id="nfc-info-banner" class="nfc-info-banner" style="display: none">
+            <span class="nfc-info-icon">&#8505;&#65039;</span>
+            <span id="nfc-info-text"></span>
           </div>
 
-          <!-- guard panel: shown when NFC API is not supported -->
-          <div id="nfc-unsupported-guard" class="panel" style="display:none;">
-            <div class="nfc-guard">
-              <div class="nfc-guard-icon">🚫</div>
-              <div class="nfc-guard-title">NFC Not Supported</div>
-              <div class="nfc-guard-sub">
-                Web NFC requires Chrome 89+ on Android.<br>
-                Please open this page in Chrome on your Android device.
+          <!-- Scan panel: Android Chrome with Web NFC only -->
+          <div id="nfc-scan-panel" class="panel" style="display: none; margin-bottom: 16px">
+            <div class="panel-header">Scan NFC Device</div>
+            <div class="panel-body">
+              <div id="nfc-status-bar" class="nfc-status-bar">
+                <span id="nfc-status-dot">&#9675;</span>
+                <span id="nfc-status-text"
+                  >Press "Start Scan" and hold the device near your phone.</span
+                >
               </div>
-            </div>
-          </div>
-
-          <!-- main NFC UI: shown only on Android with NFC support -->
-          <div id="nfc-main-ui" style="display:none;">
-
-            <!-- scan panel -->
-            <div class="panel" style="margin-bottom:16px;">
-              <div class="panel-header">Scan NFC Tag</div>
-              <div class="panel-body">
-                <div id="nfc-status-bar" class="nfc-status-bar">
-                  <span id="nfc-status-dot">○</span>
-                  <span id="nfc-status-text">Press "Start Scan" and hold the NFC tag against the phone.</span>
-                </div>
-
-                <div id="nfc-scan-zone" class="nfc-scan-zone">
-                  <div class="nfc-pulse-ring"></div>
-                  <div class="nfc-scan-icon">📶</div>
-                  <div class="nfc-scan-label" id="nfc-zone-label">Tap to begin scanning</div>
-                </div>
-
-                <div style="display:flex; gap:8px;">
-                  <button class="btn btn-primary" style="flex:1;" id="btn-nfc-scan" onclick="startNfcScan()">Start Scan</button>
-                  <button class="btn" id="btn-nfc-stop" style="display:none;" onclick="stopNfcScan()">Stop</button>
+              <div id="nfc-scan-zone" class="nfc-scan-zone">
+                <div class="nfc-pulse-ring"></div>
+                <div class="nfc-scan-icon">&#128246;</div>
+                <div class="nfc-scan-label" id="nfc-zone-label">
+                  Tap to begin scanning
                 </div>
               </div>
-            </div>
-
-            <!-- add device panel: appears after a successful scan -->
-            <div id="nfc-add-panel" class="panel" style="display:none; margin-bottom:16px;">
-              <div class="panel-header">Add Scanned Device</div>
-              <div class="panel-body">
-                <div class="nfc-tag-preview">
-                  <div class="nfc-tag-preview-meta">Scanned Tag ID</div>
-                  <div class="nfc-tag-preview-id" id="nfc-scanned-id">—</div>
-                  <div id="nfc-ndef-info" class="nfc-tag-preview-meta" style="display:none;"></div>
-                  <div class="nfc-label-row">
-                    <input id="nfc-label-input" class="form-input" type="text" placeholder="Device label (e.g. Driver Device A)" maxlength="64" />
-                    <button class="btn btn-primary" onclick="confirmAddNfcDevice()">Add to Whitelist</button>
-                  </div>
-                </div>
-                <div id="nfc-add-msg" style="font-size:12px; margin-top:4px;"></div>
-              </div>
-            </div>
-
-            <!-- whitelist table -->
-            <div class="panel">
-              <div class="panel-header">
-                Whitelisted Devices
-                <span id="nfc-wl-count" style="font-weight:400; color:var(--muted); margin-left:6px;"></span>
-              </div>
-              <div id="nfc-whitelist-body">
-                <div class="nfc-whitelist-empty">Loading…</div>
+              <div style="display: flex; gap: 8px">
+                <button
+                  class="btn btn-primary"
+                  style="flex: 1"
+                  id="btn-nfc-scan"
+                  onclick="startNfcScan()"
+                >
+                  Start Scan
+                </button>
+                <button
+                  class="btn"
+                  id="btn-nfc-stop"
+                  style="display: none"
+                  onclick="stopNfcScan()"
+                >
+                  Stop
+                </button>
               </div>
             </div>
           </div>
+
+          <!-- Known devices: every device that has ever been scanned/registered -->
+          <div class="panel" style="margin-bottom: 16px">
+            <div class="panel-header">
+              Known Devices
+              <span
+                id="nfc-known-count"
+                style="font-weight: 400; color: var(--muted); margin-left: 6px"
+              ></span>
+            </div>
+            <div id="nfc-known-body">
+              <div class="nfc-whitelist-empty">No devices detected yet.</div>
+            </div>
+          </div>
+
+          <!-- Whitelist: known devices that are authorised for unlock -->
+          <div class="panel">
+            <div class="panel-header">
+              Whitelist
+              <span
+                id="nfc-wl-count"
+                style="font-weight: 400; color: var(--muted); margin-left: 6px"
+              ></span>
+            </div>
+            <div id="nfc-whitelist-body">
+              <div class="nfc-whitelist-empty">
+                No whitelisted devices yet. Add one from Known Devices.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NFC device registration modal -->
+    <div id="nfc-register-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-title">Register New Device</div>
+        <div class="modal-sub">
+          A new NFC device was detected. Give it a name to add it to your
+          known devices.
+        </div>
+        <div class="modal-tagid" id="modal-tag-id">&mdash;</div>
+        <div class="form-group" style="margin-bottom: 8px">
+          <label class="form-label">Device Name</label>
+          <input
+            id="nfc-register-name"
+            class="form-input"
+            type="text"
+            placeholder="e.g. Driver Phone A"
+            maxlength="64"
+          />
+        </div>
+        <div
+          id="nfc-register-error"
+          class="form-error"
+          style="margin-bottom: 0"
+        ></div>
+        <div style="display: flex; gap: 8px; margin-top: 16px">
+          <button class="btn" style="flex: 1" onclick="cancelNfcRegister()">
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            style="flex: 1"
+            onclick="confirmNfcRegister()"
+          >
+            Confirm
+          </button>
         </div>
       </div>
     </div>
@@ -1442,7 +1709,7 @@
         badge.style.color =
           role === "ADMIN"   ? "var(--blue)"  :
           role === "DRIVER"  ? "var(--green)" : "var(--muted)";
-        document.getElementById("nav-nfc").style.display = role === "ADMIN" ? "inline" : "none";
+        document.getElementById("nav-nfc").style.display = role === "ADMIN" ? "inline-block" : "none";
         initApp();
       }
 
@@ -1706,9 +1973,16 @@
           },
         ],
         lastDiscordAt: null,
+        // Devices that have been scanned/registered at least once
+        nfcKnownDevices: [
+          { tagId: "04:AB:12:CD:34:EF:00", label: "Driver Device A",   firstSeenAt: "2025-06-01T10:00:00Z", lastSeenAt: "2025-06-05T08:00:00Z" },
+          { tagId: "04:CD:56:EF:78:01:02", label: "Warehouse Scanner", firstSeenAt: "2025-06-02T09:00:00Z", lastSeenAt: "2025-06-04T09:00:00Z" },
+          { tagId: "04:9F:33:11:22:AA:BB", label: "Guest Phone",       firstSeenAt: "2025-06-06T11:00:00Z", lastSeenAt: "2025-06-06T11:00:00Z" },
+        ],
+        // Subset of known devices authorised to unlock cargo
         nfcWhitelist: [
-          { tagId: "04:AB:12:CD:34:EF:00", label: "Driver Device A",    addedBy: "admin@lisa.demo", addedAt: "2025-06-01T10:00:00Z", active: true },
-          { tagId: "04:CD:56:EF:78:01:02", label: "Warehouse Scanner",  addedBy: "admin@lisa.demo", addedAt: "2025-06-02T09:00:00Z", active: true },
+          { tagId: "04:AB:12:CD:34:EF:00", addedBy: "admin@lisa.demo", addedAt: "2025-06-01T10:05:00Z" },
+          { tagId: "04:CD:56:EF:78:01:02", addedBy: "admin@lisa.demo", addedAt: "2025-06-02T09:05:00Z" },
         ],
       };
 
@@ -2170,13 +2444,12 @@
     <script>
       // ── NFC WHITELIST ────────────────────────────────────────────────────────
 
-      let _nfcReader   = null;
-      let _nfcScanning = false;
-      let _nfcLastTag  = null;
+      let _nfcReader      = null;
+      let _nfcScanning    = false;
+      let _pendingNfcTagId = null;
 
       function _isAndroidMobile() {
-        const ua = navigator.userAgent;
-        return /Android/i.test(ua);
+        return /Android/i.test(navigator.userAgent);
       }
 
       function _isNfcSupported() {
@@ -2185,23 +2458,41 @@
 
       // ── Demo DB helpers ──────────────────────────────────────────────────────
 
-      function dbNfcList()  { return _db.nfcWhitelist; }
+      function dbNfcKnownDevices()      { return _db.nfcKnownDevices; }
+      function dbNfcWhitelist()         { return _db.nfcWhitelist; }
+      function dbNfcFindKnown(tagId)    { return _db.nfcKnownDevices.find((d) => d.tagId === tagId) || null; }
+      function dbNfcIsWhitelisted(tagId) { return _db.nfcWhitelist.some((w) => w.tagId === tagId); }
 
-      function dbNfcAdd(tagId, label) {
-        const exists = _db.nfcWhitelist.find((e) => e.tagId === tagId);
-        if (exists) return false;
+      // Register a newly-scanned device, or refresh an existing one's name/last-seen time
+      function dbNfcRegisterDevice(tagId, label) {
+        const now = new Date().toISOString();
+        const existing = dbNfcFindKnown(tagId);
+        if (existing) {
+          existing.label      = label || existing.label;
+          existing.lastSeenAt = now;
+        } else {
+          _db.nfcKnownDevices.unshift({ tagId, label: label || tagId, firstSeenAt: now, lastSeenAt: now });
+        }
+      }
+
+      // Update last-seen time for a device that's already known
+      function dbNfcTouchDevice(tagId) {
+        const existing = dbNfcFindKnown(tagId);
+        if (existing) existing.lastSeenAt = new Date().toISOString();
+      }
+
+      function dbNfcAddToWhitelist(tagId) {
+        if (dbNfcIsWhitelisted(tagId)) return false;
         _db.nfcWhitelist.unshift({
           tagId,
-          label: label || tagId,
           addedBy: sessionStorage.getItem("lisa_email") || "admin",
           addedAt: new Date().toISOString(),
-          active: true,
         });
         return true;
       }
 
-      function dbNfcRemove(tagId) {
-        const idx = _db.nfcWhitelist.findIndex((e) => e.tagId === tagId);
+      function dbNfcRemoveFromWhitelist(tagId) {
+        const idx = _db.nfcWhitelist.findIndex((w) => w.tagId === tagId);
         if (idx !== -1) _db.nfcWhitelist.splice(idx, 1);
       }
 
@@ -2212,41 +2503,94 @@
 
         const isMobile  = _isAndroidMobile();
         const nfcOk     = _isNfcSupported();
+        const scanReady = isMobile && nfcOk;
 
-        document.getElementById("nfc-desktop-guard").style.display    = isMobile ? "none"  : "block";
-        document.getElementById("nfc-unsupported-guard").style.display = (!isMobile || nfcOk) ? "none" : "block";
-        document.getElementById("nfc-main-ui").style.display           = (isMobile && nfcOk) ? "block" : "none";
-        document.getElementById("nfc-mobile-badge").style.display      = (isMobile && nfcOk) ? "inline" : "none";
+        document.getElementById("nfc-scan-panel").style.display   = scanReady ? "block" : "none";
+        document.getElementById("nfc-mobile-badge").style.display = scanReady ? "inline-block" : "none";
 
-        if (isMobile && nfcOk) _renderWhitelistTable();
+        const banner = document.getElementById("nfc-info-banner");
+        if (scanReady) {
+          banner.style.display = "none";
+        } else {
+          banner.style.display = "flex";
+          document.getElementById("nfc-info-text").textContent = isMobile
+            ? "This browser doesn't support Web NFC (requires Chrome on Android). You can still view and manage known devices and the whitelist below."
+            : "Desktop browsers can't scan NFC devices. You can still view and manage known devices and the whitelist below.";
+        }
+
+        _renderKnownDevicesTable();
+        _renderWhitelistTable();
       }
 
-      function _renderWhitelistTable() {
-        const items = dbNfcList();
-        const body  = document.getElementById("nfc-whitelist-body");
-        document.getElementById("nfc-wl-count").textContent =
-          items.length ? "(" + items.length + " device" + (items.length > 1 ? "s" : "") + ")" : "";
+      function _renderKnownDevicesTable() {
+        const items = dbNfcKnownDevices();
+        const body  = document.getElementById("nfc-known-body");
+        document.getElementById("nfc-known-count").textContent =
+          items.length ? "(" + items.length + ")" : "";
 
         if (!items.length) {
-          body.innerHTML = '<div class="nfc-whitelist-empty">No devices in whitelist. Scan an NFC tag to add one.</div>';
+          body.innerHTML = '<div class="nfc-whitelist-empty">No devices detected yet.</div>';
           return;
         }
 
-        body.innerHTML = items.map((e) => `
-          <div class="nfc-wl-row">
-            <div class="nfc-wl-id" title="${e.tagId}">${e.tagId}</div>
-            <div class="nfc-wl-label">${_esc(e.label)}</div>
-            <div class="nfc-wl-meta">${_fmtDateShort(e.addedAt)}</div>
-            <span class="nfc-badge-active">Active</span>
-            <button class="nfc-wl-del" onclick="removeNfcDevice('${_esc(e.tagId)}')">Remove</button>
-          </div>`).join("");
+        body.innerHTML = items.map((d) => {
+          const onWhitelist = dbNfcIsWhitelisted(d.tagId);
+          return `
+            <div class="nfc-wl-row">
+              <div class="nfc-wl-id" title="${d.tagId}">${d.tagId}</div>
+              <div class="nfc-wl-label">${_esc(d.label)}</div>
+              <div class="nfc-wl-meta">Last seen: ${_fmtDateShort(d.lastSeenAt)}</div>
+              ${onWhitelist
+                ? '<span class="badge badge-green">Whitelisted</span>'
+                : `<button class="btn btn-sm btn-primary" onclick="addToWhitelist('${_esc(d.tagId)}')">Add to Whitelist</button>`}
+            </div>`;
+        }).join("");
       }
 
-      // ── NFC scanning ─────────────────────────────────────────────────────────
+      function _renderWhitelistTable() {
+        const items = dbNfcWhitelist();
+        const body  = document.getElementById("nfc-whitelist-body");
+        document.getElementById("nfc-wl-count").textContent =
+          items.length ? "(" + items.length + ")" : "";
+
+        if (!items.length) {
+          body.innerHTML = '<div class="nfc-whitelist-empty">No whitelisted devices yet. Add one from Known Devices.</div>';
+          return;
+        }
+
+        body.innerHTML = items.map((w) => {
+          const dev   = dbNfcFindKnown(w.tagId);
+          const label = dev ? dev.label : w.tagId;
+          return `
+            <div class="nfc-wl-row">
+              <div class="nfc-wl-id" title="${w.tagId}">${w.tagId}</div>
+              <div class="nfc-wl-label">${_esc(label)}</div>
+              <div class="nfc-wl-meta">Added: ${_fmtDateShort(w.addedAt)}</div>
+              <button class="nfc-wl-del" onclick="removeFromWhitelist('${_esc(w.tagId)}')">Remove</button>
+            </div>`;
+        }).join("");
+      }
+
+      // ── Whitelist actions ────────────────────────────────────────────────────
+
+      function addToWhitelist(tagId) {
+        dbNfcAddToWhitelist(tagId);
+        _renderKnownDevicesTable();
+        _renderWhitelistTable();
+      }
+
+      function removeFromWhitelist(tagId) {
+        if (!confirm("Remove this device from the whitelist?")) return;
+        dbNfcRemoveFromWhitelist(tagId);
+        _renderKnownDevicesTable();
+        _renderWhitelistTable();
+      }
+
+      // ── NFC scanning (Android Chrome only) ──────────────────────────────────
 
       async function startNfcScan() {
         if (_nfcScanning) return;
-        _setNfcStatus("scan", "Scanning… hold an NFC tag near the phone.");
+        _setNfcStatus("scan", "Scanning… hold the device near your phone.");
         _setNfcScanZone(true);
         document.getElementById("btn-nfc-scan").style.display = "none";
         document.getElementById("btn-nfc-stop").style.display = "inline-block";
@@ -2256,47 +2600,27 @@
           await _nfcReader.scan();
           _nfcScanning = true;
 
-          _nfcReader.addEventListener("reading", ({ message, serialNumber }) => {
-            _nfcScanning = false;
+          _nfcReader.addEventListener("reading", ({ serialNumber }) => {
             _setNfcScanZone(false);
-            _nfcLastTag = serialNumber;
-            _setNfcStatus("ok", "Tag detected: " + serialNumber);
+            _resetScanButtons();
 
-            let ndefInfo = "";
-            for (const record of message.records) {
-              if (record.recordType === "text") {
-                const dec = new TextDecoder(record.encoding || "utf-8");
-                ndefInfo += dec.decode(record.data) + " ";
-              } else if (record.recordType === "url") {
-                const dec = new TextDecoder();
-                ndefInfo += dec.decode(record.data) + " ";
-              }
-            }
-
-            document.getElementById("nfc-scanned-id").textContent = serialNumber;
-            const ndefEl = document.getElementById("nfc-ndef-info");
-            if (ndefInfo.trim()) {
-              ndefEl.textContent = "NDEF: " + ndefInfo.trim();
-              ndefEl.style.display = "block";
+            const known = dbNfcFindKnown(serialNumber);
+            if (known) {
+              dbNfcTouchDevice(serialNumber);
+              _setNfcStatus("ok", "Recognized device: " + known.label + " (" + serialNumber + ")");
+              _renderKnownDevicesTable();
             } else {
-              ndefEl.style.display = "none";
+              _setNfcStatus("scan", "New device detected: " + serialNumber);
+              _openNfcRegisterModal(serialNumber);
             }
-
-            document.getElementById("nfc-label-input").value = "";
-            document.getElementById("nfc-add-msg").textContent = "";
-            document.getElementById("nfc-add-panel").style.display = "block";
-
-            document.getElementById("btn-nfc-scan").style.display  = "inline-block";
-            document.getElementById("btn-nfc-stop").style.display  = "none";
           });
 
           _nfcReader.addEventListener("readingerror", () => {
-            _setNfcStatus("error", "Could not read tag data. Try again.");
+            _setNfcStatus("error", "Could not read device data. Try again.");
             _setNfcScanZone(false);
             _resetScanButtons();
             _nfcScanning = false;
           });
-
         } catch (err) {
           _nfcScanning = false;
           _setNfcScanZone(false);
@@ -2316,43 +2640,46 @@
         _nfcReader   = null;
         _setNfcScanZone(false);
         _resetScanButtons();
-        _setNfcStatus("", "Scan stopped.");
+        _setNfcStatus("", 'Press "Start Scan" and hold the device near your phone.');
       }
 
-      function confirmAddNfcDevice() {
-        const tagId = _nfcLastTag;
-        const label = document.getElementById("nfc-label-input").value.trim();
-        const msgEl = document.getElementById("nfc-add-msg");
+      // ── Registration modal ───────────────────────────────────────────────────
 
-        if (!tagId) {
-          msgEl.style.color = "var(--red)";
-          msgEl.textContent = "No tag scanned yet.";
+      function _openNfcRegisterModal(tagId) {
+        _pendingNfcTagId = tagId;
+        document.getElementById("modal-tag-id").textContent = tagId;
+        document.getElementById("nfc-register-name").value = "";
+        document.getElementById("nfc-register-error").style.display = "none";
+        document.getElementById("nfc-register-modal").classList.add("open");
+        setTimeout(() => document.getElementById("nfc-register-name").focus(), 50);
+      }
+
+      function cancelNfcRegister() {
+        document.getElementById("nfc-register-modal").classList.remove("open");
+        _pendingNfcTagId = null;
+        _setNfcStatus("", 'Press "Start Scan" and hold the device near your phone.');
+      }
+
+      function confirmNfcRegister() {
+        const name  = document.getElementById("nfc-register-name").value.trim();
+        const errEl = document.getElementById("nfc-register-error");
+
+        if (!name) {
+          errEl.textContent   = "Please enter a device name.";
+          errEl.style.display = "block";
           return;
         }
 
-        const added = dbNfcAdd(tagId, label);
-        if (!added) {
-          msgEl.style.color = "var(--amber)";
-          msgEl.textContent = "Tag already in whitelist.";
-          return;
-        }
-
-        msgEl.style.color = "var(--green)";
-        msgEl.textContent = "Added successfully!";
-        _renderWhitelistTable();
-
-        setTimeout(() => {
-          document.getElementById("nfc-add-panel").style.display = "none";
-          _nfcLastTag = null;
-          _setNfcStatus("", "Press \"Start Scan\" and hold the NFC tag against the phone.");
-        }, 1500);
+        dbNfcRegisterDevice(_pendingNfcTagId, name);
+        document.getElementById("nfc-register-modal").classList.remove("open");
+        _setNfcStatus("ok", 'Device "' + name + '" added to known devices.');
+        _renderKnownDevicesTable();
+        _pendingNfcTagId = null;
       }
 
-      function removeNfcDevice(tagId) {
-        if (!confirm("Remove " + tagId + " from the whitelist?")) return;
-        dbNfcRemove(tagId);
-        _renderWhitelistTable();
-      }
+      document.getElementById("nfc-register-name").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") confirmNfcRegister();
+      });
 
       // ── Internal helpers ─────────────────────────────────────────────────────
 
@@ -2360,16 +2687,16 @@
         const bar  = document.getElementById("nfc-status-bar");
         const text = document.getElementById("nfc-status-text");
         const dot  = document.getElementById("nfc-status-dot");
-        bar.className = "nfc-status-bar" + (type ? " " + type : "");
+        bar.className    = "nfc-status-bar" + (type ? " " + type : "");
         text.textContent = msg;
-        dot.textContent  = type === "ok" ? "●" : type === "error" ? "✕" : type === "scan" ? "◉" : "○";
+        dot.innerHTML     = type === "ok" ? "&#9679;" : type === "error" ? "&#10005;" : type === "scan" ? "&#9678;" : "&#9675;";
       }
 
       function _setNfcScanZone(active) {
         const zone  = document.getElementById("nfc-scan-zone");
         const label = document.getElementById("nfc-zone-label");
         zone.classList.toggle("scanning", active);
-        label.textContent = active ? "Scanning — bring tag close…" : "Tap to begin scanning";
+        label.textContent = active ? "Scanning — bring device close…" : "Tap to begin scanning";
       }
 
       function _resetScanButtons() {
