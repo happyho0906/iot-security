@@ -34,11 +34,15 @@ iot-security/
 │   ├── resolve-alert/                 # POST /alerts/{alertId}/resolve
 │   ├── discord-commands/              # POST /discord/commands (Ed25519 verified)
 │   ├── get-me/                        # GET /me  Cognito identity
-│   └── shadow-processor/              # IoT Rule trigger  shadow → DynamoDB
+│   ├── shadow-processor/              # IoT Rule trigger  shadow → DynamoDB
+│   ├── register-nfc-device/           # POST /nfc/devices (admin)
+│   ├── list-nfc-devices/              # GET /nfc/devices (admin)
+│   ├── update-nfc-whitelist/          # PUT /nfc/devices/{tagId}/whitelist (admin)
+│   └── check-nfc-device/              # GET /nfc/check/{tagId} (no auth, hardware)
 ├── pi/
 │   └── sensor_agent.py                # Raspberry Pi MQTT shadow agent
 ├── scripts/
-│   ├── seed_dynamodb.py               # Seeds 3 shipments, 1 alert, 3 users
+│   ├── seed_dynamodb.py               # Seeds 3 shipments, 1 alert, 3 users, 3 NFC devices
 │   └── register_discord_commands.py   # Registers Discord slash commands
 ├── ARCHITECTURE.md                    # System design and migration plan
 ├── INTEGRATION.md                     # Module integration reference
@@ -82,6 +86,10 @@ Slash commands (`/status`, `/alerts`, `/resolve`, `/lock`, `/unlock`) require th
 | POST | `/alerts/{alertId}/resolve` | lisa-resolve-alert | |
 | POST | `/discord/commands` | lisa-discord-commands | Ed25519 verified |
 | GET | `/me` | lisa-get-me | Cognito JWT identity |
+| POST | `/nfc/devices` | lisa-register-nfc-device | Admin only — register/touch a device |
+| GET | `/nfc/devices` | lisa-list-nfc-devices | Admin only — known devices + whitelist |
+| PUT | `/nfc/devices/{tagId}/whitelist` | lisa-update-nfc-whitelist | Admin only — `{whitelisted: bool}` |
+| GET | `/nfc/check/{tagId}` | lisa-check-nfc-device | No auth — for hardware/`Sentinel_NFC_Unlock` |
 | POST | `/unlock` | Sentinel_NFC_Unlock | **Existing  do not modify** |
 
 ---
@@ -118,6 +126,8 @@ async function dbAlerts() {
 **Shipments** (PK: `shipmentId`): `status`, `riskLevel`, `temperature`, `humidity`, `gForce`, `lockStatus`, `deviceStatus`, `latitude`, `longitude`, `batteryLevel`, `thingName`, `lastUpdatedAt`
 
 **AlertEvents** (PK: `alertId`): `shipmentId`, `alertType`, `severity`, `message`, `source`, `resolved`, `resolvedBy`, `createdAt`, `resolvedAt`
+
+**NFCDevices** (PK: `tagId`): `label`, `status` (`KNOWN`/`WHITELISTED`), `firstSeenAt`, `lastSeenAt`, `addedBy`, `addedAt`
 
 **Users** (PK: `userId`): `email`, `role`, `assignedShipments`  Cognito role mapping
 

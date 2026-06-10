@@ -52,17 +52,21 @@ def seed():
     ]:
         users.put_item(Item=u)
 
-    # Seed NFCWhitelist table
-    nfc = dynamodb.Table('NFCWhitelist')
+    # Seed NFCDevices table (known devices + whitelist, single table keyed by tagId)
+    nfc = dynamodb.Table('NFCDevices')
     for entry in [
-        {'tagId': '04:AB:12:CD:34:EF:00', 'label': 'Driver Device A',
-         'addedBy': 'admin@lisa.demo', 'addedAt': now, 'active': True},
-        {'tagId': '04:CD:56:EF:78:01:02', 'label': 'Warehouse Scanner',
-         'addedBy': 'admin@lisa.demo', 'addedAt': now, 'active': True},
+        {'tagId': '04:AB:12:CD:34:EF:00', 'label': 'Driver Device A', 'status': 'WHITELISTED',
+         'firstSeenAt': '2025-06-01T10:00:00Z', 'lastSeenAt': '2025-06-05T08:00:00Z',
+         'addedBy': 'admin@lisa.demo', 'addedAt': '2025-06-01T10:05:00Z'},
+        {'tagId': '04:CD:56:EF:78:01:02', 'label': 'Warehouse Scanner', 'status': 'WHITELISTED',
+         'firstSeenAt': '2025-06-02T09:00:00Z', 'lastSeenAt': '2025-06-04T09:00:00Z',
+         'addedBy': 'admin@lisa.demo', 'addedAt': '2025-06-02T09:05:00Z'},
+        {'tagId': '04:9F:33:11:22:AA:BB', 'label': 'Guest Phone', 'status': 'KNOWN',
+         'firstSeenAt': '2025-06-06T11:00:00Z', 'lastSeenAt': '2025-06-06T11:00:00Z'},
     ]:
         nfc.put_item(Item=entry)
 
-    print('Seed complete: 3 shipments, 1 alert, 3 users, 2 NFC whitelist entries')
+    print('Seed complete: 3 shipments, 1 alert, 3 users, 3 NFC devices (2 whitelisted)')
 
 if __name__ == '__main__':
     seed()

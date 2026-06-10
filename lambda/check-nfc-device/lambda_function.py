@@ -6,9 +6,12 @@ dynamodb = boto3.resource('dynamodb')
 
 def lambda_handler(event, context):
     """
+    GET /nfc/check/{tagId}
+
     Called by Raspberry Pi / NFC hardware to verify whether a scanned tag is
-    authorised.  This route is intentionally unauthenticated so that embedded
-    hardware can call it without Cognito tokens.
+    on the whitelist before unlocking. This route is intentionally
+    unauthenticated so embedded hardware can call it without Cognito tokens
+    (same pattern as POST /unlock).
     """
     tag_id = (event.get('pathParameters') or {}).get('tagId', '').strip()
     if not tag_id:
@@ -18,18 +21,12 @@ def lambda_handler(event, context):
             'body': json.dumps({'error': 'tagId is required'}),
         }
 
-    resp = dynamodb.Table('NFCWhitelist').get_item(Key={'tagId': tag_id})
-    item = resp.get('Item')
+    item = dynamodb.Table('NFCDevices').get_item(Key={'tagId': tag_id}).get('Item')
+    allowed = bool(item) and item.get('status') == 'WHITELISTED'
 
-    if not item or not item.get('active', False):
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            },
-            'body': json.dumps({'allowed': False, 'tagId': tag_id}),
-        }
+    body = {'allowed': allowed, 'tagId': tag_id}
+    if item:
+        body['label'] = item.get('label', '')
 
     return {
         'statusCode': 200,
@@ -37,10 +34,5 @@ def lambda_handler(event, context):
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
         },
-        'body': json.dumps({
-            'allowed': True,
-            'tagId':   tag_id,
-            'label':   item.get('label', ''),
-            'addedBy': item.get('addedBy', ''),
-        }),
+        'body': json.dumps(body),
     }
