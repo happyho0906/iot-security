@@ -737,187 +737,149 @@
         margin-bottom: 6px;
       }
 
-      /* ── NFC Whitelist ─────────────────────────────────────────────────── */
-      .nfc-guard {
-        display: flex;
-        flex-direction: column;
+      /* hamburger (mobile nav toggle) */
+      .hamburger {
+        display: none;
+        width: 32px;
+        height: 32px;
         align-items: center;
         justify-content: center;
-        padding: 56px 24px;
-        text-align: center;
-        gap: 12px;
-      }
-      .nfc-guard-icon {
-        font-size: 40px;
-        line-height: 1;
-      }
-      .nfc-guard-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--text);
-      }
-      .nfc-guard-sub {
-        font-size: 12px;
-        color: var(--muted);
-        max-width: 280px;
-        line-height: 1.6;
-      }
-      .nfc-scan-zone {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 14px;
-        padding: 28px 16px;
-        background: var(--blue-soft);
-        border: 1.5px dashed var(--blue);
-        border-radius: var(--radius);
-        margin-bottom: 16px;
-        position: relative;
-        overflow: hidden;
-      }
-      .nfc-scan-zone.scanning {
-        background: #eff6ff;
-        border-style: solid;
-      }
-      .nfc-scan-icon {
-        font-size: 36px;
-        line-height: 1;
-        position: relative;
-        z-index: 1;
-      }
-      @keyframes nfc-pulse {
-        0%   { transform: scale(1);   opacity: 0.6; }
-        50%  { transform: scale(1.18); opacity: 0.2; }
-        100% { transform: scale(1);   opacity: 0.6; }
-      }
-      .nfc-pulse-ring {
-        position: absolute;
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: var(--blue);
-        opacity: 0;
-        pointer-events: none;
-      }
-      .nfc-scan-zone.scanning .nfc-pulse-ring {
-        animation: nfc-pulse 1.4s ease-in-out infinite;
-      }
-      .nfc-scan-label {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--blue);
-        position: relative;
-        z-index: 1;
-      }
-      .nfc-status-bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 12px;
-        color: var(--muted);
-        padding: 8px 12px;
-        background: var(--bg);
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
-        margin-bottom: 12px;
-      }
-      .nfc-status-bar.ok    { color: var(--green); border-color: #bbf7d0; background: var(--green-soft); }
-      .nfc-status-bar.error { color: var(--red);   border-color: #fecaca; background: var(--red-soft); }
-      .nfc-status-bar.scan  { color: var(--blue);  border-color: #bfdbfe; background: var(--blue-soft); }
-      .nfc-tag-preview {
         background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 14px 16px;
-        margin-bottom: 16px;
-      }
-      .nfc-tag-preview-id {
-        font-family: var(--mono);
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--text);
-        margin-bottom: 10px;
-        word-break: break-all;
-      }
-      .nfc-tag-preview-meta {
-        font-size: 11px;
-        color: var(--muted);
-        margin-bottom: 12px;
-      }
-      .nfc-label-row {
-        display: flex;
-        gap: 8px;
-        align-items: stretch;
-      }
-      .nfc-label-row input {
-        flex: 1;
-        min-width: 0;
-      }
-      .nfc-whitelist-empty {
-        padding: 20px 16px;
-        font-size: 12px;
-        color: var(--muted);
-        text-align: center;
-      }
-      .nfc-wl-row {
-        display: flex;
-        align-items: center;
-        padding: 10px 16px;
-        border-bottom: 1px solid var(--border-soft);
-        gap: 10px;
-      }
-      .nfc-wl-row:last-child { border-bottom: none; }
-      .nfc-wl-id {
-        font-family: var(--mono);
-        font-size: 11px;
-        color: var(--muted);
-        flex: 0 0 auto;
-        width: 150px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .nfc-wl-label {
-        font-size: 12px;
-        font-weight: 600;
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .nfc-wl-meta {
-        font-size: 11px;
-        color: var(--muted);
-        flex: 0 0 auto;
-      }
-      .nfc-wl-del {
-        flex: 0 0 auto;
-        background: none;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        color: var(--red);
-        font-size: 12px;
-        padding: 3px 8px;
+        font-size: 16px;
+        line-height: 1;
         cursor: pointer;
-        font-family: var(--font);
-        transition: background 0.12s;
+        color: var(--text);
+        flex-shrink: 0;
       }
-      .nfc-wl-del:hover { background: var(--red-soft); }
-      .nfc-badge-active {
-        display: inline-block;
-        font-size: 10px;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 99px;
-        background: var(--green-soft);
-        color: var(--green);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+
+      /* scrollable table wrapper for narrow screens */
+      .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
       }
-      .pw-requirements { margin: 4px 0 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-      .pw-req { font-size: 10px; color: var(--muted); padding: 2px 7px; border-radius: 20px; border: 1px solid var(--border); }
-      .pw-req.met { color: var(--green); border-color: var(--green); background: var(--green-soft); }
+
+      /* ============================================================
+         Responsive: tablet (<=1024px)
+         ============================================================ */
+      @media (max-width: 1024px) {
+        .page-content {
+          padding: 20px;
+        }
+        .dash-grid,
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+        nav {
+          gap: 0;
+        }
+        .nav-link {
+          padding: 6px 8px;
+          font-size: 12px;
+        }
+      }
+
+      /* ============================================================
+         Responsive: mobile (<=768px)
+         ============================================================ */
+      @media (max-width: 768px) {
+        .topbar {
+          padding: 0 14px;
+          justify-content: flex-start;
+          gap: 10px;
+        }
+        .hamburger {
+          display: flex;
+        }
+        nav {
+          display: none;
+          position: absolute;
+          top: 52px;
+          left: 0;
+          right: 0;
+          flex-direction: column;
+          gap: 0;
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
+          box-shadow: var(--shadow-md);
+          padding: 6px;
+          z-index: 99;
+        }
+        nav.mobile-open {
+          display: flex;
+        }
+        .nav-link {
+          padding: 10px 12px;
+          font-size: 13px;
+        }
+        .topbar-right {
+          margin-left: auto;
+          gap: 8px;
+          font-size: 11px;
+        }
+        .page-content {
+          padding: 14px;
+        }
+        .stat-strip {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
+        .stat-card {
+          padding: 12px 14px;
+        }
+        .stat-value {
+          font-size: 22px;
+        }
+        .section-header {
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+        table {
+          min-width: 640px;
+        }
+        .kv-table {
+          min-width: 0;
+        }
+        #leaflet-map {
+          height: 380px;
+        }
+        .login-card {
+          padding: 28px 22px;
+        }
+      }
+
+      /* ============================================================
+         Responsive: small mobile (<=480px)
+         ============================================================ */
+      @media (max-width: 480px) {
+        body {
+          font-size: 12px;
+        }
+        .stat-strip {
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .stat-value {
+          font-size: 20px;
+        }
+        .topbar-email,
+        .topbar-dot {
+          display: none;
+        }
+        .demo-grid {
+          grid-template-columns: 1fr;
+        }
+        .dp-fields {
+          grid-template-columns: 1fr;
+        }
+        #leaflet-map {
+          height: 300px;
+        }
+        .detail-header {
+          flex-wrap: wrap;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1106,7 +1068,15 @@
           <div class="brand-mark">L</div>
           <span class="brand-name">LISA</span>
         </div>
-        <nav>
+        <button
+          class="hamburger"
+          id="hamburger-btn"
+          onclick="toggleMobileNav()"
+          aria-label="Toggle navigation"
+        >
+          &#9776;
+        </button>
+        <nav id="main-nav">
           <span class="nav-link active" onclick="navigate('dashboard')"
             >Dashboard</span
           >
@@ -1117,8 +1087,8 @@
           <span class="nav-link" id="nav-nfc" style="display:none" onclick="navigate('nfc-whitelist')">NFC Whitelist</span>
         </nav>
         <div class="topbar-right">
-          <span id="nav-user-label"></span>
-          &middot;
+          <span id="nav-user-label" class="topbar-email"></span>
+          <span class="topbar-dot">&middot;</span>
           <span id="nav-role-badge" style="font-weight: 600; color: var(--blue)"
             >ADMIN</span
           >
@@ -1217,21 +1187,23 @@
           <!-- Shipment table -->
           <div class="panel">
             <div class="panel-header">All Shipments</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Shipment ID</th>
-                  <th>Status</th>
-                  <th>Risk</th>
-                  <th>Temp (C)</th>
-                  <th>Lock</th>
-                  <th>Device</th>
-                  <th>Last Update</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="shipment-table-body"></tbody>
-            </table>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Shipment ID</th>
+                    <th>Status</th>
+                    <th>Risk</th>
+                    <th>Temp (C)</th>
+                    <th>Lock</th>
+                    <th>Device</th>
+                    <th>Last Update</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="shipment-table-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -1265,20 +1237,22 @@
             </div>
           </div>
           <div class="panel">
-            <table>
-              <thead>
-                <tr>
-                  <th>Alert ID</th>
-                  <th>Shipment</th>
-                  <th>Type</th>
-                  <th>Severity</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="alerts-table-body"></tbody>
-            </table>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Alert ID</th>
+                    <th>Shipment</th>
+                    <th>Type</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="alerts-table-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -1874,8 +1848,26 @@
           </div>`;
       }
 
+      // MOBILE NAV
+      function toggleMobileNav() {
+        document.getElementById("main-nav").classList.toggle("mobile-open");
+      }
+
+      document.addEventListener("click", (e) => {
+        const nav = document.getElementById("main-nav");
+        const btn = document.getElementById("hamburger-btn");
+        if (
+          nav.classList.contains("mobile-open") &&
+          !nav.contains(e.target) &&
+          e.target !== btn
+        ) {
+          nav.classList.remove("mobile-open");
+        }
+      });
+
       // ROUTING
       function navigate(page) {
+        document.getElementById("main-nav").classList.remove("mobile-open");
         document.querySelectorAll(".page-section").forEach((el) => el.classList.remove("active"));
         const navLinks = document.querySelectorAll(".nav-link");
         navLinks.forEach((el) => el.classList.remove("active"));
