@@ -10,7 +10,8 @@ This document is for developers integrating other hardware modules, Lambda funct
 |-----------|-------|-------|
 | `index.html` frontend | **Working**  demo mode | Runs locally, no AWS needed |
 | Lambda functions (6) | **Written, not deployed** | Code in `lambda/*/lambda_function.py` |
-| DynamoDB tables | **Not created** | Schema defined, seed script ready |
+| NFC whitelist Lambdas (4) | **Written, not deployed** | `lambda/register-nfc-device`, `list-nfc-devices`, `update-nfc-whitelist`, `check-nfc-device` |
+| DynamoDB tables | **Not created** | Schema defined, seed script ready (incl. `NFCDevices`) |
 | API Gateway routes | **Not wired** | Endpoint exists, new routes not added |
 | Discord webhook alerts | **Working**  browser-to-Discord | Set `DISCORD_WEBHOOK_URL` in `index.html` |
 | Discord slash commands | **Not active** | Needs Lambda deployment + Discord setup |
@@ -96,6 +97,28 @@ Partition key: `alertId` (String)
 | `LOCK_UPDATE` | Special type  updates `lockStatus` only, no alert record created |
 
 You can add new types freely  the dashboard will display any string in the `alertType` field. Add it to this table when you do.
+
+### Table: `NFCDevices`
+Partition key: `tagId` (String)
+
+```json
+{
+  "tagId":       "04:AB:12:CD:34:EF:00",
+  "label":       "Driver Device A",
+  "status":      "WHITELISTED",          // KNOWN | WHITELISTED
+  "firstSeenAt": "2025-06-01T10:00:00Z",
+  "lastSeenAt":  "2025-06-05T08:00:00Z",
+  "addedBy":     "admin@lisa.demo",       // only present when status = WHITELISTED
+  "addedAt":     "2025-06-01T10:05:00Z"   // only present when status = WHITELISTED
+}
+```
+
+**Rules:**
+- One row per physical NFC tag  there is no separate whitelist table
+- `lisa-register-nfc-device` (`POST /nfc/devices`) creates the row on first scan (`status = KNOWN`) or refreshes `lastSeenAt`/`label` on repeat scans
+- `lisa-update-nfc-whitelist` (`PUT /nfc/devices/{tagId}/whitelist`) flips `status` between `KNOWN` and `WHITELISTED` and sets/clears `addedBy`/`addedAt`
+- `lisa-check-nfc-device` (`GET /nfc/check/{tagId}`, unauthenticated) returns `{allowed: true}` only when `status = WHITELISTED`  this is the route hardware/`Sentinel_NFC_Unlock` should call before unlocking
+- All four NFC routes (except `check`) require `custom:role = ADMIN`; the dashboard only shows the "NFC Whitelist" nav item to admins, but the Lambdas enforce it independently
 
 ---
 
@@ -212,6 +235,31 @@ The dashboard will show updated values on next load / refresh.
      renderDetail(sid); renderDashboard();
    }
    ```
+
+### NFC Whitelist Module (new)
+
+**Current state:** 4 Lambdas written (`lambda/register-nfc-device`, `lambda/list-nfc-devices`,
+`lambda/update-nfc-whitelist`, `lambda/check-nfc-device`), `NFCDevices` table not yet created.
+
+**To integrate with `Sentinel_NFC_Unlock` (optional, without modifying it):**
+
+`GET /nfc/check/{tagId}` is unauthenticated, like `/unlock`, and is safe to call
+from hardware or from `Sentinel_NFC_Unlock` itself before proceeding with an
+unlock:
+
+```python
+import urllib.request, json
+
+def is_tag_whitelisted(tag_id):
+    url = f"https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{STAGE}/nfc/check/{tag_id}"
+    with urllib.request.urlopen(url, timeout=2) as r:
+        return json.load(r).get('allowed', False)
+```
+
+This is purely additive  `/unlock` itself is untouched, and `Sentinel_NFC_Unlock`
+can choose to call `/nfc/check/{tagId}` first and short-circuit if `allowed` is
+`false`. If you'd rather not modify `Sentinel_NFC_Unlock` at all, the whitelist
+still works as a standalone admin tool (Known Devices / Whitelist management UI).
 
 ### Image Processor Module (`Sentinel_Image_Processor`)
 

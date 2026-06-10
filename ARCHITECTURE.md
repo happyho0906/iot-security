@@ -29,6 +29,10 @@
     │  lisa-discord-commands POST /discord/.. │
     │  lisa-get-me           GET /me          │
     │  lisa-shadow-processor (IoT Rule)       │
+    │  lisa-register-nfc-device  POST /nfc/devices            │
+    │  lisa-list-nfc-devices     GET  /nfc/devices            │
+    │  lisa-update-nfc-whitelist PUT  /nfc/devices/{tagId}/...│
+    │  lisa-check-nfc-device     GET  /nfc/check/{tagId}      │──► (no auth, for hardware)
     └──────────────────┬──────────────────────┘
                        │
          ┌─────────────┴──────────────┐
@@ -37,6 +41,7 @@
          │  AlertEvents               │
          │  DiscordUsers              │
          │  Users                     │
+         │  NFCDevices                │
          └────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
@@ -239,6 +244,26 @@ See `lambda/shadow-processor/lambda_function.py` and `pi/sensor_agent.py`.
 | assignedShipments | L | List of shipmentId strings |
 | createdAt | S | ISO 8601 UTC |
 
+### NFCDevices (PK: tagId) — new
+
+A single table holds every NFC tag LISA has ever seen. `status` decides whether
+it shows up only in "Known Devices" or also in the "Whitelist" panel — there is
+no separate whitelist table, so a device can never be "whitelisted but not
+known" or vice versa.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| tagId | S | Primary key — NFC serial number, e.g. `04:AB:12:CD:34:EF:00` |
+| label | S | Friendly name entered in the registration modal |
+| status | S | `KNOWN` \| `WHITELISTED` |
+| firstSeenAt | S | ISO 8601 UTC — set once, on first scan |
+| lastSeenAt | S | ISO 8601 UTC — updated on every scan |
+| addedBy | S | Admin email; only present when `status = WHITELISTED` |
+| addedAt | S | ISO 8601 UTC; only present when `status = WHITELISTED` |
+
+Optional GSI `status-index` (PK: `status`) lets `lisa-list-nfc-devices` and
+future queries use `Query` instead of `Scan` once the table grows.
+
 ---
 
 ## 4. API Routes
@@ -254,6 +279,10 @@ See `lambda/shadow-processor/lambda_function.py` and `pi/sensor_agent.py`.
 | POST | `/discord/commands` | lisa-discord-commands | Ed25519 | Deploy |
 | GET | `/me` | lisa-get-me | Cognito | New |
 | — | IoT Rule trigger | lisa-shadow-processor | IoT | New |
+| POST | `/nfc/devices` | lisa-register-nfc-device | Cognito (ADMIN) | New |
+| GET | `/nfc/devices` | lisa-list-nfc-devices | Cognito (ADMIN) | New |
+| PUT | `/nfc/devices/{tagId}/whitelist` | lisa-update-nfc-whitelist | Cognito (ADMIN) | New |
+| GET | `/nfc/check/{tagId}` | lisa-check-nfc-device | None (hardware) | New |
 
 Future paths to reserve now (mock integration, no Lambda yet):
 
@@ -269,11 +298,12 @@ Future paths to reserve now (mock integration, no Lambda yet):
 
 ### Phase 1 — Backend (~2 hours)
 
-1. Create DynamoDB tables: `Shipments`, `AlertEvents`, `DiscordUsers`, `Users`
+1. Create DynamoDB tables: `Shipments`, `AlertEvents`, `DiscordUsers`, `Users`, `NFCDevices` (PK `tagId`, optional GSI `status-index` on `status`)
 2. `python scripts/seed_dynamodb.py`
 3. Deploy 6 Lambda functions (Python 3.12) — paste from `lambda/*/lambda_function.py`
 4. Upload `lambda/discord-commands/discord-commands.zip` (pre-built, 924 KB)
-5. Add API Gateway routes, enable CORS on each, deploy stage
+5. Deploy the 4 NFC Lambda functions (`register-nfc-device`, `list-nfc-devices`, `update-nfc-whitelist`, `check-nfc-device`)
+6. Add API Gateway routes, enable CORS on each, deploy stage (`/nfc/check/{tagId}` gets **no** Cognito authorizer, same as `/unlock`)
 
 Verify:
 ```bash
@@ -352,6 +382,7 @@ All Lambda functions share one execution role. Minimum required:
     "Effect": "Allow",
     "Action": [
       "dynamodb:Scan",
+      "dynamodb:Query",
       "dynamodb:GetItem",
       "dynamodb:PutItem",
       "dynamodb:UpdateItem"
@@ -359,7 +390,9 @@ All Lambda functions share one execution role. Minimum required:
     "Resource": [
       "arn:aws:dynamodb:us-east-1:*:table/Shipments",
       "arn:aws:dynamodb:us-east-1:*:table/AlertEvents",
-      "arn:aws:dynamodb:us-east-1:*:table/Users"
+      "arn:aws:dynamodb:us-east-1:*:table/Users",
+      "arn:aws:dynamodb:us-east-1:*:table/NFCDevices",
+      "arn:aws:dynamodb:us-east-1:*:table/NFCDevices/index/*"
     ]
   }]
 }
@@ -370,3 +403,7 @@ All Lambda functions share one execution role. Minimum required:
 { "Effect": "Allow", "Action": "iot:UpdateThingShadow",
   "Resource": "arn:aws:iot:us-east-1:*:thing/shipment-*" }
 ```
+
+`lisa-check-nfc-device` runs unauthenticated (like `Sentinel_NFC_Unlock`) but
+still uses the same shared execution role — it only needs `dynamodb:GetItem`
+on `NFCDevices`, which the policy above already covers.

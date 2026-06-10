@@ -5,6 +5,16 @@ dynamodb = boto3.resource('dynamodb')
 
 
 def lambda_handler(event, context):
+    """
+    GET /nfc/devices
+
+    Returns every device LISA has ever seen, each tagged with `status`:
+      - "KNOWN"       -> appears in "Known Devices" only
+      - "WHITELISTED" -> appears in "Known Devices" (badge) and "Whitelist"
+
+    The frontend splits this single list into the two panels client-side.
+    Admin-only.
+    """
     claims = (
         (event.get('requestContext') or {})
         .get('authorizer', {})
@@ -19,15 +29,8 @@ def lambda_handler(event, context):
             'body': json.dumps({'error': 'Admin access required'}),
         }
 
-    tag_id = (event.get('pathParameters') or {}).get('tagId', '').strip()
-    if not tag_id:
-        return {
-            'statusCode': 400,
-            'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'tagId is required'}),
-        }
-
-    dynamodb.Table('NFCWhitelist').delete_item(Key={'tagId': tag_id})
+    items = dynamodb.Table('NFCDevices').scan().get('Items', [])
+    items.sort(key=lambda x: x.get('lastSeenAt', ''), reverse=True)
 
     return {
         'statusCode': 200,
@@ -35,5 +38,5 @@ def lambda_handler(event, context):
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
         },
-        'body': json.dumps({'tagId': tag_id, 'deleted': True}),
+        'body': json.dumps(items),
     }

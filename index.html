@@ -1645,6 +1645,24 @@
       };
       const _cognitoEnabled = !!_cognitoCfg.poolId && !!_cognitoCfg.clientId;
 
+      // ── API auth helper ──────────────────────────────────────────────────────
+      // Returns headers carrying the Cognito ID token (Phase 3 live API), or
+      // {} in demo mode / when no session is active.
+      function _getIdToken() {
+        return new Promise((resolve) => {
+          if (!_cognitoEnabled || !_cognitoUser) return resolve(null);
+          _cognitoUser.getSession((err, session) => {
+            if (err || !session || !session.isValid()) return resolve(null);
+            resolve(session.getIdToken().getJwtToken());
+          });
+        });
+      }
+
+      async function _authHeaders() {
+        const token = await _getIdToken();
+        return token ? { Authorization: "Bearer " + token } : {};
+      }
+
       // ── UI helpers ───────────────────────────────────────────────────────────
 
       function _showErr(msg) {
@@ -1973,16 +1991,18 @@
           },
         ],
         lastDiscordAt: null,
-        // Devices that have been scanned/registered at least once
-        nfcKnownDevices: [
-          { tagId: "04:AB:12:CD:34:EF:00", label: "Driver Device A",   firstSeenAt: "2025-06-01T10:00:00Z", lastSeenAt: "2025-06-05T08:00:00Z" },
-          { tagId: "04:CD:56:EF:78:01:02", label: "Warehouse Scanner", firstSeenAt: "2025-06-02T09:00:00Z", lastSeenAt: "2025-06-04T09:00:00Z" },
-          { tagId: "04:9F:33:11:22:AA:BB", label: "Guest Phone",       firstSeenAt: "2025-06-06T11:00:00Z", lastSeenAt: "2025-06-06T11:00:00Z" },
-        ],
-        // Subset of known devices authorised to unlock cargo
-        nfcWhitelist: [
-          { tagId: "04:AB:12:CD:34:EF:00", addedBy: "admin@lisa.demo", addedAt: "2025-06-01T10:05:00Z" },
-          { tagId: "04:CD:56:EF:78:01:02", addedBy: "admin@lisa.demo", addedAt: "2025-06-02T09:05:00Z" },
+        // Single table of every NFC tag ever seen — mirrors the DynamoDB
+        // `NFCDevices` table (PK: tagId). `status` is KNOWN or WHITELISTED;
+        // addedBy/addedAt are only set once a device is whitelisted.
+        nfcDevices: [
+          { tagId: "04:AB:12:CD:34:EF:00", label: "Driver Device A",   status: "WHITELISTED",
+            firstSeenAt: "2025-06-01T10:00:00Z", lastSeenAt: "2025-06-05T08:00:00Z",
+            addedBy: "admin@lisa.demo", addedAt: "2025-06-01T10:05:00Z" },
+          { tagId: "04:CD:56:EF:78:01:02", label: "Warehouse Scanner", status: "WHITELISTED",
+            firstSeenAt: "2025-06-02T09:00:00Z", lastSeenAt: "2025-06-04T09:00:00Z",
+            addedBy: "admin@lisa.demo", addedAt: "2025-06-02T09:05:00Z" },
+          { tagId: "04:9F:33:11:22:AA:BB", label: "Guest Phone",       status: "KNOWN",
+            firstSeenAt: "2025-06-06T11:00:00Z", lastSeenAt: "2025-06-06T11:00:00Z" },
         ],
       };
 
@@ -2456,49 +2476,101 @@
         return typeof NDEFReader !== "undefined";
       }
 
-      // ── Demo DB helpers ──────────────────────────────────────────────────────
+      // ── DB helpers (demo: in-memory _db.nfcDevices / live: API_BASE) ────────────
+      //
+      // _nfcDevicesCache mirrors the DynamoDB `NFCDevices` table (PK tagId,
+      // field `status`: KNOWN | WHITELISTED). Call dbNfcLoadDevices() to
+      // (re)populate it before reading from the synchronous getters below.
 
-      function dbNfcKnownDevices()      { return _db.nfcKnownDevices; }
-      function dbNfcWhitelist()         { return _db.nfcWhitelist; }
-      function dbNfcFindKnown(tagId)    { return _db.nfcKnownDevices.find((d) => d.tagId === tagId) || null; }
-      function dbNfcIsWhitelisted(tagId) { return _db.nfcWhitelist.some((w) => w.tagId === tagId); }
+      let _nfcDevicesCache = [];
 
-      // Register a newly-scanned device, or refresh an existing one's name/last-seen time
-      function dbNfcRegisterDevice(tagId, label) {
-        const now = new Date().toISOString();
-        const existing = dbNfcFindKnown(tagId);
-        if (existing) {
-          existing.label      = label || existing.label;
-          existing.lastSeenAt = now;
+      async function dbNfcLoadDevices() {
+        if (typeof API_BASE !== "undefined" && API_BASE) {
+          _nfcDevicesCache = await fetch(API_BASE + "/nfc/devices", {
+            headers: await _authHeaders(),
+          }).then((r) => r.json());
         } else {
-          _db.nfcKnownDevices.unshift({ tagId, label: label || tagId, firstSeenAt: now, lastSeenAt: now });
+          _nfcDevicesCache = _db.nfcDevices;
         }
+        return _nfcDevicesCache;
+      }
+
+      function dbNfcKnownDevices()       { return _nfcDevicesCache; }
+      function dbNfcWhitelist()          { return _nfcDevicesCache.filter((d) => d.status === "WHITELISTED"); }
+      function dbNfcFindKnown(tagId)     { return _nfcDevicesCache.find((d) => d.tagId === tagId) || null; }
+      function dbNfcIsWhitelisted(tagId) { const d = dbNfcFindKnown(tagId); return !!d && d.status === "WHITELISTED"; }
+
+      // Register a newly-scanned device, or (label="") just refresh lastSeenAt
+      // for a device that's already known. POST /nfc/devices upserts either way.
+      async function dbNfcRegisterDevice(tagId, label) {
+        if (typeof API_BASE !== "undefined" && API_BASE) {
+          await fetch(API_BASE + "/nfc/devices", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...(await _authHeaders()) },
+            body: JSON.stringify({ tagId, label: label || "" }),
+          });
+        } else {
+          const now = new Date().toISOString();
+          const existing = _db.nfcDevices.find((d) => d.tagId === tagId);
+          if (existing) {
+            existing.label      = label || existing.label;
+            existing.lastSeenAt = now;
+          } else {
+            _db.nfcDevices.unshift({
+              tagId, label: label || tagId, status: "KNOWN",
+              firstSeenAt: now, lastSeenAt: now,
+            });
+          }
+        }
+        await dbNfcLoadDevices();
       }
 
       // Update last-seen time for a device that's already known
-      function dbNfcTouchDevice(tagId) {
-        const existing = dbNfcFindKnown(tagId);
-        if (existing) existing.lastSeenAt = new Date().toISOString();
+      async function dbNfcTouchDevice(tagId) {
+        await dbNfcRegisterDevice(tagId, "");
       }
 
-      function dbNfcAddToWhitelist(tagId) {
+      async function dbNfcAddToWhitelist(tagId) {
         if (dbNfcIsWhitelisted(tagId)) return false;
-        _db.nfcWhitelist.unshift({
-          tagId,
-          addedBy: sessionStorage.getItem("lisa_email") || "admin",
-          addedAt: new Date().toISOString(),
-        });
+        if (typeof API_BASE !== "undefined" && API_BASE) {
+          await fetch(API_BASE + "/nfc/devices/" + encodeURIComponent(tagId) + "/whitelist", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", ...(await _authHeaders()) },
+            body: JSON.stringify({ whitelisted: true }),
+          });
+        } else {
+          const dev = _db.nfcDevices.find((d) => d.tagId === tagId);
+          if (dev) {
+            dev.status  = "WHITELISTED";
+            dev.addedBy = sessionStorage.getItem("lisa_email") || "admin";
+            dev.addedAt = new Date().toISOString();
+          }
+        }
+        await dbNfcLoadDevices();
         return true;
       }
 
-      function dbNfcRemoveFromWhitelist(tagId) {
-        const idx = _db.nfcWhitelist.findIndex((w) => w.tagId === tagId);
-        if (idx !== -1) _db.nfcWhitelist.splice(idx, 1);
+      async function dbNfcRemoveFromWhitelist(tagId) {
+        if (typeof API_BASE !== "undefined" && API_BASE) {
+          await fetch(API_BASE + "/nfc/devices/" + encodeURIComponent(tagId) + "/whitelist", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", ...(await _authHeaders()) },
+            body: JSON.stringify({ whitelisted: false }),
+          });
+        } else {
+          const dev = _db.nfcDevices.find((d) => d.tagId === tagId);
+          if (dev) {
+            dev.status = "KNOWN";
+            delete dev.addedBy;
+            delete dev.addedAt;
+          }
+        }
+        await dbNfcLoadDevices();
       }
 
       // ── Render ───────────────────────────────────────────────────────────────
 
-      function renderNfcWhitelist() {
+      async function renderNfcWhitelist() {
         if (_currentRole !== "ADMIN") return;
 
         const isMobile  = _isAndroidMobile();
@@ -2518,6 +2590,7 @@
             : "Desktop browsers can't scan NFC devices. You can still view and manage known devices and the whitelist below.";
         }
 
+        await dbNfcLoadDevices();
         _renderKnownDevicesTable();
         _renderWhitelistTable();
       }
@@ -2573,15 +2646,15 @@
 
       // ── Whitelist actions ────────────────────────────────────────────────────
 
-      function addToWhitelist(tagId) {
-        dbNfcAddToWhitelist(tagId);
+      async function addToWhitelist(tagId) {
+        await dbNfcAddToWhitelist(tagId);
         _renderKnownDevicesTable();
         _renderWhitelistTable();
       }
 
-      function removeFromWhitelist(tagId) {
+      async function removeFromWhitelist(tagId) {
         if (!confirm("Remove this device from the whitelist?")) return;
-        dbNfcRemoveFromWhitelist(tagId);
+        await dbNfcRemoveFromWhitelist(tagId);
         _renderKnownDevicesTable();
         _renderWhitelistTable();
       }
@@ -2600,13 +2673,13 @@
           await _nfcReader.scan();
           _nfcScanning = true;
 
-          _nfcReader.addEventListener("reading", ({ serialNumber }) => {
+          _nfcReader.addEventListener("reading", async ({ serialNumber }) => {
             _setNfcScanZone(false);
             _resetScanButtons();
 
             const known = dbNfcFindKnown(serialNumber);
             if (known) {
-              dbNfcTouchDevice(serialNumber);
+              await dbNfcTouchDevice(serialNumber);
               _setNfcStatus("ok", "Recognized device: " + known.label + " (" + serialNumber + ")");
               _renderKnownDevicesTable();
             } else {
@@ -2660,7 +2733,7 @@
         _setNfcStatus("", 'Press "Start Scan" and hold the device near your phone.');
       }
 
-      function confirmNfcRegister() {
+      async function confirmNfcRegister() {
         const name  = document.getElementById("nfc-register-name").value.trim();
         const errEl = document.getElementById("nfc-register-error");
 
@@ -2670,7 +2743,7 @@
           return;
         }
 
-        dbNfcRegisterDevice(_pendingNfcTagId, name);
+        await dbNfcRegisterDevice(_pendingNfcTagId, name);
         document.getElementById("nfc-register-modal").classList.remove("open");
         _setNfcStatus("ok", 'Device "' + name + '" added to known devices.');
         _renderKnownDevicesTable();

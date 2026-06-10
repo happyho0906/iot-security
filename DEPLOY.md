@@ -9,13 +9,22 @@
 
 ## Step 1: DynamoDB Tables
 
-Create these 3 tables in AWS Console → DynamoDB → Create table:
+Create these tables in AWS Console → DynamoDB → Create table:
 
 | Table Name | Partition Key | Type | Billing |
 |-----------|---------------|------|---------|
 | Shipments | shipmentId | String | On-demand |
 | AlertEvents | alertId | String | On-demand |
 | DiscordUsers | discordUserId | String | On-demand |
+| NFCDevices | tagId | String | On-demand |
+
+For `NFCDevices`, optionally add a Global Secondary Index:
+
+- Index name: `status-index`
+- Partition key: `status` (String)
+
+(The bundled Lambdas use `Scan` and work fine without the GSI; add it later if
+the table grows large and you want `Query`-based lookups.)
 
 After creating tables, seed initial data:
 ```bash
@@ -37,6 +46,17 @@ All use **Runtime: Python 3.12**.
 | lisa-trigger-alert | lambda/trigger-alert/lambda_function.py | lambda_function.lambda_handler |
 | lisa-resolve-alert | lambda/resolve-alert/lambda_function.py | lambda_function.lambda_handler |
 | lisa-discord-commands | (zip bundle — see below) | lambda_function.lambda_handler |
+
+### NFC whitelist Lambda functions
+
+Create these 4 additional functions, also **Runtime: Python 3.12**:
+
+| Function Name | File | Handler |
+|--------------|------|---------|
+| lisa-register-nfc-device | lambda/register-nfc-device/lambda_function.py | lambda_function.lambda_handler |
+| lisa-list-nfc-devices | lambda/list-nfc-devices/lambda_function.py | lambda_function.lambda_handler |
+| lisa-update-nfc-whitelist | lambda/update-nfc-whitelist/lambda_function.py | lambda_function.lambda_handler |
+| lisa-check-nfc-device | lambda/check-nfc-device/lambda_function.py | lambda_function.lambda_handler |
 
 ### discord-commands bundle (requires PyNaCl)
 
@@ -65,7 +85,9 @@ Upload `lambda/discord-commands/discord-commands.zip` via the Lambda console.
       ],
       "Resource": [
         "arn:aws:dynamodb:us-east-1:*:table/Shipments",
-        "arn:aws:dynamodb:us-east-1:*:table/AlertEvents"
+        "arn:aws:dynamodb:us-east-1:*:table/AlertEvents",
+        "arn:aws:dynamodb:us-east-1:*:table/NFCDevices",
+        "arn:aws:dynamodb:us-east-1:*:table/NFCDevices/index/*"
       ]
     }
   ]
@@ -100,8 +122,18 @@ Add these resources and methods — do NOT modify the existing `/unlock` route:
 | POST | /demo/trigger-alert | lisa-trigger-alert |
 | POST | /alerts/{alertId}/resolve | lisa-resolve-alert |
 | POST | /discord/commands | lisa-discord-commands |
+| POST | /nfc/devices | lisa-register-nfc-device |
+| GET | /nfc/devices | lisa-list-nfc-devices |
+| PUT | /nfc/devices/{tagId}/whitelist | lisa-update-nfc-whitelist |
+| GET | /nfc/check/{tagId} | lisa-check-nfc-device |
 
 **Enable CORS on every new resource** (select resource → Actions → Enable CORS → Enable).
+
+For `/nfc/devices` and `/nfc/devices/{tagId}/whitelist`, attach the same Cognito
+authorizer used by `/shipments` etc. (these Lambdas additionally check
+`custom:role = ADMIN` themselves). For `/nfc/check/{tagId}`, leave the
+authorizer set to **NONE** — same as `/unlock` — so hardware can call it
+without a JWT.
 
 After adding all routes: **Actions → Deploy API** → select your stage (or create `prod`) → Deploy.
 
@@ -168,6 +200,18 @@ curl -X POST $BASE/demo/trigger-alert \
   -H 'Content-Type: application/json' \
   -d '{"shipmentId":"SHIP-001","alertType":"TEMP_HIGH","severity":"CRITICAL","temperature":"12.5"}'
 
+# NFC whitelist (requires a Cognito ADMIN access token in $TOKEN for the /nfc/devices* routes)
+curl -H "Authorization: Bearer $TOKEN" $BASE/nfc/devices
+curl -X POST $BASE/nfc/devices \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"tagId":"04:11:22:33:44:55:66","label":"Test Tag"}'
+curl -X PUT "$BASE/nfc/devices/04:11:22:33:44:55:66/whitelist" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"whitelisted": true}'
+
+# /nfc/check is unauthenticated, like /unlock
+curl "$BASE/nfc/check/04:11:22:33:44:55:66"
+
 # Serve frontend locally
 python3 -m http.server 8080
 # Open http://localhost:8080 → login with admin@lisa-demo.com
@@ -190,3 +234,8 @@ python3 -m http.server 8080
 - [ ] Map placeholder page loads
 - [ ] Discord `/status SHIP-001` returns live data
 - [ ] Existing `POST /unlock` endpoint still works
+- [ ] `GET /nfc/devices` (admin token) returns the seeded NFC devices
+- [ ] `POST /nfc/devices` registers a new tag with `status = KNOWN`
+- [ ] `PUT /nfc/devices/{tagId}/whitelist` toggles `status` to `WHITELISTED` and back to `KNOWN`
+- [ ] `GET /nfc/check/{tagId}` (no auth) returns `allowed: true` only for whitelisted tags
+- [ ] Non-admin users get `403` from all `/nfc/devices*` routes
