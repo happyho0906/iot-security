@@ -2130,11 +2130,44 @@
           { userId: "demo-driver",   email: "driver@lisa.demo",   role: "DRIVER" },
           { userId: "demo-customer", email: "customer@lisa.demo", role: "CUSTOMER" },
         ],
+        // Mirrors the DynamoDB `AccidentEvents` table (PK: accidentId).
+        // Road accidents drawn as warning markers on the Map page; demo
+        // coordinates sit on Hsinchu City roads.
+        accidents: [
+          { accidentId: "ACC-001", type: "COLLISION", severity: "HIGH",
+            description: "Collision reported on a Hsinchu City road",
+            latitude: 24.8043, longitude: 120.9688, reportedAt: "2025-06-05T07:40:00Z" },
+          { accidentId: "ACC-002", type: "ROAD_BLOCKED", severity: "MEDIUM",
+            description: "Road Blocked reported on a Hsinchu City road",
+            latitude: 24.7975, longitude: 120.9900, reportedAt: "2025-06-05T08:10:00Z" },
+          { accidentId: "ACC-003", type: "VEHICLE_BREAKDOWN", severity: "LOW",
+            description: "Vehicle Breakdown reported on a Hsinchu City road",
+            latitude: 24.8046, longitude: 120.9940, reportedAt: "2025-06-05T08:30:00Z" },
+        ],
       };
 
       function dbShipments()    { return _db.shipments; }
       function dbShipment(id)   { return _db.shipments.find((s) => s.shipmentId === id) || null; }
       function dbAlerts()       { return _db.alerts; }
+      function dbAccidents()    { return _db.accidents; }
+
+      // Replaces the in-memory accidents with the live DynamoDB
+      // AccidentEvents table (GET /accidents) when API_BASE is set. On any
+      // failure the demo data is kept so the map still renders.
+      async function dbLoadAccidents() {
+        if (typeof API_BASE === "undefined" || !API_BASE) return _db.accidents;
+        try {
+          const resp = await fetch(API_BASE + "/accidents", {
+            headers: await _authHeaders(),
+          });
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
+          const items = await resp.json();
+          if (Array.isArray(items)) _db.accidents = items;
+        } catch (e) {
+          console.warn("GET /accidents failed, keeping demo accidents:", e);
+        }
+        return _db.accidents;
+      }
 
       // Replaces the in-memory shipments with the live DynamoDB Shipments
       // table (GET /shipments) when API_BASE is set. On any failure the
@@ -2209,7 +2242,9 @@
             shipmentId, status, riskLevel,
             temperature: 4.0, humidity: 60, gForce: 0.0, batteryLevel: 100,
             lockStatus: "LOCKED", deviceStatus: "ONLINE",
-            latitude: 24.8016, longitude: 120.9715,
+            // Default spawn point: Guangfu Rd near the NTHU main gate
+            // (matches lambda/create-shipment's default).
+            latitude: 24.79596236380543, longitude: 120.99216710551259,
             lastUpdatedAt: new Date().toISOString(),
           };
           if (driver)   item.driver   = driver;
@@ -2429,7 +2464,7 @@
         renderDiscordStatus();
         navigate(location.hash.replace("#", "") || "dashboard");
 
-        await dbLoadShipments();
+        await Promise.all([dbLoadShipments(), dbLoadAccidents()]);
         renderDashboard();
         renderAlerts();
         // Re-render whichever data page is currently visible.
@@ -2822,11 +2857,57 @@
           _leafletMarkers.push(marker);
         });
 
-        if (ships.length > 0) {
-          const bounds = L.latLngBounds(
-            ships.map((s) => [s.latitude, s.longitude]),
+        // Road accidents (AccidentEvents table) as warning markers, so
+        // drivers/admins can spot trouble near a shipment's route.
+        const accidents = dbAccidents();
+        const accidentColor = { HIGH: "#dc2626", MEDIUM: "#b45309", LOW: "#64748b" };
+
+        accidents.forEach((a) => {
+          const color = accidentColor[a.severity] || "#b45309";
+          const marker = L.marker([a.latitude, a.longitude], {
+            icon: L.divIcon({
+              className: "",
+              html:
+                '<div style="width:26px; height:26px; border-radius:6px; background:' +
+                color +
+                "; color:#ffffff; font-size:15px; font-weight:700; line-height:26px; " +
+                'text-align:center; border:2px solid #ffffff; box-shadow:0 1px 4px rgba(15,23,42,0.4);">&#9888;</div>',
+              iconSize: [26, 26],
+              iconAnchor: [13, 13],
+            }),
+          });
+
+          marker.bindPopup(
+            '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif; min-width:170px; padding:2px 0;">' +
+              '<div style="font-weight:700; font-size:13px; margin-bottom:8px;">&#9888; ' +
+              a.accidentId +
+              "</div>" +
+              '<div style="font-size:12px; line-height:1.9; color:#374151;">' +
+              'Type: <strong>' +
+              (a.type || "").replace(/_/g, " ") +
+              "</strong><br>" +
+              'Severity: <strong style="color:' +
+              color +
+              '">' +
+              a.severity +
+              "</strong><br>" +
+              (a.description || "") +
+              "<br>" +
+              "Reported: " +
+              fmtTime(a.reportedAt) +
+              "</div>" +
+              "</div>",
           );
-          _leafletMap.fitBounds(bounds, { padding: [50, 50] });
+
+          marker.addTo(_leafletMap);
+          _leafletMarkers.push(marker);
+        });
+
+        const allPoints = ships
+          .map((s) => [s.latitude, s.longitude])
+          .concat(accidents.map((a) => [a.latitude, a.longitude]));
+        if (allPoints.length > 0) {
+          _leafletMap.fitBounds(L.latLngBounds(allPoints), { padding: [50, 50] });
         }
       }
     </script>

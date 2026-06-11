@@ -69,6 +69,26 @@ def seed():
         'resolvedAt': None,
     })
 
+    # Seed AccidentEvents: 3 demo road accidents randomly placed on Hsinchu
+    # City roads. The dashboard's Map page draws these as warning markers
+    # alongside the shipment markers.
+    accidents = dynamodb.Table('AccidentEvents')
+    for i, (acc_type, severity) in enumerate([
+        ('COLLISION',          'HIGH'),
+        ('ROAD_BLOCKED',       'MEDIUM'),
+        ('VEHICLE_BREAKDOWN',  'LOW'),
+    ], start=1):
+        lat, lng = random_road_point()
+        accidents.put_item(Item={
+            'accidentId': f'ACC-{i:03d}',
+            'type': acc_type,
+            'severity': severity,
+            'description': acc_type.replace('_', ' ').title() + ' reported on a Hsinchu City road',
+            'latitude': lat,
+            'longitude': lng,
+            'reportedAt': now,
+        })
+
     # Seed Users table (for Cognito role mapping). Shipment assignment is
     # not stored here — it lives on the Shipments table's driver/customer
     # email fields, so query Shipments by those to find a user's shipments.
@@ -104,7 +124,7 @@ def seed():
     ]:
         nfc.put_item(Item=entry)
 
-    print('Seed complete: 3 shipments, 1 alert, 3 users, 3 NFC devices (2 whitelisted)')
+    print('Seed complete: 3 shipments, 1 alert, 3 accidents, 3 users, 3 NFC devices (2 whitelisted)')
 
 if __name__ == '__main__':
     seed()

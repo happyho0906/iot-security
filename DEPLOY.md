@@ -156,13 +156,16 @@ python3 scripts/seed_dynamodb.py
 ```
 
 This deploys `lisa-list-shipments` (`GET /shipments`, any signed-in user),
+`lisa-list-accidents` (`GET /accidents`, any signed-in user),
 `lisa-list-users` (`GET /users?role=...`), `lisa-create-shipment`
 (`POST /shipments`) and `lisa-delete-shipment` (`DELETE /shipments/{id}`),
-the latter three admin-only — all behind the JWT authorizer. It also adds
-`DELETE` to the API-level CORS AllowMethods. The dashboard reads the
-"All Shipments" table from `GET /shipments`; the "Add Shipment" modal uses
-`GET /users` + `POST /shipments` to create shipments, and the per-row
-Delete button (with its confirmation dialog) calls `DELETE /shipments/{id}`.
+the latter three admin-only — all behind the JWT authorizer. It also
+creates the `AccidentEvents` table and adds `DELETE` to the API-level CORS
+AllowMethods. The dashboard reads the "All Shipments" table from
+`GET /shipments`; the Map page additionally draws `GET /accidents` rows as
+warning markers; the "Add Shipment" modal uses `GET /users` +
+`POST /shipments` to create shipments, and the per-row Delete button (with
+its confirmation dialog) calls `DELETE /shipments/{id}`.
 
 ### discord-commands bundle (requires PyNaCl)
 

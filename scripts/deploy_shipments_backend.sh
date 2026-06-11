@@ -2,13 +2,15 @@
 #
 # Deploys the shipments backend onto the EXISTING LISA HTTP API
 # (API Gateway v2, e.g. "Sentinel_NFC_API"):
-#   - Creates the `Shipments` and `Users` DynamoDB tables if they don't
-#     already exist (PK shipmentId / userId respectively)
+#   - Creates the `Shipments`, `Users` and `AccidentEvents` DynamoDB tables
+#     if they don't already exist (PK shipmentId / userId / accidentId)
 #   - Creates/updates the `lisa-list-shipments`, `lisa-list-users`,
-#     `lisa-create-shipment` and `lisa-delete-shipment` Lambda functions
-#   - Adds GET /shipments (any signed-in user), GET /users, POST /shipments
-#     and DELETE /shipments/{id} (admin-only Lambdas) routes to the existing
-#     HTTP API, all protected by the shared Cognito JWT authorizer
+#     `lisa-create-shipment`, `lisa-delete-shipment` and
+#     `lisa-list-accidents` Lambda functions
+#   - Adds GET /shipments + GET /accidents (any signed-in user), GET /users,
+#     POST /shipments and DELETE /shipments/{id} (admin-only Lambdas) routes
+#     to the existing HTTP API, all protected by the shared Cognito JWT
+#     authorizer
 #   - Adds DELETE to the API-level CORS AllowMethods (needed for the
 #     dashboard's delete-shipment button to pass the browser preflight)
 #
@@ -85,6 +87,7 @@ create_table_if_missing() {
 
 create_table_if_missing Shipments shipmentId
 create_table_if_missing Users userId
+create_table_if_missing AccidentEvents accidentId
 
 # ── 2. Lambda functions ─────────────────────────────────────────────────────
 
@@ -125,6 +128,7 @@ ARN_LIST_SHIP=$(deploy_lambda  lisa-list-shipments  lambda/list-shipments)
 ARN_LIST_USERS=$(deploy_lambda lisa-list-users     lambda/list-users)
 ARN_CREATE_SHIP=$(deploy_lambda lisa-create-shipment lambda/create-shipment)
 ARN_DELETE_SHIP=$(deploy_lambda lisa-delete-shipment lambda/delete-shipment)
+ARN_LIST_ACC=$(deploy_lambda   lisa-list-accidents  lambda/list-accidents)
 
 # ── 3. HTTP API integrations + routes ───────────────────────────────────────
 
@@ -177,16 +181,19 @@ INT_LIST_SHIP=$(get_or_create_integration "$ARN_LIST_SHIP")
 INT_LIST_USERS=$(get_or_create_integration "$ARN_LIST_USERS")
 INT_CREATE_SHIP=$(get_or_create_integration "$ARN_CREATE_SHIP")
 INT_DELETE_SHIP=$(get_or_create_integration "$ARN_DELETE_SHIP")
+INT_LIST_ACC=$(get_or_create_integration "$ARN_LIST_ACC")
 
 get_or_create_route "GET /shipments"          "$INT_LIST_SHIP"
 get_or_create_route "GET /users"              "$INT_LIST_USERS"
 get_or_create_route "POST /shipments"         "$INT_CREATE_SHIP"
 get_or_create_route "DELETE /shipments/{id}"  "$INT_DELETE_SHIP"
+get_or_create_route "GET /accidents"          "$INT_LIST_ACC"
 
 add_permission lisa-list-shipments
 add_permission lisa-list-users
 add_permission lisa-create-shipment
 add_permission lisa-delete-shipment
+add_permission lisa-list-accidents
 
 # ── CORS: make sure DELETE is allowed at the API level ──────────────────────
 # (HTTP API CORS is one API-level block; the NFC deploy script set
@@ -213,12 +220,14 @@ cat <<EOF
 
 Done. New routes are live at:
   GET    $BASE/shipments                          (any signed-in user)
+  GET    $BASE/accidents                          (any signed-in user)
   GET    $BASE/users?role=DRIVER|CUSTOMER|ADMIN  (admin only)
   POST   $BASE/shipments                          (admin only)
   DELETE $BASE/shipments/{id}                     (admin only)
 
 Smoke test (needs a Cognito ID token; /users needs an admin one):
   curl -H "Authorization: Bearer \$TOKEN" "$BASE/shipments"
+  curl -H "Authorization: Bearer \$TOKEN" "$BASE/accidents"
   curl -H "Authorization: Bearer \$TOKEN" "$BASE/users?role=DRIVER"
   curl -H "Authorization: Bearer \$TOKEN" -H "Content-Type: application/json" \\
        -X POST "$BASE/shipments" \\
