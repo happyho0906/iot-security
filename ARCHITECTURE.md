@@ -299,6 +299,7 @@ future queries use `Query` instead of `Scan` once the table grows.
 | GET | `/nfc/check/{tagId}` | lisa-check-nfc-device | None (hardware) | New |
 | GET | `/users` | lisa-list-users | Cognito (ADMIN) | New |
 | POST | `/shipments` | lisa-create-shipment | Cognito (ADMIN) | New |
+| DELETE | `/shipments/{id}` | lisa-delete-shipment | Cognito (ADMIN) | New |
 
 Future paths to reserve now (mock integration, no Lambda yet):
 

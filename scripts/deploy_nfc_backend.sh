@@ -231,10 +231,12 @@ echo "==> Updating API-level CORS configuration..."
 EXISTING_ORIGINS=$(aws apigatewayv2 get-api --api-id "$API_ID" --region "$AWS_REGION" \
   --query 'CorsConfiguration.AllowOrigins' --output json)
 
+# DELETE is used by the shipments backend (DELETE /shipments/{id}) — keep
+# it in the list so re-running this script doesn't break that feature.
 aws apigatewayv2 update-api --api-id "$API_ID" --region "$AWS_REGION" \
   --cors-configuration "{
     \"AllowOrigins\": ${EXISTING_ORIGINS:-[\"*\"]},
-    \"AllowMethods\": [\"GET\",\"POST\",\"PUT\",\"OPTIONS\"],
+    \"AllowMethods\": [\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],
     \"AllowHeaders\": [\"content-type\",\"authorization\"],
     \"AllowCredentials\": false,
     \"MaxAge\": 0
