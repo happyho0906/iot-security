@@ -17,9 +17,13 @@ def lambda_handler(event, context):
 
     Admin-only.
     """
+    # HTTP API (v2) + Cognito JWT authorizer puts claims under
+    # requestContext.authorizer.jwt.claims (not .authorizer.claims like
+    # REST API v1).
     claims = (
         (event.get('requestContext') or {})
         .get('authorizer', {})
+        .get('jwt', {})
         .get('claims', {})
     )
     role  = claims.get('custom:role', '').upper()
