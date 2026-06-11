@@ -1115,7 +1115,11 @@
       // Read from config.local.js (gitignored)
       const DISCORD_WEBHOOK_URL = (window.LISA_CONFIG || {}).DISCORD_WEBHOOK_URL || "";
 
-      // const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/unlock';
+      // HTTP API on $default stage — no stage prefix in the URL.
+      // Currently only the NFC Whitelist db* helpers check API_BASE; other
+      // db* functions (dbShipments etc.) remain demo-only until their
+      // Lambdas/routes are deployed too.
+      const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com';
     </script>
 
     <!-- login -->
