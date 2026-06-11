@@ -139,6 +139,28 @@ attach the IAM policy from ARCHITECTURE.md §6 (includes `NFCDevices` and
 `NFCDevices/index/*`) — AWS Academy `LabRole` usually already has broad
 DynamoDB access, so this is normally unnecessary.
 
+### Step 2c (alternative): scripted deploy of the "Add Shipment" admin feature
+
+Run `scripts/deploy_shipments_backend.sh` from AWS CloudShell, after Step 2b
+(it reuses the `lisa-cognito-jwt` authorizer created there). It is idempotent
+and additionally creates the `Shipments` and `Users` tables if they don't
+already exist:
+
+```bash
+export AWS_REGION=us-east-1
+export API_ID=d1rocl5xb9        # existing HTTP API "Sentinel_NFC_API"
+export LAMBDA_ROLE_ARN=arn:aws:iam::194686029661:role/LabRole
+
+bash scripts/deploy_shipments_backend.sh
+python3 scripts/seed_dynamodb.py
+```
+
+This deploys `lisa-list-users` (`GET /users?role=...`) and
+`lisa-create-shipment` (`POST /shipments`), both admin-only via the JWT
+authorizer. The dashboard's "Add Shipment" modal uses these to populate the
+Driver/Customer dropdowns from the `Users` table and to persist new shipments
+to the `Shipments` table.
+
 ### discord-commands bundle (requires PyNaCl)
 
 ```bash
@@ -167,6 +189,7 @@ Upload `lambda/discord-commands/discord-commands.zip` via the Lambda console.
       "Resource": [
         "arn:aws:dynamodb:us-east-1:*:table/Shipments",
         "arn:aws:dynamodb:us-east-1:*:table/AlertEvents",
+        "arn:aws:dynamodb:us-east-1:*:table/Users",
         "arn:aws:dynamodb:us-east-1:*:table/NFCDevices",
         "arn:aws:dynamodb:us-east-1:*:table/NFCDevices/index/*"
       ]
