@@ -126,7 +126,10 @@ fi
 deploy_lambda() {
   local name="$1" dir="$2"
   local zip="/tmp/${name}.zip"
-  echo "==> Deploying $name (from $dir)"
+  # NOTE: this function's stdout is captured via $(...) to get the
+  # FunctionArn, so all progress messages MUST go to stderr (>&2) —
+  # otherwise they get appended to the captured ARN and corrupt it.
+  echo "==> Deploying $name (from $dir)" >&2
   rm -f "$zip"
   (cd "$dir" && zip -q -r "$zip" lambda_function.py)
 
@@ -135,7 +138,7 @@ deploy_lambda() {
       --function-name "$name" --zip-file "fileb://$zip" \
       --region "$AWS_REGION" >/dev/null
     aws lambda wait function-updated --function-name "$name" --region "$AWS_REGION"
-    echo "    Updated existing function."
+    echo "    Updated existing function." >&2
   else
     aws lambda create-function \
       --function-name "$name" \
@@ -146,7 +149,7 @@ deploy_lambda() {
       --zip-file "fileb://$zip" \
       --region "$AWS_REGION" >/dev/null
     aws lambda wait function-active --function-name "$name" --region "$AWS_REGION"
-    echo "    Created new function."
+    echo "    Created new function." >&2
   fi
 
   aws lambda get-function --function-name "$name" --region "$AWS_REGION" \
