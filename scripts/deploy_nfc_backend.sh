@@ -1,73 +1,100 @@
 #!/usr/bin/env bash
 #
-# Deploys the NFC whitelist backend onto the EXISTING LISA API Gateway:
+# Deploys the NFC whitelist backend onto the EXISTING LISA HTTP API
+# (API Gateway v2, e.g. "Sentinel_NFC_API"):
 #   - Creates the `NFCDevices` DynamoDB table (+ status-index GSI)
 #   - Creates/updates the 4 NFC Lambda functions
-#   - Adds /nfc/devices, /nfc/devices/{tagId}/whitelist, /nfc/check/{tagId}
-#     routes to the existing REST API and redeploys the stage
+#   - Adds POST/GET /nfc/devices, PUT /nfc/devices/{tagId}/whitelist,
+#     GET /nfc/check/{tagId} routes to the existing HTTP API
+#   - Optionally creates a Cognito JWT authorizer and attaches it to the
+#     3 admin-only routes (registration/list/whitelist update)
 #
-# This script is purely additive. It never touches /unlock,
-# Sentinel_NFC_Unlock, or Sentinel_Image_Processor (see INTEGRATION.md
-# "Do Not Touch"). Re-running it is safe (idempotent where practical).
+# This script is purely additive. It never touches POST /unlock,
+# Sentinel_NFC_Unlock, Sentinel_Image_Processor, or the existing
+# /discord/commands route (see INTEGRATION.md "Do Not Touch").
+# Re-running it is safe (idempotent: existing integrations/routes/
+# authorizer are reused and updated in place).
 #
 # IMPORTANT — AWS Amplify in this repo only manages FRONTEND HOSTING/CI-CD
 # (see amplify.yml: it builds index.html + config.local.js from env vars).
 # It does not deploy Lambda/DynamoDB/API Gateway. Those are deployed
 # separately, by running this script (or the manual steps in DEPLOY.md)
-# once from a machine with the AWS CLI configured for this AWS account.
+# once from a machine/CloudShell with the AWS CLI configured for this
+# AWS account.
 #
 # Prerequisites:
-#   - AWS CLI v2, configured (`aws configure` or SSO) with permissions for
-#     dynamodb:*, lambda:*, apigateway:*, iam:PassRole, sts:GetCallerIdentity
-#   - `zip` available on PATH
+#   - AWS CLI v2, configured (e.g. AWS CloudShell already has this)
+#   - `zip` available on PATH (preinstalled in CloudShell)
 #   - Run from the repository root
 #
 # Required environment variables:
 #   AWS_REGION       e.g. us-east-1
-#   API_ID           existing REST API ID, e.g. d1rocl5xb9 (see DEPLOY.md)
-#   STAGE            existing deployed stage, e.g. unlock
-#   LAMBDA_ROLE_ARN  shared Lambda execution role ARN (see ARCHITECTURE.md §6 —
-#                    must allow dynamodb:Scan/Query/GetItem/PutItem/UpdateItem
+#   API_ID           existing HTTP API ID, e.g. d1rocl5xb9 (Sentinel_NFC_API)
+#   LAMBDA_ROLE_ARN  shared Lambda execution role ARN, e.g. LabRole
+#                    (must allow dynamodb:Scan/Query/GetItem/PutItem/UpdateItem
 #                    on NFCDevices and NFCDevices/index/*)
 #
-# Optional:
-#   COGNITO_AUTHORIZER_ID  ID of the Cognito authorizer already attached to
-#                          this API (used by /shipments etc). If unset, the
-#                          three admin NFC routes are created with NO
-#                          authorizer (NONE) and you must attach the
-#                          authorizer manually afterwards in the API Gateway
-#                          console (Resources → method → Method Request).
+# Optional (enables Cognito auth on the 3 admin routes):
+#   COGNITO_USER_POOL_ID   e.g. us-east-1_XXXXXXXXX
+#   COGNITO_CLIENT_ID      App client ID used by the dashboard (no secret)
 #
-# Example:
+#   If either is unset, the 3 admin routes are created with NO authorizer
+#   (authorizationType=NONE). In that case requestContext.authorizer will be
+#   absent, so the Lambdas' `custom:role == ADMIN` check will always fail
+#   (403) — i.e. the admin endpoints simply won't work yet. Set both env
+#   vars and re-run this script once the Cognito User Pool is known.
+#
+# Example (run in AWS CloudShell, region us-east-1):
 #   export AWS_REGION=us-east-1
 #   export API_ID=d1rocl5xb9
-#   export STAGE=unlock
-#   export LAMBDA_ROLE_ARN=arn:aws:iam::123456789012:role/lisa-lambda-role
-#   export COGNITO_AUTHORIZER_ID=abc123      # optional
+#   export LAMBDA_ROLE_ARN=arn:aws:iam::194686029661:role/LabRole
+#   export COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX   # optional
+#   export COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx  # optional
 #   bash scripts/deploy_nfc_backend.sh
 
 set -euo pipefail
 
 : "${AWS_REGION:?Set AWS_REGION, e.g. us-east-1}"
-: "${API_ID:?Set API_ID to the existing REST API ID (see DEPLOY.md)}"
-: "${STAGE:?Set STAGE to the existing deployed stage, e.g. unlock}"
-: "${LAMBDA_ROLE_ARN:?Set LAMBDA_ROLE_ARN to the shared Lambda execution role ARN}"
+: "${API_ID:?Set API_ID to the existing HTTP API ID (Sentinel_NFC_API)}"
+: "${LAMBDA_ROLE_ARN:?Set LAMBDA_ROLE_ARN to the shared Lambda execution role ARN (e.g. LabRole)}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
-AUTH_ADMIN="NONE"
-AUTHORIZER_ARGS=()
-if [ -n "${COGNITO_AUTHORIZER_ID:-}" ]; then
-  AUTH_ADMIN="COGNITO_USER_POOLS"
-  AUTHORIZER_ARGS=(--authorizer-id "$COGNITO_AUTHORIZER_ID")
+# ── 0. Cognito JWT authorizer (optional) ────────────────────────────────────
+
+AUTH_TYPE="NONE"
+AUTHORIZER_ID=""
+
+if [ -n "${COGNITO_USER_POOL_ID:-}" ] && [ -n "${COGNITO_CLIENT_ID:-}" ]; then
+  AUTH_TYPE="JWT"
+  ISSUER="https://cognito-idp.${AWS_REGION}.amazonaws.com/${COGNITO_USER_POOL_ID}"
+
+  echo "==> Checking for existing Cognito JWT authorizer..."
+  AUTHORIZER_ID=$(aws apigatewayv2 get-authorizers --api-id "$API_ID" --region "$AWS_REGION" \
+    --query "Items[?Name=='lisa-cognito-jwt'].AuthorizerId | [0]" --output text)
+
+  if [ "$AUTHORIZER_ID" != "None" ] && [ -n "$AUTHORIZER_ID" ]; then
+    echo "    Reusing existing authorizer $AUTHORIZER_ID"
+    aws apigatewayv2 update-authorizer --api-id "$API_ID" --authorizer-id "$AUTHORIZER_ID" \
+      --jwt-configuration "Audience=${COGNITO_CLIENT_ID},Issuer=${ISSUER}" \
+      --region "$AWS_REGION" >/dev/null
+  else
+    AUTHORIZER_ID=$(aws apigatewayv2 create-authorizer --api-id "$API_ID" --region "$AWS_REGION" \
+      --authorizer-type JWT --identity-source '$request.header.Authorization' \
+      --name lisa-cognito-jwt \
+      --jwt-configuration "Audience=${COGNITO_CLIENT_ID},Issuer=${ISSUER}" \
+      --query AuthorizerId --output text)
+    echo "    Created authorizer $AUTHORIZER_ID"
+  fi
 else
-  echo "WARNING: COGNITO_AUTHORIZER_ID not set — admin NFC routes will be"
-  echo "         created with NO authorizer. Attach the Cognito authorizer"
-  echo "         manually afterwards (API Gateway console → Resources →"
-  echo "         method → Method Request → Authorization)."
+  echo "WARNING: COGNITO_USER_POOL_ID / COGNITO_CLIENT_ID not set."
+  echo "         The 3 admin NFC routes will be created with NO authorizer."
+  echo "         requestContext.authorizer will be absent, so the Lambdas'"
+  echo "         ADMIN check will always return 403 until you set both env"
+  echo "         vars and re-run this script."
 fi
 
 # ── 1. DynamoDB table ───────────────────────────────────────────────────────
@@ -131,117 +158,89 @@ ARN_LIST=$(deploy_lambda     lisa-list-nfc-devices     lambda/list-nfc-devices)
 ARN_UPDATE=$(deploy_lambda   lisa-update-nfc-whitelist lambda/update-nfc-whitelist)
 ARN_CHECK=$(deploy_lambda    lisa-check-nfc-device     lambda/check-nfc-device)
 
-# ── 3. API Gateway resources ────────────────────────────────────────────────
+# ── 3. HTTP API integrations + routes ───────────────────────────────────────
 
-get_or_create_resource() {
-  local parent_id="$1" path_part="$2"
+get_or_create_integration() {
+  local lambda_arn="$1"
   local existing
-  existing=$(aws apigateway get-resources --rest-api-id "$API_ID" --region "$AWS_REGION" \
-    --query "items[?parentId=='${parent_id}' && pathPart=='${path_part}'].id | [0]" \
-    --output text)
+  existing=$(aws apigatewayv2 get-integrations --api-id "$API_ID" --region "$AWS_REGION" \
+    --query "Items[?IntegrationUri=='${lambda_arn}'].IntegrationId | [0]" --output text)
   if [ "$existing" != "None" ] && [ -n "$existing" ]; then
     echo "$existing"
   else
-    aws apigateway create-resource --rest-api-id "$API_ID" --region "$AWS_REGION" \
-      --parent-id "$parent_id" --path-part "$path_part" \
-      --query 'id' --output text
+    aws apigatewayv2 create-integration --api-id "$API_ID" --region "$AWS_REGION" \
+      --integration-type AWS_PROXY --integration-method POST \
+      --integration-uri "$lambda_arn" --payload-format-version 2.0 \
+      --query IntegrationId --output text
   fi
 }
 
-echo "==> Creating API Gateway resource tree under /nfc..."
-ROOT_ID=$(aws apigateway get-resources --rest-api-id "$API_ID" --region "$AWS_REGION" \
-  --query "items[?path=='/'].id | [0]" --output text)
-
-NFC_ID=$(get_or_create_resource "$ROOT_ID" "nfc")
-DEVICES_ID=$(get_or_create_resource "$NFC_ID" "devices")
-DEVICE_ID=$(get_or_create_resource "$DEVICES_ID" "{tagId}")
-WHITELIST_ID=$(get_or_create_resource "$DEVICE_ID" "whitelist")
-CHECK_ID=$(get_or_create_resource "$NFC_ID" "check")
-CHECK_TAG_ID=$(get_or_create_resource "$CHECK_ID" "{tagId}")
-
-# ── 4. Methods + Lambda proxy integrations ──────────────────────────────────
-
-add_method() {
-  local resource_id="$1" http_method="$2" lambda_arn="$3" lambda_name="$4" auth="$5"
-  local authorizer_args=()
-  if [ "$auth" = "COGNITO_USER_POOLS" ]; then
-    authorizer_args=("${AUTHORIZER_ARGS[@]}")
+get_or_create_route() {
+  local route_key="$1" integration_id="$2" auth="$3"
+  local target="integrations/${integration_id}"
+  local auth_args=(--authorization-type "$auth")
+  if [ "$auth" = "JWT" ]; then
+    auth_args+=(--authorizer-id "$AUTHORIZER_ID")
   fi
 
-  echo "==> $http_method on resource $resource_id -> $lambda_name (auth=$auth)"
+  local existing
+  existing=$(aws apigatewayv2 get-routes --api-id "$API_ID" --region "$AWS_REGION" \
+    --query "Items[?RouteKey=='${route_key}'].RouteId | [0]" --output text)
 
-  aws apigateway put-method \
-    --rest-api-id "$API_ID" --resource-id "$resource_id" \
-    --http-method "$http_method" --authorization-type "$auth" \
-    "${authorizer_args[@]}" \
-    --region "$AWS_REGION" >/dev/null 2>&1 || \
-  aws apigateway update-method \
-    --rest-api-id "$API_ID" --resource-id "$resource_id" --http-method "$http_method" \
-    --patch-operations "op=replace,path=/authorizationType,value=$auth" \
-    --region "$AWS_REGION" >/dev/null
+  echo "==> $route_key -> $target (auth=$auth)"
+  if [ "$existing" != "None" ] && [ -n "$existing" ]; then
+    aws apigatewayv2 update-route --api-id "$API_ID" --route-id "$existing" \
+      --target "$target" "${auth_args[@]}" --region "$AWS_REGION" >/dev/null
+  else
+    aws apigatewayv2 create-route --api-id "$API_ID" --route-key "$route_key" \
+      --target "$target" "${auth_args[@]}" --region "$AWS_REGION" >/dev/null
+  fi
+}
 
-  aws apigateway put-integration \
-    --rest-api-id "$API_ID" --resource-id "$resource_id" \
-    --http-method "$http_method" --type AWS_PROXY --integration-http-method POST \
-    --uri "arn:aws:apigateway:${AWS_REGION}:lambda:path/2015-03-31/functions/${lambda_arn}/invocations" \
-    --region "$AWS_REGION" >/dev/null
-
+add_permission() {
+  local lambda_name="$1"
   aws lambda add-permission \
     --function-name "$lambda_name" \
-    --statement-id "apigw-$(echo "${resource_id}-${http_method}" | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9-')" \
+    --statement-id "apigw-invoke" \
     --action lambda:InvokeFunction --principal apigateway.amazonaws.com \
-    --source-arn "arn:aws:execute-api:${AWS_REGION}:${ACCOUNT_ID}:${API_ID}/*/${http_method}/*" \
+    --source-arn "arn:aws:execute-api:${AWS_REGION}:${ACCOUNT_ID}:${API_ID}/*/*" \
     --region "$AWS_REGION" >/dev/null 2>&1 || true
 }
 
-enable_cors() {
-  local resource_id="$1" methods="$2"  # e.g. "GET,POST"
+INT_REGISTER=$(get_or_create_integration "$ARN_REGISTER")
+INT_LIST=$(get_or_create_integration "$ARN_LIST")
+INT_UPDATE=$(get_or_create_integration "$ARN_UPDATE")
+INT_CHECK=$(get_or_create_integration "$ARN_CHECK")
 
-  aws apigateway put-method --rest-api-id "$API_ID" --resource-id "$resource_id" \
-    --http-method OPTIONS --authorization-type NONE \
-    --region "$AWS_REGION" >/dev/null 2>&1 || true
+get_or_create_route "POST /nfc/devices"                     "$INT_REGISTER" "$AUTH_TYPE"
+get_or_create_route "GET /nfc/devices"                      "$INT_LIST"     "$AUTH_TYPE"
+get_or_create_route "PUT /nfc/devices/{tagId}/whitelist"    "$INT_UPDATE"   "$AUTH_TYPE"
+get_or_create_route "GET /nfc/check/{tagId}"                "$INT_CHECK"    "NONE"
 
-  aws apigateway put-integration --rest-api-id "$API_ID" --resource-id "$resource_id" \
-    --http-method OPTIONS --type MOCK \
-    --request-templates '{"application/json":"{\"statusCode\": 200}"}' \
-    --region "$AWS_REGION" >/dev/null
+add_permission lisa-register-nfc-device
+add_permission lisa-list-nfc-devices
+add_permission lisa-update-nfc-whitelist
+add_permission lisa-check-nfc-device
 
-  aws apigateway put-method-response --rest-api-id "$API_ID" --resource-id "$resource_id" \
-    --http-method OPTIONS --status-code 200 \
-    --response-parameters '{
-      "method.response.header.Access-Control-Allow-Headers": false,
-      "method.response.header.Access-Control-Allow-Methods": false,
-      "method.response.header.Access-Control-Allow-Origin": false
-    }' \
-    --region "$AWS_REGION" >/dev/null 2>&1 || true
+# ── 4. CORS (API-level, HTTP API style) ─────────────────────────────────────
 
-  aws apigateway put-integration-response --rest-api-id "$API_ID" --resource-id "$resource_id" \
-    --http-method OPTIONS --status-code 200 \
-    --response-parameters "{
-      \"method.response.header.Access-Control-Allow-Headers\": \"'Content-Type,Authorization'\",
-      \"method.response.header.Access-Control-Allow-Methods\": \"'${methods},OPTIONS'\",
-      \"method.response.header.Access-Control-Allow-Origin\": \"'*'\"
-    }" \
-    --region "$AWS_REGION" >/dev/null
-}
+echo "==> Updating API-level CORS configuration..."
+EXISTING_ORIGINS=$(aws apigatewayv2 get-api --api-id "$API_ID" --region "$AWS_REGION" \
+  --query 'CorsConfiguration.AllowOrigins' --output json)
 
-add_method "$DEVICES_ID"   POST "$ARN_REGISTER" lisa-register-nfc-device  "$AUTH_ADMIN"
-add_method "$DEVICES_ID"   GET  "$ARN_LIST"     lisa-list-nfc-devices     "$AUTH_ADMIN"
-add_method "$WHITELIST_ID" PUT  "$ARN_UPDATE"   lisa-update-nfc-whitelist "$AUTH_ADMIN"
-add_method "$CHECK_TAG_ID" GET  "$ARN_CHECK"    lisa-check-nfc-device     "NONE"
+aws apigatewayv2 update-api --api-id "$API_ID" --region "$AWS_REGION" \
+  --cors-configuration "{
+    \"AllowOrigins\": ${EXISTING_ORIGINS:-[\"*\"]},
+    \"AllowMethods\": [\"GET\",\"POST\",\"PUT\",\"OPTIONS\"],
+    \"AllowHeaders\": [\"content-type\",\"authorization\"],
+    \"AllowCredentials\": false,
+    \"MaxAge\": 0
+  }" >/dev/null
 
-enable_cors "$DEVICES_ID"   "GET,POST"
-enable_cors "$WHITELIST_ID" "PUT"
-enable_cors "$CHECK_TAG_ID" "GET"
+# ── 5. Done ──────────────────────────────────────────────────────────────────
+# $default stage has auto-deploy enabled, so routes are live immediately.
 
-# ── 5. Deploy stage ──────────────────────────────────────────────────────────
-
-echo "==> Deploying API stage '$STAGE'..."
-aws apigateway create-deployment --rest-api-id "$API_ID" --stage-name "$STAGE" \
-  --description "Add NFC whitelist routes (lisa-*-nfc-* lambdas)" \
-  --region "$AWS_REGION" >/dev/null
-
-BASE="https://${API_ID}.execute-api.${AWS_REGION}.amazonaws.com/${STAGE}"
+BASE="https://${API_ID}.execute-api.${AWS_REGION}.amazonaws.com"
 cat <<EOF
 
 Done. New routes are live at:
@@ -253,9 +252,9 @@ Done. New routes are live at:
 Smoke test (no-auth route):
   curl "$BASE/nfc/check/04:AB:12:CD:34:EF:00"
 
-Admin routes need a Cognito ID token:
+Admin routes need a Cognito ID token (auth=$AUTH_TYPE):
   curl -H "Authorization: Bearer \$TOKEN" "$BASE/nfc/devices"
 
 Don't forget:
-  python scripts/seed_dynamodb.py   # seeds NFCDevices with demo data
+  python3 scripts/seed_dynamodb.py   # seeds NFCDevices with demo data
 EOF
