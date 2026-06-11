@@ -125,13 +125,13 @@ async function dbAlerts() {
 
 ## DynamoDB Schema
 
-**Shipments** (PK: `shipmentId`): `status`, `riskLevel`, `temperature`, `humidity`, `gForce`, `lockStatus`, `deviceStatus`, `latitude`, `longitude`, `batteryLevel`, `thingName`, `lastUpdatedAt`
+**Shipments** (PK: `shipmentId`): `status`, `riskLevel`, `temperature`, `humidity`, `gForce`, `lockStatus`, `deviceStatus`, `latitude`, `longitude`, `batteryLevel`, `thingName`, `lastUpdatedAt`, `driver`, `customer`
 
 **AlertEvents** (PK: `alertId`): `shipmentId`, `alertType`, `severity`, `message`, `source`, `resolved`, `resolvedBy`, `createdAt`, `resolvedAt`
 
 **NFCDevices** (PK: `tagId`): `label`, `status` (`KNOWN`/`WHITELISTED`), `firstSeenAt`, `lastSeenAt`, `addedBy`, `addedAt`
 
-**Users** (PK: `userId`): `email`, `role`, `assignedShipments`  Cognito role mapping
+**Users** (PK: `userId`): `email`, `role`  Cognito role mapping; shipment assignment lives on Shipments (`driver`/`customer`)
 
 ---
 
