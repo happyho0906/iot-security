@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LISA — System Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    width: 1280px; height: 720px; overflow: hidden;
+    background: #f8fafc;
+    display: flex;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 200px; flex-shrink: 0;
+    background: #1a56db;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 32px 20px;
+    gap: 12px;
+  }
+  .sidebar-logo {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,.18);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800; color: #fff;
+  }
+  .sidebar-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: .03em; }
+  .sidebar-tag  { font-size: 10px; color: rgba(255,255,255,.65); text-align: center; line-height: 1.5; }
+  .slide-num { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.45); margin-top: 24px; }
+
+  /* ── Main area ── */
+  .main {
+    flex: 1;
+    padding: 36px 44px 28px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .slide-title {
+    font-size: 22px; font-weight: 700; color: #0f172a;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .slide-title::after {
+    content: ''; flex: 1;
+    height: 2px; background: #1a56db; border-radius: 2px;
+  }
+  .slide-subtitle { font-size: 12px; color: #64748b; margin-top: -10px; }
+
+  /* ── Architecture diagram ── */
+  .arch {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+  }
+  .row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  /* nodes */
+  .node {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 11px; font-weight: 600; color: #0f172a;
+    text-align: center; line-height: 1.4;
+    min-width: 100px;
+    position: relative;
+    gap: 4px;
+  }
+  .node-icon { font-size: 20px; }
+  .node-label { font-size: 10px; font-weight: 700; letter-spacing: .03em; }
+  .node-sub { font-size: 9px; font-weight: 400; color: #64748b; }
+
+  .node-pi      { background: #f0fdf4; border: 1.5px solid #86efac; }
+  .node-iot     { background: #fefce8; border: 1.5px solid #fde047; }
+  .node-lambda  { background: #fff7ed; border: 1.5px solid #fdba74; }
+  .node-dynamo  { background: #eff6ff; border: 1.5px solid #93c5fd; }
+  .node-api     { background: #f5f3ff; border: 1.5px solid #c4b5fd; }
+  .node-web     { background: #fdf2f8; border: 1.5px solid #f0abfc; }
+  .node-cognito { background: #eff6ff; border: 1.5px solid #1a56db; }
+  .node-discord { background: #f0fdf4; border: 1.5px solid #86efac; }
+  .node-sensor  { background: #f8fafc; border: 1.5px solid #94a3b8; font-size: 9px; }
+
+  /* arrows */
+  .arrow {
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    padding: 0 6px;
+    gap: 1px;
+    position: relative;
+  }
+  .arrow-h {
+    display: flex; align-items: center; gap: 2px; padding: 0 8px;
+  }
+  .arrow-line { height: 2px; background: #94a3b8; flex: 1; min-width: 24px; border-radius: 1px; }
+  .arrow-tip  { color: #94a3b8; font-size: 13px; line-height: 1; }
+  .arrow-label { font-size: 8.5px; color: #64748b; white-space: nowrap; font-weight: 500; }
+
+  .arrow-v {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 4px 0; gap: 1px; min-height: 28px;
+  }
+  .arrow-v-line { width: 2px; background: #94a3b8; flex: 1; min-height: 10px; border-radius: 1px; }
+  .arrow-v-tip { color: #94a3b8; font-size: 13px; line-height: 1; }
+
+  /* ── Big layout ── */
+  .diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    flex: 1;
+  }
+
+  /* Row: Pi sensors → Pi agent */
+  .layer { display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .layer-center { display: flex; align-items: center; justify-content: center; gap: 4px; flex: 1; }
+
+  .connector-v {
+    display: flex; flex-direction: column; align-items: center;
+    width: 100%; padding: 4px 0;
+  }
+  .connector-v-inner { width: 2px; height: 22px; background: #94a3b8; border-radius: 1px; }
+
+  /* right column */
+  .right-col {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    position: absolute; right: 44px; top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* legend */
+  .legend {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    padding: 10px 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-top: auto;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 9.5px; color: #64748b; }
+  .legend-dot  { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* special highlight box */
+  .box-group {
+    border: 1.5px dashed #e2e8f0;
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(248,250,252,.8);
+  }
+  .box-label {
+    font-size: 8.5px; font-weight: 700; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .06em;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    padding-right: 6px; border-right: 1px solid #e2e8f0; margin-right: 8px;
+  }
+
+  .full-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">L</div>
+  <div class="sidebar-name">LISA</div>
+  <div class="sidebar-tag">Logistics Intelligence<br>Sentinel Assistant</div>
+  <div class="slide-num">Slide 11</div>
+</div>
+
+<div class="main">
+  <div class="slide-title">System Architecture Overview</div>
+  <div class="slide-subtitle">End-to-end data flow · AWS Serverless · Real-time monitoring</div>
+
+  <!-- Main architecture flow -->
+  <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+
+    <!-- Top-level flow row -->
+    <div style="display:flex; align-items:center; justify-content:center; gap:0; flex:1;">
+
+      <!-- Pi Group -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 14px; background:#f8fafc; border:1.5px dashed #cbd5e1; border-radius:12px;">
+        <div style="font-size:8.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px;">Hardware</div>
+        <div class="node node-pi">
+          <div class="node-icon">🌡️</div>
+          <div class="node-label">DHT22</div>
+          <div class="node-sub">Temp / Humidity</div>
+        </div>
+        <div class="node node-pi">
+          <div class="node-icon">📡</div>
+          <div class="node-label">MPU-6050</div>
+          <div class="node-sub">G-Force / Tilt</div>
+        </div>
+        <div class="node node-pi">
+          <div class="node-icon">🛰️</div>
+          <div class="node-label">GPS Module</div>
+          <div class="node-sub">Location</div>
+        </div>
+        <div class="node node-pi">
+          <div class="node-icon">🏷️</div>
+          <div class="node-label">NFC Reader</div>
+          <div class="node-sub">Identity / Lock</div>
+        </div>
+      </div>
+
+      <!-- Arrow Pi → IoT -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; padding:0 10px;">
+        <div style="font-size:9px; color:#64748b; font-weight:500; white-space:nowrap;">MQTT</div>
+        <div style="display:flex; align-items:center;">
+          <div style="width:50px; height:2px; background:#94a3b8; border-radius:1px;"></div>
+          <div style="color:#94a3b8; font-size:14px;">▶</div>
+        </div>
+        <div style="font-size:8px; color:#94a3b8; white-space:nowrap;">IoT Shadow</div>
+      </div>
+
+      <!-- AWS Cloud Group -->
+      <div style="display:flex; flex-direction:column; gap:8px; padding:12px 16px; background:#eff6ff; border:1.5px dashed #93c5fd; border-radius:12px;">
+        <div style="font-size:8.5px; font-weight:700; color:#1a56db; text-transform:uppercase; letter-spacing:.06em; text-align:center; margin-bottom:2px;">AWS Cloud</div>
+
+        <!-- Row 1: IoT Core -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="node node-iot" style="min-width:120px;">
+            <div class="node-icon">⚡</div>
+            <div class="node-label">AWS IoT Core</div>
+            <div class="node-sub">Device Shadow · MQTT Broker</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:1px; padding:0 4px;">
+            <div style="font-size:8.5px; color:#64748b; font-weight:500;">IoT Rule</div>
+            <div style="display:flex; align-items:center;">
+              <div style="width:24px; height:2px; background:#94a3b8;"></div>
+              <div style="color:#94a3b8; font-size:12px;">▶</div>
+            </div>
+          </div>
+          <div class="node node-lambda" style="min-width:140px;">
+            <div class="node-icon">λ</div>
+            <div class="node-label">shadow-processor</div>
+            <div class="node-sub">Threshold check · Alerts</div>
+          </div>
+        </div>
+
+        <!-- vertical connector -->
+        <div style="display:flex; justify-content:flex-end; padding-right:64px;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:1px;">
+            <div style="width:2px; height:16px; background:#94a3b8;"></div>
+            <div style="color:#94a3b8; font-size:10px; margin-top:-2px;">▼</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Lambda + DynamoDB -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div class="node node-lambda" style="min-width:120px; padding:7px 12px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:15px;">λ</span>
+                <div style="text-align:left;">
+                  <div class="node-label">8 Lambda Functions</div>
+                  <div class="node-sub">shipments · alerts · NFC · Discord · me</div>
+                </div>
+              </div>
+            </div>
+            <div class="node node-api" style="min-width:120px; padding:7px 12px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:15px;">🔗</span>
+                <div style="text-align:left;">
+                  <div class="node-label">API Gateway</div>
+                  <div class="node-sub">REST · Cognito Authorizer</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:1px; padding:0 4px;">
+            <div style="display:flex; align-items:center;">
+              <div style="width:16px; height:2px; background:#94a3b8;"></div>
+              <div style="color:#94a3b8; font-size:12px;">▶</div>
+            </div>
+          </div>
+          <div class="node node-dynamo" style="min-width:130px;">
+            <div class="node-icon">🗄️</div>
+            <div class="node-label">DynamoDB</div>
+            <div class="node-sub" style="text-align:left; padding-left:4px;">
+              Shipments · AlertEvents<br>DiscordUsers · Users
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow Cloud → Web -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; padding:0 10px;">
+        <div style="font-size:9px; color:#64748b; font-weight:500; white-space:nowrap;">HTTPS + JWT</div>
+        <div style="display:flex; align-items:center;">
+          <div style="width:50px; height:2px; background:#94a3b8; border-radius:1px;"></div>
+          <div style="color:#94a3b8; font-size:14px;">▶</div>
+        </div>
+      </div>
+
+      <!-- Web + Auth Group -->
+      <div style="display:flex; flex-direction:column; gap:6px; padding:10px 14px; background:#fdf2f8; border:1.5px dashed #f0abfc; border-radius:12px;">
+        <div style="font-size:8.5px; font-weight:700; color:#a21caf; text-transform:uppercase; letter-spacing:.06em; text-align:center; margin-bottom:2px;">Frontend</div>
+        <div class="node node-web" style="min-width:120px;">
+          <div class="node-icon">🌐</div>
+          <div class="node-label">Web Dashboard</div>
+          <div class="node-sub">AWS Amplify Hosting</div>
+        </div>
+        <div class="node node-cognito" style="min-width:120px;">
+          <div class="node-icon">🔐</div>
+          <div class="node-label">Cognito</div>
+          <div class="node-sub">JWT Auth · RBAC</div>
+        </div>
+        <div class="node node-discord" style="min-width:120px;">
+          <div class="node-icon">💬</div>
+          <div class="node-label">Discord Bot</div>
+          <div class="node-sub">Slash Commands · Alerts</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#86efac;"></div>Raspberry Pi (Hardware)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fde047;"></div>AWS IoT Core</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fdba74;"></div>Lambda (12 total)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#93c5fd;"></div>DynamoDB (4 tables)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#c4b5fd;"></div>API Gateway (8 routes)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f0abfc;"></div>Frontend (Amplify)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a56db;"></div>Cognito Auth</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

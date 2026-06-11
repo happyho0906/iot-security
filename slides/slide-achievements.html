@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LISA — Achievements</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    width: 1280px; height: 720px; overflow: hidden;
+    background: #f8fafc;
+    display: flex;
+  }
+
+  .sidebar {
+    width: 200px; flex-shrink: 0;
+    background: #1a56db;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 32px 20px; gap: 12px;
+  }
+  .sidebar-logo {
+    width: 52px; height: 52px; background: rgba(255,255,255,.18);
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800; color: #fff;
+  }
+  .sidebar-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: .03em; }
+  .sidebar-tag  { font-size: 10px; color: rgba(255,255,255,.65); text-align: center; line-height: 1.5; }
+  .slide-num    { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.45); margin-top: 24px; }
+
+  .main {
+    flex: 1; padding: 32px 44px 28px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .slide-title {
+    font-size: 22px; font-weight: 700; color: #0f172a;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .slide-title::after {
+    content: ''; flex: 1; height: 2px;
+    background: #1a56db; border-radius: 2px;
+  }
+  .slide-subtitle { font-size: 12px; color: #64748b; margin-top: -10px; }
+
+  /* ── Big stats ── */
+  .big-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .big-stat {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 14px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(15,23,42,.06);
+    text-align: center;
+  }
+  .big-stat.highlight {
+    border-color: #1a56db;
+    background: linear-gradient(135deg, #eff6ff, #fff);
+  }
+  .big-stat-icon { font-size: 22px; }
+  .big-stat-num {
+    font-size: 36px; font-weight: 900; line-height: 1;
+    letter-spacing: -.02em;
+  }
+  .big-stat-unit { font-size: 11px; font-weight: 600; color: #64748b; margin-top: -2px; }
+  .big-stat-label { font-size: 10px; color: #94a3b8; font-weight: 500; }
+
+  .num-blue   { color: #1a56db; }
+  .num-green  { color: #16a34a; }
+  .num-orange { color: #ea580c; }
+  .num-purple { color: #7c3aed; }
+  .num-slate  { color: #475569; }
+
+  /* ── Feature grid ── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+  }
+  .feature-col {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .feature-col-title {
+    font-size: 10px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: .08em;
+    padding-bottom: 4px;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+  .feature-item {
+    display: flex; align-items: flex-start; gap: 7px;
+  }
+  .feature-check {
+    width: 16px; height: 16px; border-radius: 4px;
+    background: #f0fdf4; border: 1.5px solid #86efac;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: #16a34a; font-weight: 700;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .feature-text { font-size: 11px; color: #0f172a; font-weight: 500; line-height: 1.4; }
+  .feature-sub  { font-size: 9.5px; color: #64748b; }
+
+  /* ── Tech stack row ── */
+  .tech-row {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    padding: 10px 14px;
+    background: #f1f5f9; border-radius: 8px;
+  }
+  .tech-pill {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 10px; font-weight: 600; color: #0f172a;
+  }
+  .tech-dot { width: 6px; height: 6px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">L</div>
+  <div class="sidebar-name">LISA</div>
+  <div class="sidebar-tag">Logistics Intelligence<br>Sentinel Assistant</div>
+  <div class="slide-num">Slide 13</div>
+</div>
+
+<div class="main">
+  <div class="slide-title">Achievements &amp; Results</div>
+  <div class="slide-subtitle">What we built · by the numbers</div>
+
+  <!-- Big numbers -->
+  <div class="big-stats">
+    <div class="big-stat highlight">
+      <div class="big-stat-icon">λ</div>
+      <div class="big-stat-num num-blue">12</div>
+      <div class="big-stat-unit">Lambda Functions</div>
+      <div class="big-stat-label">Serverless backend</div>
+    </div>
+    <div class="big-stat">
+      <div class="big-stat-icon">🔗</div>
+      <div class="big-stat-num num-purple">8</div>
+      <div class="big-stat-unit">REST API Endpoints</div>
+      <div class="big-stat-label">Cognito-protected</div>
+    </div>
+    <div class="big-stat">
+      <div class="big-stat-icon">🗄️</div>
+      <div class="big-stat-num num-slate">4</div>
+      <div class="big-stat-unit">DynamoDB Tables</div>
+      <div class="big-stat-label">Shipments · Alerts · Users</div>
+    </div>
+    <div class="big-stat">
+      <div class="big-stat-icon">📡</div>
+      <div class="big-stat-num num-green">4</div>
+      <div class="big-stat-unit">Sensor Types</div>
+      <div class="big-stat-label">Temp · G-force · GPS · NFC</div>
+    </div>
+    <div class="big-stat">
+      <div class="big-stat-icon">👥</div>
+      <div class="big-stat-num num-orange">3</div>
+      <div class="big-stat-unit">User Roles</div>
+      <div class="big-stat-label">Admin · Driver · Customer</div>
+    </div>
+  </div>
+
+  <!-- Feature checklist -->
+  <div class="feature-grid">
+
+    <div class="feature-col">
+      <div class="feature-col-title">Hardware</div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Raspberry Pi Agent</div>
+          <div class="feature-sub">MQTT → AWS IoT Device Shadow</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Multi-sensor Fusion</div>
+          <div class="feature-sub">DHT22, MPU-6050, GPS, NFC</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Remote Lock Control</div>
+          <div class="feature-sub">Shadow desired → GPIO relay</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">NFC Whitelist Access</div>
+          <div class="feature-sub">DynamoDB-backed allowlist</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-col">
+      <div class="feature-col-title">Cloud Backend</div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">IoT Rule → Auto-alerting</div>
+          <div class="feature-sub">Threshold breach triggers Lambda + Discord</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Cognito JWT Auth + RBAC</div>
+          <div class="feature-sub">Role claim in token, validated per route</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Discord Slash Commands</div>
+          <div class="feature-sub">Ed25519-verified webhook integration</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Amplify CI/CD Deployment</div>
+          <div class="feature-sub">GitHub → build → config injection</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-col">
+      <div class="feature-col-title">Web Dashboard</div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Real-time Shipment Tracking</div>
+          <div class="feature-sub">Live sensor data, status badges</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Interactive Map</div>
+          <div class="feature-sub">Leaflet.js with color-coded pins</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Alert Resolution Workflow</div>
+          <div class="feature-sub">One-click resolve, history log</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <div>
+          <div class="feature-text">Password Req. + Signup UX</div>
+          <div class="feature-sub">Live checklist, resend code, spam notice</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tech stack pills -->
+  <div class="tech-row">
+    <div style="font-size:9.5px;font-weight:700;color:#64748b;align-self:center;margin-right:4px;">Stack:</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#fde047;"></div>AWS IoT Core</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#fdba74;"></div>Lambda</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#93c5fd;"></div>DynamoDB</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#c4b5fd;"></div>API Gateway</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#1a56db;"></div>Cognito</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#f0abfc;"></div>Amplify Hosting</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#86efac;"></div>Raspberry Pi</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#5865f2;"></div>Discord Bot</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#94a3b8;"></div>Leaflet.js</div>
+    <div class="tech-pill"><div class="tech-dot" style="background:#0f172a;"></div>Vanilla JS</div>
+  </div>
+
+</div>
+
+</body>
+</html>
