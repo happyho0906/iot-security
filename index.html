@@ -1306,10 +1306,10 @@
           <span class="nav-link active" onclick="navigate('dashboard')"
             >Dashboard</span
           >
-          <span class="nav-link" onclick="navigate('alerts')"
+          <span class="nav-link" id="nav-alerts" onclick="navigate('alerts')"
             >Alert Center</span
           >
-          <span class="nav-link" onclick="navigate('map')">Map</span>
+          <span class="nav-link" id="nav-map" onclick="navigate('map')">Map</span>
           <span
             class="nav-link"
             id="nav-nfc"
@@ -1808,6 +1808,9 @@
           role === "DRIVER"  ? "var(--green)" : "var(--muted)";
         document.getElementById("nav-nfc").style.display = role === "ADMIN" ? "inline-block" : "none";
         document.getElementById("btn-add-shipment").style.display = role === "ADMIN" ? "inline-block" : "none";
+        // DRIVER users get a dashboard-only view scoped to their own shipments.
+        document.getElementById("nav-alerts").style.display = role === "DRIVER" ? "none" : "inline-block";
+        document.getElementById("nav-map").style.display    = role === "DRIVER" ? "none" : "inline-block";
         initApp();
       }
 
@@ -2100,6 +2103,14 @@
       function dbShipment(id)   { return _db.shipments.find((s) => s.shipmentId === id) || null; }
       function dbAlerts()       { return _db.alerts; }
 
+      // DRIVER users only see shipments assigned to them (Shipments.driver
+      // matches their login email); other roles see everything.
+      function visibleShipments() {
+        if (_currentRole !== "DRIVER") return dbShipments();
+        const email = sessionStorage.getItem("lisa_email") || "";
+        return dbShipments().filter((s) => s.driver === email);
+      }
+
       function dbAddShipment(shipment) {
         _db.shipments.push(shipment);
         return shipment;
@@ -2305,6 +2316,15 @@
 
       // ROUTING
       function navigate(page) {
+        // DRIVER role is dashboard-only: block hash navigation to the
+        // hidden tabs (shipment detail stays reachable for own shipments).
+        if (
+          _currentRole === "DRIVER" &&
+          page !== "dashboard" &&
+          !page.startsWith("shipment-")
+        ) {
+          page = "dashboard";
+        }
         document.getElementById("main-nav").classList.remove("mobile-open");
         document.querySelectorAll(".page-section").forEach((el) => el.classList.remove("active"));
         const navLinks = document.querySelectorAll(".nav-link");
@@ -2358,9 +2378,10 @@
 
       // DASHBOARD
       function renderDashboard() {
-        const ships  = dbShipments();
-        const active = dbAlerts().filter((a) => !a.resolved);
-        const crit   = active.filter((a) => a.severity === "CRITICAL");
+        const ships   = visibleShipments();
+        const shipIds = new Set(ships.map((s) => s.shipmentId));
+        const active  = dbAlerts().filter((a) => !a.resolved && shipIds.has(a.shipmentId));
+        const crit    = active.filter((a) => a.severity === "CRITICAL");
 
         document.getElementById("stat-shipments").textContent = ships.length;
         document.getElementById("stat-alerts").textContent    = active.length;
@@ -2479,7 +2500,10 @@
       let _alertFilter = "all";
 
       function renderAlerts() {
-        const all  = dbAlerts();
+        // Scope to visible shipments so a DRIVER's hidden Alert Center DOM
+        // never contains other drivers' alerts.
+        const shipIds = new Set(visibleShipments().map((s) => s.shipmentId));
+        const all  = dbAlerts().filter((a) => shipIds.has(a.shipmentId));
         const data = _alertFilter === "active"   ? all.filter((a) => !a.resolved)
                    : _alertFilter === "resolved" ? all.filter((a) =>  a.resolved)
                    : all;
@@ -2523,7 +2547,9 @@
       // SHIPMENT DETAIL
       function renderDetail(sid) {
         const el = document.getElementById("shipment-detail-content");
-        const s  = dbShipment(sid);
+        // visibleShipments() limits DRIVER users to their own shipments,
+        // so a driver can't open another driver's detail via the URL hash.
+        const s  = visibleShipments().find((x) => x.shipmentId === sid) || null;
         if (!s) { el.innerHTML = '<div style="color:var(--muted);">Shipment not found.</div>'; return; }
 
         const latestAlert = dbAlerts().find((a) => a.shipmentId === sid && !a.resolved) || null;
@@ -2605,7 +2631,7 @@
       let _leafletMarkers = [];
 
       function renderMap() {
-        const ships = dbShipments();
+        const ships = visibleShipments();
 
         if (!_leafletMap) {
           _leafletMap = L.map("leaflet-map").setView([1.3521, 103.8198], 13);
