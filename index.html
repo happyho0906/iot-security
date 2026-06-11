@@ -1837,11 +1837,13 @@
           role === "DRIVER"  ? "var(--green)" : "var(--muted)";
         document.getElementById("nav-nfc").style.display = role === "ADMIN" ? "inline-block" : "none";
         document.getElementById("btn-add-shipment").style.display = role === "ADMIN" ? "inline-block" : "none";
-        // DRIVER/CUSTOMER users get a dashboard-only view scoped to their
-        // own shipments; only ADMIN keeps the Alert Center and Map tabs.
-        const dashboardOnly = role === "DRIVER" || role === "CUSTOMER";
-        document.getElementById("nav-alerts").style.display = dashboardOnly ? "none" : "inline-block";
-        document.getElementById("nav-map").style.display    = dashboardOnly ? "none" : "inline-block";
+        // DRIVER/CUSTOMER dashboards are scoped to their own shipments and
+        // lose the Alert Center tab; DRIVER additionally keeps the Map tab
+        // (showing all shipment locations, same as ADMIN). CUSTOMER is
+        // dashboard-only.
+        const restricted = role === "DRIVER" || role === "CUSTOMER";
+        document.getElementById("nav-alerts").style.display = restricted ? "none" : "inline-block";
+        document.getElementById("nav-map").style.display    = role === "CUSTOMER" ? "none" : "inline-block";
         initApp();
       }
 
@@ -2384,11 +2386,15 @@
 
       // ROUTING
       function navigate(page) {
-        // DRIVER/CUSTOMER roles are dashboard-only: block hash navigation to
-        // the hidden tabs (shipment detail stays reachable for own shipments).
+        // Restricted roles: block hash navigation to hidden tabs (shipment
+        // detail stays reachable for own shipments). DRIVER keeps the Map
+        // tab; CUSTOMER is dashboard-only.
+        const allowedPages =
+          _currentRole === "DRIVER"   ? ["dashboard", "map"] :
+          _currentRole === "CUSTOMER" ? ["dashboard"] : null;
         if (
-          (_currentRole === "DRIVER" || _currentRole === "CUSTOMER") &&
-          page !== "dashboard" &&
+          allowedPages &&
+          !allowedPages.includes(page) &&
           !page.startsWith("shipment-")
         ) {
           page = "dashboard";
@@ -2746,7 +2752,10 @@
       let _leafletMarkers = [];
 
       function renderMap() {
-        const ships = visibleShipments();
+        // The map intentionally shows ALL shipment locations — DRIVER users
+        // see the same picture as ADMIN here (their dashboard table stays
+        // scoped to their own shipments; CUSTOMER never reaches this page).
+        const ships = dbShipments();
 
         if (!_leafletMap) {
           // Centered on Hsinchu City, Taiwan (near the train station).
