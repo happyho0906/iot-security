@@ -1,7 +1,33 @@
+import random
+
 import boto3
 from datetime import datetime, timezone
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+
+# Approximate straight stretches of major roads in Hsinchu City, Taiwan,
+# as ((lat, lng), (lat, lng)) endpoint pairs. Shipments are placed at a
+# random point interpolated along a random segment, so they land on (or
+# very near) an actual road instead of inside a building/river.
+HSINCHU_ROAD_SEGMENTS = [
+    ((24.8016, 120.9706), (24.8081, 120.9663)),  # Zhonghua Rd (中華路), from the train station heading north
+    ((24.8060, 120.9680), (24.8130, 120.9610)),  # Dongda Rd (東大路) heading northwest
+    ((24.7990, 120.9830), (24.7961, 120.9967)),  # Guangfu Rd (光復路) toward NTHU / Science Park
+    ((24.8040, 120.9870), (24.8050, 120.9990)),  # Gongdao 5th Rd (公道五路) heading east
+    ((24.7950, 120.9740), (24.7906, 120.9800)),  # Shipin Rd (食品路) heading southeast
+    ((24.8086, 120.9700), (24.8040, 120.9720)),  # Minzu Rd (民族路) back toward the station
+]
+
+
+def random_road_point():
+    """Random (lat, lng) on a random Hsinchu road segment, as strings
+    (matching the Shipments table's string-typed coordinate fields)."""
+    (lat1, lng1), (lat2, lng2) = random.choice(HSINCHU_ROAD_SEGMENTS)
+    t = random.random()
+    lat = lat1 + (lat2 - lat1) * t
+    lng = lng1 + (lng2 - lng1) * t
+    return f'{lat:.6f}', f'{lng:.6f}'
+
 
 def seed():
     now = datetime.now(timezone.utc).isoformat()
@@ -12,21 +38,22 @@ def seed():
         {'shipmentId': 'SHIP-001', 'status': 'IN_TRANSIT', 'riskLevel': 'LOW',
          'temperature': '4.2', 'humidity': '65', 'gForce': '0.1',
          'lockStatus': 'LOCKED', 'deviceStatus': 'ONLINE',
-         'latitude': '1.3521', 'longitude': '103.8198', 'lastUpdatedAt': now,
+         'lastUpdatedAt': now,
          'thingName': 'shipment-SHIP-001', 'batteryLevel': 87,
          'driver': 'driver@lisa.demo', 'customer': 'customer@lisa.demo'},
         {'shipmentId': 'SHIP-002', 'status': 'ALERT', 'riskLevel': 'CRITICAL',
          'temperature': '11.2', 'humidity': '70', 'gForce': '0.3',
          'lockStatus': 'LOCKED', 'deviceStatus': 'ONLINE',
-         'latitude': '1.3000', 'longitude': '103.8500', 'lastUpdatedAt': now,
+         'lastUpdatedAt': now,
          'thingName': 'shipment-SHIP-002', 'batteryLevel': 62,
          'driver': 'driver@lisa.demo'},
         {'shipmentId': 'SHIP-003', 'status': 'IN_TRANSIT', 'riskLevel': 'LOW',
          'temperature': '3.8', 'humidity': '62', 'gForce': '0.0',
          'lockStatus': 'LOCKED', 'deviceStatus': 'ONLINE',
-         'latitude': '1.3200', 'longitude': '103.7800', 'lastUpdatedAt': now,
+         'lastUpdatedAt': now,
          'thingName': 'shipment-SHIP-003', 'batteryLevel': 91},
     ]:
+        item['latitude'], item['longitude'] = random_road_point()
         shipments.put_item(Item=item)
 
     alerts.put_item(Item={
