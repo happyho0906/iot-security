@@ -2,292 +2,342 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LISA — Achievements</title>
+<title>LISA — Achievements & Results</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: Inter, -apple-system, sans-serif;
     width: 1280px; height: 720px; overflow: hidden;
-    background: #f8fafc;
-    display: flex;
+    background: #f8fafc; display: flex;
   }
 
+  /* Sidebar */
   .sidebar {
-    width: 200px; flex-shrink: 0;
-    background: #1a56db;
+    width: 188px; flex-shrink: 0; background: #1a56db;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    padding: 32px 20px; gap: 12px;
+    padding: 36px 20px; gap: 10px;
   }
-  .sidebar-logo {
-    width: 52px; height: 52px; background: rgba(255,255,255,.18);
-    border-radius: 14px; display: flex; align-items: center; justify-content: center;
-    font-size: 26px; font-weight: 800; color: #fff;
+  .sidebar-mark {
+    width: 48px; height: 48px;
+    border: 2px solid rgba(255,255,255,.35); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800; color: #fff;
+    margin-bottom: 4px;
   }
-  .sidebar-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: .03em; }
-  .sidebar-tag  { font-size: 10px; color: rgba(255,255,255,.65); text-align: center; line-height: 1.5; }
-  .slide-num    { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.45); margin-top: 24px; }
+  .sidebar-name { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .04em; }
+  .sidebar-sub  { font-size: 9px; font-weight: 500; color: rgba(255,255,255,.55); text-align: center; line-height: 1.6; }
+  .sidebar-divider { width: 32px; height: 1px; background: rgba(255,255,255,.2); margin: 12px 0; }
+  .slide-label { font-size: 9px; font-weight: 600; color: rgba(255,255,255,.4); letter-spacing: .12em; text-transform: uppercase; }
 
-  .main {
-    flex: 1; padding: 32px 44px 28px;
-    display: flex; flex-direction: column; gap: 18px;
-  }
-  .slide-title {
-    font-size: 22px; font-weight: 700; color: #0f172a;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .slide-title::after {
-    content: ''; flex: 1; height: 2px;
-    background: #1a56db; border-radius: 2px;
-  }
-  .slide-subtitle { font-size: 12px; color: #64748b; margin-top: -10px; }
+  /* Main */
+  .main { flex: 1; padding: 30px 40px 24px; display: flex; flex-direction: column; gap: 16px; }
 
-  /* ── Big stats ── */
-  .big-stats {
+  .slide-heading {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .slide-heading h1 { font-size: 20px; font-weight: 700; color: #0f172a; white-space: nowrap; }
+  .slide-heading .rule { flex: 1; height: 1.5px; background: #e2e8f0; }
+  .slide-heading .sub { font-size: 11px; color: #94a3b8; white-space: nowrap; }
+
+  /* ── Metric row ── */
+  .metrics {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
+    gap: 10px;
   }
-  .big-stat {
+  .metric {
     background: #fff;
     border: 1.5px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px 14px;
+    border-radius: 10px;
+    padding: 14px 12px 12px;
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 4px;
-    box-shadow: 0 2px 6px rgba(15,23,42,.06);
+    align-items: center;
     text-align: center;
+    gap: 4px;
+    box-shadow: 0 1px 4px rgba(15,23,42,.05);
   }
-  .big-stat.highlight {
+  .metric.primary {
     border-color: #1a56db;
-    background: linear-gradient(135deg, #eff6ff, #fff);
+    background: linear-gradient(160deg, #eff6ff 0%, #fff 60%);
   }
-  .big-stat-icon { font-size: 22px; }
-  .big-stat-num {
-    font-size: 36px; font-weight: 900; line-height: 1;
-    letter-spacing: -.02em;
+  .metric-num {
+    font-size: 42px; font-weight: 900; line-height: 1;
+    letter-spacing: -.03em;
   }
-  .big-stat-unit { font-size: 11px; font-weight: 600; color: #64748b; margin-top: -2px; }
-  .big-stat-label { font-size: 10px; color: #94a3b8; font-weight: 500; }
+  .metric-unit {
+    font-size: 10.5px; font-weight: 600; color: #475569;
+    margin-top: -2px;
+  }
+  .metric-desc {
+    font-size: 9px; color: #94a3b8; font-weight: 500; line-height: 1.4;
+  }
+  .c-blue   { color: #1a56db; }
+  .c-purple { color: #7c3aed; }
+  .c-slate  { color: #475569; }
+  .c-teal   { color: #0891b2; }
+  .c-amber  { color: #b45309; }
 
-  .num-blue   { color: #1a56db; }
-  .num-green  { color: #16a34a; }
-  .num-orange { color: #ea580c; }
-  .num-purple { color: #7c3aed; }
-  .num-slate  { color: #475569; }
-
-  /* ── Feature grid ── */
-  .feature-grid {
+  /* ── Feature columns ── */
+  .features {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
     flex: 1;
   }
-  .feature-col {
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .feature-col-title {
-    font-size: 10px; font-weight: 700; color: #64748b;
-    text-transform: uppercase; letter-spacing: .08em;
-    padding-bottom: 4px;
+  .feat-col { display: flex; flex-direction: column; gap: 6px; }
+  .feat-col-head {
+    font-size: 9px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: .1em;
+    padding-bottom: 5px;
     border-bottom: 1.5px solid #e2e8f0;
   }
-  .feature-item {
-    display: flex; align-items: flex-start; gap: 7px;
-  }
-  .feature-check {
-    width: 16px; height: 16px; border-radius: 4px;
+  .feat-item { display: flex; align-items: flex-start; gap: 7px; }
+  .feat-check {
+    width: 15px; height: 15px; border-radius: 3px;
     background: #f0fdf4; border: 1.5px solid #86efac;
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px; color: #16a34a; font-weight: 700;
     flex-shrink: 0; margin-top: 1px;
   }
-  .feature-text { font-size: 11px; color: #0f172a; font-weight: 500; line-height: 1.4; }
-  .feature-sub  { font-size: 9.5px; color: #64748b; }
+  .feat-check svg { display: block; }
+  .feat-body { display: flex; flex-direction: column; gap: 1px; }
+  .feat-title { font-size: 11px; font-weight: 600; color: #0f172a; line-height: 1.3; }
+  .feat-detail { font-size: 9px; color: #64748b; line-height: 1.4; }
 
-  /* ── Tech stack row ── */
-  .tech-row {
-    display: flex; gap: 8px; flex-wrap: wrap;
-    padding: 10px 14px;
-    background: #f1f5f9; border-radius: 8px;
+  /* ── Tech stack ── */
+  .stack {
+    display: flex; gap: 7px; flex-wrap: wrap; align-items: center;
+    padding: 9px 14px;
+    background: #f1f5f9; border-radius: 7px;
+    border: 1px solid #e2e8f0;
   }
-  .tech-pill {
+  .stack-label {
+    font-size: 9px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: .1em;
+    margin-right: 4px;
+  }
+  .stack-pill {
     display: flex; align-items: center; gap: 5px;
-    padding: 4px 10px;
+    padding: 3px 9px; border-radius: 20px;
     background: #fff; border: 1px solid #e2e8f0;
-    border-radius: 20px;
     font-size: 10px; font-weight: 600; color: #0f172a;
+    white-space: nowrap;
   }
-  .tech-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .stack-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 </style>
 </head>
 <body>
 
 <div class="sidebar">
-  <div class="sidebar-logo">L</div>
+  <div class="sidebar-mark">L</div>
   <div class="sidebar-name">LISA</div>
-  <div class="sidebar-tag">Logistics Intelligence<br>Sentinel Assistant</div>
-  <div class="slide-num">Slide 13</div>
+  <div class="sidebar-sub">Logistics Intelligence<br>Sentinel Assistant</div>
+  <div class="sidebar-divider"></div>
+  <div class="slide-label">Results</div>
 </div>
 
 <div class="main">
-  <div class="slide-title">Achievements &amp; Results</div>
-  <div class="slide-subtitle">What we built · by the numbers</div>
 
-  <!-- Big numbers -->
-  <div class="big-stats">
-    <div class="big-stat highlight">
-      <div class="big-stat-icon">λ</div>
-      <div class="big-stat-num num-blue">12</div>
-      <div class="big-stat-unit">Lambda Functions</div>
-      <div class="big-stat-label">Serverless backend</div>
+  <div class="slide-heading">
+    <h1>Achievements &amp; Results</h1>
+    <div class="rule"></div>
+    <div class="sub">Quantitative outcomes &nbsp;·&nbsp; Implementation completeness</div>
+  </div>
+
+  <!-- Key metrics -->
+  <div class="metrics">
+    <div class="metric primary">
+      <div class="metric-num c-blue">12</div>
+      <div class="metric-unit">Lambda Functions</div>
+      <div class="metric-desc">Serverless backend<br>zero server management</div>
     </div>
-    <div class="big-stat">
-      <div class="big-stat-icon">🔗</div>
-      <div class="big-stat-num num-purple">8</div>
-      <div class="big-stat-unit">REST API Endpoints</div>
-      <div class="big-stat-label">Cognito-protected</div>
+    <div class="metric">
+      <div class="metric-num c-purple">8</div>
+      <div class="metric-unit">REST API Endpoints</div>
+      <div class="metric-desc">Cognito-authorised<br>API Gateway routes</div>
     </div>
-    <div class="big-stat">
-      <div class="big-stat-icon">🗄️</div>
-      <div class="big-stat-num num-slate">4</div>
-      <div class="big-stat-unit">DynamoDB Tables</div>
-      <div class="big-stat-label">Shipments · Alerts · Users</div>
+    <div class="metric">
+      <div class="metric-num c-slate">4</div>
+      <div class="metric-unit">DynamoDB Tables</div>
+      <div class="metric-desc">Shipments · AlertEvents<br>DiscordUsers · Users</div>
     </div>
-    <div class="big-stat">
-      <div class="big-stat-icon">📡</div>
-      <div class="big-stat-num num-green">4</div>
-      <div class="big-stat-unit">Sensor Types</div>
-      <div class="big-stat-label">Temp · G-force · GPS · NFC</div>
+    <div class="metric">
+      <div class="metric-num c-teal">4</div>
+      <div class="metric-unit">Sensor Types</div>
+      <div class="metric-desc">Temp · G-Force<br>GPS · NFC</div>
     </div>
-    <div class="big-stat">
-      <div class="big-stat-icon">👥</div>
-      <div class="big-stat-num num-orange">3</div>
-      <div class="big-stat-unit">User Roles</div>
-      <div class="big-stat-label">Admin · Driver · Customer</div>
+    <div class="metric">
+      <div class="metric-num c-amber">3</div>
+      <div class="metric-unit">User Roles</div>
+      <div class="metric-desc">Admin · Driver<br>Customer — JWT-enforced</div>
     </div>
   </div>
 
   <!-- Feature checklist -->
-  <div class="feature-grid">
+  <div class="features">
 
-    <div class="feature-col">
-      <div class="feature-col-title">Hardware</div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Raspberry Pi Agent</div>
-          <div class="feature-sub">MQTT → AWS IoT Device Shadow</div>
+    <div class="feat-col">
+      <div class="feat-col-head">Hardware &amp; Edge</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Raspberry Pi Sensor Agent</div>
+          <div class="feat-detail">MQTT publish to AWS IoT Device Shadow</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Multi-sensor Fusion</div>
-          <div class="feature-sub">DHT22, MPU-6050, GPS, NFC</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Multi-sensor Fusion</div>
+          <div class="feat-detail">DHT22, MPU-6050, GPS, NFC reader</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Remote Lock Control</div>
-          <div class="feature-sub">Shadow desired → GPIO relay</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Remote Lock Control</div>
+          <div class="feat-detail">Shadow desired state → GPIO relay</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">NFC Whitelist Access</div>
-          <div class="feature-sub">DynamoDB-backed allowlist</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">NFC Whitelist Access Control</div>
+          <div class="feat-detail">DynamoDB-backed device registry</div>
         </div>
       </div>
     </div>
 
-    <div class="feature-col">
-      <div class="feature-col-title">Cloud Backend</div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">IoT Rule → Auto-alerting</div>
-          <div class="feature-sub">Threshold breach triggers Lambda + Discord</div>
+    <div class="feat-col">
+      <div class="feat-col-head">Cloud Backend</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Automated Threshold Alerting</div>
+          <div class="feat-detail">IoT Rule triggers Lambda + Discord on breach</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Cognito JWT Auth + RBAC</div>
-          <div class="feature-sub">Role claim in token, validated per route</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Cognito JWT Authentication</div>
+          <div class="feat-detail">custom:role claim, validated per API route</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Discord Slash Commands</div>
-          <div class="feature-sub">Ed25519-verified webhook integration</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Discord Slash Commands</div>
+          <div class="feat-detail">Ed25519-verified webhook integration</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Amplify CI/CD Deployment</div>
-          <div class="feature-sub">GitHub → build → config injection</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Amplify CI/CD Pipeline</div>
+          <div class="feat-detail">GitHub push → build → env injection → deploy</div>
         </div>
       </div>
     </div>
 
-    <div class="feature-col">
-      <div class="feature-col-title">Web Dashboard</div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Real-time Shipment Tracking</div>
-          <div class="feature-sub">Live sensor data, status badges</div>
+    <div class="feat-col">
+      <div class="feat-col-head">Web Dashboard</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Real-time Shipment Dashboard</div>
+          <div class="feat-detail">Live sensor data, status indicators, admin controls</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Interactive Map</div>
-          <div class="feature-sub">Leaflet.js with color-coded pins</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Interactive Map</div>
+          <div class="feat-detail">Leaflet.js, colour-coded pins, accident markers</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Alert Resolution Workflow</div>
-          <div class="feature-sub">One-click resolve, history log</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Alert Resolution Workflow</div>
+          <div class="feat-detail">One-click resolve with full audit history</div>
         </div>
       </div>
-      <div class="feature-item">
-        <div class="feature-check">✓</div>
-        <div>
-          <div class="feature-text">Password Req. + Signup UX</div>
-          <div class="feature-sub">Live checklist, resend code, spam notice</div>
+      <div class="feat-item">
+        <div class="feat-check">
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <div class="feat-title">Role-Gated Views</div>
+          <div class="feat-detail">Admin / Driver / Customer — scoped per JWT role</div>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Tech stack pills -->
-  <div class="tech-row">
-    <div style="font-size:9.5px;font-weight:700;color:#64748b;align-self:center;margin-right:4px;">Stack:</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#fde047;"></div>AWS IoT Core</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#fdba74;"></div>Lambda</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#93c5fd;"></div>DynamoDB</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#c4b5fd;"></div>API Gateway</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#1a56db;"></div>Cognito</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#f0abfc;"></div>Amplify Hosting</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#86efac;"></div>Raspberry Pi</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#5865f2;"></div>Discord Bot</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#94a3b8;"></div>Leaflet.js</div>
-    <div class="tech-pill"><div class="tech-dot" style="background:#0f172a;"></div>Vanilla JS</div>
+  <!-- Tech stack -->
+  <div class="stack">
+    <div class="stack-label">Stack</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#ca8a04;"></div>AWS IoT Core</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#ea580c;"></div>Lambda</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#2563eb;"></div>DynamoDB</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#7c3aed;"></div>API Gateway</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#059669;"></div>Cognito</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#a21caf;"></div>Amplify Hosting</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#0891b2;"></div>Raspberry Pi</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#4f46e5;"></div>Discord API</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#16a34a;"></div>Leaflet.js</div>
+    <div class="stack-pill"><div class="stack-dot" style="background:#334155;"></div>Vanilla JS</div>
   </div>
 
 </div>
-
 </body>
 </html>

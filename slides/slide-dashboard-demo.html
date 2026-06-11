@@ -2,232 +2,244 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LISA — Dashboard Demo</title>
+<title>LISA — Web Dashboard Demo</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: Inter, -apple-system, sans-serif;
     width: 1280px; height: 720px; overflow: hidden;
-    background: #f8fafc;
-    display: flex;
+    background: #f8fafc; display: flex;
   }
 
+  /* Sidebar */
   .sidebar {
-    width: 200px; flex-shrink: 0;
-    background: #1a56db;
+    width: 188px; flex-shrink: 0; background: #1a56db;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    padding: 32px 20px; gap: 12px;
+    padding: 36px 20px; gap: 10px;
   }
-  .sidebar-logo {
-    width: 52px; height: 52px; background: rgba(255,255,255,.18);
-    border-radius: 14px; display: flex; align-items: center; justify-content: center;
-    font-size: 26px; font-weight: 800; color: #fff;
+  .sidebar-mark {
+    width: 48px; height: 48px;
+    border: 2px solid rgba(255,255,255,.35); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800; color: #fff;
+    margin-bottom: 4px;
   }
-  .sidebar-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: .03em; }
-  .sidebar-tag  { font-size: 10px; color: rgba(255,255,255,.65); text-align: center; line-height: 1.5; }
-  .slide-num    { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.45); margin-top: 24px; }
+  .sidebar-name { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .04em; }
+  .sidebar-sub  { font-size: 9px; font-weight: 500; color: rgba(255,255,255,.55); text-align: center; line-height: 1.6; }
+  .sidebar-divider { width: 32px; height: 1px; background: rgba(255,255,255,.2); margin: 12px 0; }
+  .slide-label { font-size: 9px; font-weight: 600; color: rgba(255,255,255,.4); letter-spacing: .12em; text-transform: uppercase; }
 
-  .main {
-    flex: 1; padding: 32px 40px 24px;
-    display: flex; flex-direction: column; gap: 16px;
-  }
-  .slide-title {
-    font-size: 22px; font-weight: 700; color: #0f172a;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .slide-title::after {
-    content: ''; flex: 1; height: 2px;
-    background: #1a56db; border-radius: 2px;
-  }
-  .slide-subtitle { font-size: 12px; color: #64748b; margin-top: -10px; }
+  /* Main */
+  .main { flex: 1; padding: 28px 36px 22px; display: flex; flex-direction: column; gap: 14px; }
 
-  /* ── Screen mockups ── */
-  .screens {
+  .slide-heading {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .slide-heading h1 { font-size: 20px; font-weight: 700; color: #0f172a; white-space: nowrap; }
+  .slide-heading .rule { flex: 1; height: 1.5px; background: #e2e8f0; }
+  .slide-heading .sub { font-size: 11px; color: #94a3b8; white-space: nowrap; }
+
+  /* Screen grid */
+  .grid {
+    flex: 1;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr;
-    gap: 12px;
-    flex: 1;
-  }
-  .screen {
-    border-radius: 10px;
-    border: 1.5px solid #e2e8f0;
-    overflow: hidden;
-    display: flex; flex-direction: column;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(15,23,42,.07);
-  }
-  .screen-bar {
-    height: 28px;
-    background: #0f172a;
-    display: flex; align-items: center;
-    padding: 0 10px; gap: 5px; flex-shrink: 0;
-  }
-  .dot { width: 7px; height: 7px; border-radius: 50%; }
-  .screen-title-bar {
-    background: #1e293b;
-    padding: 5px 10px;
-    font-size: 9px; color: #94a3b8; font-weight: 500;
-    letter-spacing: .03em; flex-shrink: 0;
-  }
-  .screen-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 10px; gap: 7px; }
-  .screen-caption {
-    font-size: 10px; font-weight: 700; color: #0f172a;
-    padding: 6px 10px 0; text-align: center; flex-shrink: 0;
+    gap: 10px;
   }
 
-  /* Login screen */
-  .login-mock {
-    background: linear-gradient(135deg, #0f172a 60%, #1a56db 100%);
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    padding: 8px;
+  /* Individual screen card */
+  .screen {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(15,23,42,.07);
   }
-  .login-card-mock {
-    background: #fff; border-radius: 8px;
-    padding: 14px 16px; width: 100%; max-width: 180px;
-    display: flex; flex-direction: column; gap: 8px;
+
+  /* Browser chrome bar */
+  .chrome {
+    background: #1e293b;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 5px;
+    flex-shrink: 0;
   }
-  .mock-logo-row { display: flex; align-items: center; gap: 6px; }
-  .mock-logo { width: 24px; height: 24px; background: #1a56db; border-radius: 6px;
+  .chrome-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+  }
+  .chrome-url {
+    flex: 1; margin: 0 8px;
+    background: #334155; border-radius: 3px;
+    height: 13px;
+    display: flex; align-items: center; padding: 0 6px;
+    font-size: 8px; color: #94a3b8; font-family: ui-monospace, monospace;
+  }
+
+  /* Caption strip */
+  .caption {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 4px 10px;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #334155;
+    letter-spacing: .02em;
+    flex-shrink: 0;
+  }
+  .caption span {
+    display: inline-block;
+    width: 14px; height: 14px;
+    background: #1a56db; color: #fff;
+    border-radius: 3px;
+    font-size: 8px; font-weight: 700;
+    text-align: center; line-height: 14px;
+    margin-right: 5px;
+  }
+
+  /* ── Screen body helpers ── */
+  .sbody { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* ─ 1. Login ─ */
+  .login-bg {
+    flex: 1; background: linear-gradient(145deg, #0f172a 55%, #1e3a8a);
+    display: flex; align-items: center; justify-content: center; padding: 10px;
+  }
+  .login-card {
+    background: #fff; border-radius: 8px; padding: 14px 16px;
+    width: 190px; display: flex; flex-direction: column; gap: 7px;
+  }
+  .lc-header { display: flex; align-items: center; gap: 7px; }
+  .lc-mark { width: 22px; height: 22px; background: #1a56db; border-radius: 5px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0; }
-  .mock-title { font-size: 11px; font-weight: 700; color: #0f172a; }
-  .mock-tabs { display: flex; gap: 4px; }
-  .mock-tab { flex: 1; padding: 3px; font-size: 8px; text-align: center;
-    border-radius: 4px; font-weight: 600; }
-  .mock-tab.active { background: #1a56db; color: #fff; }
-  .mock-tab.inactive { background: #f1f5f9; color: #64748b; }
-  .mock-input { height: 18px; background: #f8fafc; border: 1px solid #e2e8f0;
-    border-radius: 4px; width: 100%; }
-  .mock-btn { height: 20px; background: #1a56db; border-radius: 4px;
+    font-size: 11px; font-weight: 800; color: #fff; }
+  .lc-title { font-size: 11px; font-weight: 700; color: #0f172a; }
+  .lc-sub   { font-size: 8px; color: #94a3b8; }
+  .lc-tabs  { display: flex; gap: 3px; }
+  .lc-tab   { flex: 1; padding: 3px; text-align: center; font-size: 8px; font-weight: 600; border-radius: 4px; }
+  .lc-tab.on  { background: #1a56db; color: #fff; }
+  .lc-tab.off { background: #f1f5f9; color: #64748b; }
+  .lc-input { height: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; width: 100%; }
+  .lc-role  { display: flex; gap: 3px; }
+  .lc-role-opt { flex: 1; height: 16px; background: #f1f5f9; border-radius: 3px;
+    font-size: 7.5px; font-weight: 600; color: #475569;
+    display: flex; align-items: center; justify-content: center; }
+  .lc-btn { height: 22px; background: #1a56db; border-radius: 4px; width: 100%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 8px; font-weight: 700; color: #fff; }
-  .mock-demo-row { display: flex; gap: 3px; }
-  .mock-demo-btn { flex: 1; height: 14px; background: #f1f5f9; border-radius: 3px;
+    font-size: 8.5px; font-weight: 700; color: #fff; }
+  .lc-divider { height: 1px; background: #f1f5f9; }
+  .lc-demos { display: flex; gap: 3px; }
+  .lc-demo { flex: 1; height: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 3px;
     font-size: 7px; font-weight: 600; color: #64748b;
     display: flex; align-items: center; justify-content: center; }
 
-  /* Dashboard screen */
-  .dash-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 10px; background: #0f172a; flex-shrink: 0;
+  /* ─ 2. Dashboard ─ */
+  .dash-nav {
+    background: #0f172a; height: 26px; display: flex; align-items: center;
+    padding: 0 10px; gap: 1px; flex-shrink: 0;
   }
-  .dash-logo { font-size: 10px; font-weight: 800; color: #fff; }
-  .dash-user { font-size: 8px; color: #94a3b8; }
-  .dash-body { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #f5f7fa; }
+  .dash-logo { font-size: 10px; font-weight: 800; color: #fff; margin-right: 10px; }
+  .nav-item { font-size: 7.5px; font-weight: 500; color: #94a3b8; padding: 3px 7px; border-radius: 3px; }
+  .nav-item.active { background: #1e293b; color: #e2e8f0; }
+  .dash-user { margin-left: auto; font-size: 7.5px; color: #64748b; }
+  .dash-body { flex: 1; background: #f5f7fa; padding: 7px 8px; display: flex; flex-direction: column; gap: 5px; }
   .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-  .stat-card {
-    background: #fff; border-radius: 6px; padding: 6px 8px;
-    border: 1px solid #e2e8f0;
-    display: flex; flex-direction: column; gap: 2px;
-  }
-  .stat-label { font-size: 8px; color: #64748b; font-weight: 500; }
-  .stat-value { font-size: 14px; font-weight: 700; }
-  .stat-ok   { color: #16a34a; }
-  .stat-warn { color: #b45309; }
-  .stat-info { color: #1a56db; }
-  .stat-sub  { font-size: 7px; color: #94a3b8; }
-
-  /* Shipment list */
+  .stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 5px; padding: 6px 7px; }
+  .stat-label { font-size: 7.5px; color: #64748b; font-weight: 500; }
+  .stat-val   { font-size: 18px; font-weight: 800; line-height: 1.1; margin-top: 1px; }
+  .stat-sub   { font-size: 7px; color: #94a3b8; margin-top: 1px; }
+  .v-blue { color: #1a56db; } .v-amber { color: #b45309; } .v-green { color: #16a34a; }
   .ship-row {
-    background: #fff; border-radius: 6px; padding: 5px 8px;
-    border: 1px solid #e2e8f0;
-    display: flex; align-items: center; gap: 6px;
-    flex-shrink: 0;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 5px;
+    padding: 5px 7px; display: flex; align-items: center; gap: 6px;
   }
-  .ship-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .ship-indicator { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
   .ship-id { font-size: 8.5px; font-weight: 700; color: #0f172a; }
   .ship-meta { font-size: 7.5px; color: #64748b; flex: 1; }
-  .ship-badge {
-    font-size: 7px; font-weight: 600; padding: 1px 5px; border-radius: 20px;
-  }
-  .badge-ok   { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
-  .badge-warn { background: #fefce8; color: #b45309; border: 1px solid #fde047; }
-  .badge-crit { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+  .badge { font-size: 7px; font-weight: 600; padding: 1px 5px; border-radius: 20px; }
+  .b-ok   { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+  .b-warn { background: #fefce8; color: #b45309; border: 1px solid #fde047; }
+  .b-crit { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
 
-  /* Map screen */
-  .map-mock {
-    flex: 1;
-    background: linear-gradient(160deg, #e8f4f8 0%, #d4e8d0 50%, #c8dfc8 100%);
-    position: relative; overflow: hidden;
+  /* ─ 3. Map ─ */
+  .map-area {
+    flex: 1; position: relative;
+    background: linear-gradient(160deg, #dbeafe 0%, #d1fae5 60%, #c6f7e9 100%);
+    overflow: hidden;
   }
-  .map-grid-h, .map-grid-v {
-    position: absolute; background: rgba(148,163,184,.2);
-  }
-  .map-grid-h { height: 1px; left: 0; right: 0; }
-  .map-grid-v { width: 1px; top: 0; bottom: 0; }
+  .map-road { position: absolute; background: rgba(255,255,255,.5); border-radius: 2px; }
   .map-pin {
-    position: absolute; width: 12px; height: 12px;
+    position: absolute; width: 10px; height: 10px;
     border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
     border: 1.5px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
   }
-  .pin-blue { background: #1a56db; }
-  .pin-green { background: #16a34a; }
-  .pin-red { background: #dc2626; }
-  .map-label {
-    position: absolute; font-size: 7px; font-weight: 700; color: #0f172a;
-    background: rgba(255,255,255,.9); border-radius: 3px; padding: 1px 3px;
-    white-space: nowrap;
+  .map-tooltip {
+    position: absolute; background: rgba(255,255,255,.95);
+    border: 1px solid #e2e8f0; border-radius: 4px;
+    padding: 2px 6px; font-size: 7.5px; font-weight: 600; color: #0f172a;
+    white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.1);
   }
+  .map-legend {
+    position: absolute; bottom: 6px; right: 6px;
+    background: rgba(255,255,255,.92); border: 1px solid #e2e8f0;
+    border-radius: 5px; padding: 5px 7px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .map-legend-item { display: flex; align-items: center; gap: 4px; font-size: 7.5px; color: #334155; font-weight: 500; }
+  .ml-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
-  /* Alert screen */
-  .alert-mock { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 8px; background: #f5f7fa; }
-  .alert-item {
-    background: #fff; border-radius: 6px; padding: 6px 8px;
-    border-left: 3px solid; display: flex; flex-direction: column; gap: 2px;
-    border: 1px solid #e2e8f0;
+  /* ─ 4. Alerts ─ */
+  .alerts-body { flex: 1; background: #f5f7fa; padding: 7px 8px; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+  .alert-card {
+    background: #fff; border: 1px solid #e2e8f0;
+    border-left-width: 3px; border-radius: 5px;
+    padding: 6px 8px; display: flex; flex-direction: column; gap: 2px;
   }
-  .alert-item.crit { border-left-color: #dc2626; }
-  .alert-item.warn { border-left-color: #b45309; }
-  .alert-item.ok   { border-left-color: #16a34a; }
-  .alert-top { display: flex; align-items: center; gap: 5px; }
-  .alert-icon { font-size: 11px; }
-  .alert-title { font-size: 8.5px; font-weight: 700; color: #0f172a; flex: 1; }
-  .alert-time  { font-size: 7.5px; color: #94a3b8; }
-  .alert-msg   { font-size: 7.5px; color: #64748b; padding-left: 16px; }
-  .alert-resolve { font-size: 7px; font-weight: 600; color: #1a56db;
-    align-self: flex-end; cursor: pointer; }
+  .ac-crit { border-left-color: #dc2626; }
+  .ac-warn { border-left-color: #f59e0b; }
+  .ac-ok   { border-left-color: #16a34a; opacity: .75; }
+  .alert-top { display: flex; align-items: center; gap: 6px; }
+  .alert-type { font-size: 8.5px; font-weight: 700; color: #0f172a; flex: 1; }
+  .alert-time { font-size: 7.5px; color: #94a3b8; }
+  .alert-body-text { font-size: 7.5px; color: #64748b; }
+  .alert-action { font-size: 7px; font-weight: 600; color: #1a56db; align-self: flex-end; margin-top: 1px; cursor: pointer; }
 
-  /* Discord screen */
-  .discord-mock {
-    flex: 1; background: #313338; display: flex; flex-direction: column;
-    padding: 8px; gap: 5px;
-  }
-  .dc-msg {
-    display: flex; gap: 6px; align-items: flex-start;
-  }
-  .dc-avatar { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 9px; font-weight: 700; }
-  .dc-content { display: flex; flex-direction: column; gap: 1px; }
+  /* severity dot in alert */
+  .sev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ─ 5. Discord ─ */
+  .dc-bg { flex: 1; background: #313338; display: flex; flex-direction: column; padding: 8px; gap: 6px; overflow: hidden; }
+  .dc-channel { font-size: 8px; font-weight: 700; color: #5c5e66; padding-bottom: 5px; border-bottom: 1px solid #3f4147; }
+  .dc-msg { display: flex; gap: 6px; align-items: flex-start; }
+  .dc-av { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; font-size: 9px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; }
+  .dc-right { display: flex; flex-direction: column; gap: 1px; }
   .dc-name { font-size: 8.5px; font-weight: 700; }
-  .dc-text { font-size: 8px; color: #d1d5db; line-height: 1.4; }
+  .dc-ts   { font-size: 7px; color: #5c5e66; font-weight: 400; margin-left: 4px; }
+  .dc-text { font-size: 8px; color: #dbdee1; line-height: 1.4; }
   .dc-embed {
-    background: #1e1f22; border-left: 3px solid;
-    border-radius: 0 4px 4px 0; padding: 6px 8px;
-    display: flex; flex-direction: column; gap: 2px;
-    margin-top: 2px;
+    margin-top: 3px; border-left: 3px solid; border-radius: 0 4px 4px 0;
+    background: #2b2d31; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px;
   }
-  .dc-embed-title { font-size: 8.5px; font-weight: 700; color: #fff; }
+  .dc-embed-title { font-size: 8.5px; font-weight: 700; color: #f2f3f5; }
   .dc-embed-line  { font-size: 7.5px; color: #9ca3af; }
 
-  /* NFC / Role screens */
-  .role-mock { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 8px; background: #f5f7fa; }
-  .role-header { font-size: 9px; font-weight: 700; color: #0f172a; padding: 4px 0; }
-  .role-card {
-    background: #fff; border-radius: 6px; padding: 6px 8px;
-    border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px;
-  }
-  .role-icon { font-size: 16px; }
-  .role-info { display: flex; flex-direction: column; gap: 1px; flex: 1; }
-  .role-name { font-size: 9px; font-weight: 700; color: #0f172a; }
-  .role-desc { font-size: 8px; color: #64748b; }
-  .role-badge {
-    font-size: 7px; font-weight: 600; padding: 2px 6px; border-radius: 20px;
-  }
+  /* ─ 6. RBAC ─ */
+  .rbac-body { flex: 1; background: #f5f7fa; padding: 8px; display: flex; flex-direction: column; gap: 5px; }
+  .rbac-header { font-size: 8px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .1em; padding-bottom: 4px; }
+  .role-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 5px; padding: 7px 9px; display: flex; align-items: center; gap: 8px; }
+  .role-icon-box { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+  .role-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+  .role-name { font-size: 9.5px; font-weight: 700; color: #0f172a; }
+  .role-perm { font-size: 8px; color: #64748b; }
+  .role-badge { font-size: 7.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
   .rb-admin  { background: #eff6ff; color: #1a56db; border: 1px solid #93c5fd; }
   .rb-driver { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
   .rb-cust   { background: #fefce8; color: #b45309; border: 1px solid #fde047; }
@@ -236,252 +248,275 @@
 <body>
 
 <div class="sidebar">
-  <div class="sidebar-logo">L</div>
+  <div class="sidebar-mark">L</div>
   <div class="sidebar-name">LISA</div>
-  <div class="sidebar-tag">Logistics Intelligence<br>Sentinel Assistant</div>
-  <div class="slide-num">Slide 12</div>
+  <div class="sidebar-sub">Logistics Intelligence<br>Sentinel Assistant</div>
+  <div class="sidebar-divider"></div>
+  <div class="slide-label">Dashboard</div>
 </div>
 
 <div class="main">
-  <div class="slide-title">Web Dashboard Demo</div>
-  <div class="slide-subtitle">Live monitoring · Role-based access · Real-time alerts · Discord integration</div>
 
-  <div class="screens">
+  <div class="slide-heading">
+    <h1>Web Dashboard Demo</h1>
+    <div class="rule"></div>
+    <div class="sub">Deployed on AWS Amplify &nbsp;·&nbsp; Role-based access &nbsp;·&nbsp; Real-time monitoring</div>
+  </div>
+
+  <div class="grid">
 
     <!-- 1. Login -->
     <div class="screen">
-      <div class="screen-bar">
-        <div class="dot" style="background:#ff5f57;"></div>
-        <div class="dot" style="background:#febc2e;"></div>
-        <div class="dot" style="background:#28c840;"></div>
-        <div style="flex:1;text-align:center;font-size:8px;color:#64748b;">localhost:8080</div>
+      <div class="chrome">
+        <div class="chrome-dot" style="background:#ff5f57;"></div>
+        <div class="chrome-dot" style="background:#febc2e;"></div>
+        <div class="chrome-dot" style="background:#28c840;"></div>
+        <div class="chrome-url">lisa.amplifyapp.com</div>
       </div>
-      <div class="screen-caption">① Sign In / Sign Up</div>
-      <div class="login-mock">
-        <div class="login-card-mock">
-          <div class="mock-logo-row">
-            <div class="mock-logo">L</div>
-            <div>
-              <div class="mock-title">LISA</div>
-              <div style="font-size:7px;color:#64748b;">Logistics Intelligence Sentinel</div>
+      <div class="caption"><span>1</span>Authentication</div>
+      <div class="sbody">
+        <div class="login-bg">
+          <div class="login-card">
+            <div class="lc-header">
+              <div class="lc-mark">L</div>
+              <div>
+                <div class="lc-title">LISA</div>
+                <div class="lc-sub">Cold-Chain Logistics Monitor</div>
+              </div>
             </div>
-          </div>
-          <div class="mock-tabs">
-            <div class="mock-tab active">Sign In</div>
-            <div class="mock-tab inactive">Sign Up</div>
-          </div>
-          <div class="mock-input"></div>
-          <div class="mock-input"></div>
-          <div style="display:flex; gap:4px; align-items:center; margin:-2px 0;">
-            <div style="width:8px;height:8px;background:#e2e8f0;border-radius:2px;"></div>
-            <div style="font-size:7px;color:#64748b;">Remember me</div>
-          </div>
-          <div class="mock-btn">Sign In</div>
-          <div style="font-size:7px;color:#64748b;text-align:center;">or try a demo account</div>
-          <div class="mock-demo-row">
-            <div class="mock-demo-btn">Admin</div>
-            <div class="mock-demo-btn">Driver</div>
-            <div class="mock-demo-btn">Customer</div>
+            <div class="lc-tabs">
+              <div class="lc-tab on">Sign In</div>
+              <div class="lc-tab off">Sign Up</div>
+            </div>
+            <div class="lc-input"></div>
+            <div class="lc-input"></div>
+            <div class="lc-btn">Sign In</div>
+            <div class="lc-divider"></div>
+            <div style="font-size:7.5px;color:#94a3b8;text-align:center;">Demo accounts</div>
+            <div class="lc-demos">
+              <div class="lc-demo">Admin</div>
+              <div class="lc-demo">Driver</div>
+              <div class="lc-demo">Customer</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 2. Dashboard / Stats -->
+    <!-- 2. Dashboard -->
     <div class="screen">
-      <div class="dash-header">
-        <div class="dash-logo">LISA</div>
-        <div style="display:flex;gap:10px;font-size:8px;color:#94a3b8;">
-          <span>Dashboard</span><span>Shipments</span><span>Alerts</span><span>Map</span>
-        </div>
-        <div class="dash-user">admin@lisa.com</div>
+      <div class="chrome">
+        <div class="chrome-dot" style="background:#ff5f57;"></div>
+        <div class="chrome-dot" style="background:#febc2e;"></div>
+        <div class="chrome-dot" style="background:#28c840;"></div>
+        <div class="chrome-url">lisa.amplifyapp.com/dashboard</div>
       </div>
-      <div class="screen-caption">② Dashboard Overview</div>
-      <div class="dash-body">
-        <div class="stat-row">
-          <div class="stat-card">
-            <div class="stat-label">Active Shipments</div>
-            <div class="stat-value stat-info">12</div>
-            <div class="stat-sub">3 in transit</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Active Alerts</div>
-            <div class="stat-value stat-warn">3</div>
-            <div class="stat-sub">1 critical</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Avg Temp</div>
-            <div class="stat-value stat-ok">4.2°C</div>
-            <div class="stat-sub">within range</div>
-          </div>
+      <div class="caption"><span>2</span>Shipment Overview</div>
+      <div class="sbody">
+        <div class="dash-nav">
+          <div class="dash-logo">LISA</div>
+          <div class="nav-item active">Dashboard</div>
+          <div class="nav-item">Alerts</div>
+          <div class="nav-item">Map</div>
+          <div class="nav-item">NFC</div>
+          <div class="dash-user">admin@lisa.com</div>
         </div>
-        <div class="ship-row">
-          <div class="ship-dot" style="background:#16a34a;"></div>
-          <div class="ship-id">SHIP-001</div>
-          <div class="ship-meta">Taipei → Kaohsiung · 3.8°C · 62% RH</div>
-          <div class="ship-badge badge-ok">Normal</div>
-        </div>
-        <div class="ship-row">
-          <div class="ship-dot" style="background:#b45309;"></div>
-          <div class="ship-id">SHIP-002</div>
-          <div class="ship-meta">Taichung · 7.1°C · 58% RH</div>
-          <div class="ship-badge badge-warn">Temp High</div>
-        </div>
-        <div class="ship-row">
-          <div class="ship-dot" style="background:#dc2626;"></div>
-          <div class="ship-id">SHIP-003</div>
-          <div class="ship-meta">Tainan · 1.8G shock · GPS lost</div>
-          <div class="ship-badge badge-crit">Critical</div>
+        <div class="dash-body">
+          <div class="stat-row">
+            <div class="stat-card">
+              <div class="stat-label">Active Shipments</div>
+              <div class="stat-val v-blue">12</div>
+              <div class="stat-sub">3 in transit</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Open Alerts</div>
+              <div class="stat-val v-amber">3</div>
+              <div class="stat-sub">1 critical</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Avg Temp</div>
+              <div class="stat-val v-green">4.2°</div>
+              <div class="stat-sub">within range</div>
+            </div>
+          </div>
+          <div class="ship-row">
+            <div class="ship-indicator" style="background:#16a34a;"></div>
+            <div class="ship-id">SHIP-001</div>
+            <div class="ship-meta">Taipei → Kaohsiung &nbsp;·&nbsp; 3.8°C &nbsp;·&nbsp; 62% RH</div>
+            <div class="badge b-ok">Normal</div>
+          </div>
+          <div class="ship-row">
+            <div class="ship-indicator" style="background:#b45309;"></div>
+            <div class="ship-id">SHIP-002</div>
+            <div class="ship-meta">Taichung &nbsp;·&nbsp; 7.1°C &nbsp;·&nbsp; 58% RH</div>
+            <div class="badge b-warn">Temp High</div>
+          </div>
+          <div class="ship-row">
+            <div class="ship-indicator" style="background:#dc2626;"></div>
+            <div class="ship-id">SHIP-003</div>
+            <div class="ship-meta">Tainan &nbsp;·&nbsp; 1.8G shock &nbsp;·&nbsp; GPS lost</div>
+            <div class="badge b-crit">Critical</div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 3. Map -->
     <div class="screen">
-      <div class="screen-bar">
-        <div class="dot" style="background:#ff5f57;"></div>
-        <div class="dot" style="background:#febc2e;"></div>
-        <div class="dot" style="background:#28c840;"></div>
+      <div class="chrome">
+        <div class="chrome-dot" style="background:#ff5f57;"></div>
+        <div class="chrome-dot" style="background:#febc2e;"></div>
+        <div class="chrome-dot" style="background:#28c840;"></div>
+        <div class="chrome-url">lisa.amplifyapp.com/map</div>
       </div>
-      <div class="screen-caption">③ Live Map (Leaflet.js)</div>
-      <div class="map-mock">
-        <!-- Grid lines -->
-        <div class="map-grid-h" style="top:25%;"></div>
-        <div class="map-grid-h" style="top:50%;"></div>
-        <div class="map-grid-h" style="top:75%;"></div>
-        <div class="map-grid-v" style="left:25%;"></div>
-        <div class="map-grid-v" style="left:50%;"></div>
-        <div class="map-grid-v" style="left:75%;"></div>
-        <!-- Pins -->
-        <div class="map-pin pin-green" style="top:20%; left:45%;"></div>
-        <div class="map-label" style="top:16%; left:50%;">SHIP-001 ✓</div>
-        <div class="map-pin pin-blue" style="top:45%; left:30%;"></div>
-        <div class="map-label" style="top:41%; left:35%;">SHIP-002 ⚠</div>
-        <div class="map-pin pin-red" style="top:65%; left:55%;"></div>
-        <div class="map-label" style="top:61%; left:60%;">SHIP-003 ✗</div>
-        <!-- Mini legend -->
-        <div style="position:absolute;bottom:8px;right:8px;background:rgba(255,255,255,.9);border-radius:4px;padding:4px 6px;font-size:7px;color:#0f172a;display:flex;flex-direction:column;gap:2px;">
-          <div style="display:flex;align-items:center;gap:3px;"><div style="width:7px;height:7px;background:#16a34a;border-radius:50%;"></div>Normal</div>
-          <div style="display:flex;align-items:center;gap:3px;"><div style="width:7px;height:7px;background:#1a56db;border-radius:50%;"></div>Warning</div>
-          <div style="display:flex;align-items:center;gap:3px;"><div style="width:7px;height:7px;background:#dc2626;border-radius:50%;"></div>Critical</div>
+      <div class="caption"><span>3</span>Live Map — Leaflet.js</div>
+      <div class="sbody">
+        <div class="map-area">
+          <!-- roads -->
+          <div class="map-road" style="width:1px;top:0;bottom:0;left:38%;"></div>
+          <div class="map-road" style="height:1px;left:0;right:0;top:45%;"></div>
+          <div class="map-road" style="width:1px;top:0;bottom:0;left:68%;"></div>
+          <div class="map-road" style="height:1px;left:0;right:0;top:72%;"></div>
+          <!-- pins -->
+          <div class="map-pin" style="top:18%;left:40%;background:#16a34a;"></div>
+          <div class="map-tooltip" style="top:10%;left:44%;">SHIP-001 — Normal</div>
+          <div class="map-pin" style="top:42%;left:26%;background:#f59e0b;"></div>
+          <div class="map-tooltip" style="top:34%;left:30%;">SHIP-002 — Warning</div>
+          <div class="map-pin" style="top:65%;left:62%;background:#dc2626;"></div>
+          <div class="map-tooltip" style="top:57%;left:65%;">SHIP-003 — Critical</div>
+          <!-- legend -->
+          <div class="map-legend">
+            <div class="map-legend-item"><div class="ml-dot" style="background:#16a34a;"></div>Normal</div>
+            <div class="map-legend-item"><div class="ml-dot" style="background:#f59e0b;"></div>Warning</div>
+            <div class="map-legend-item"><div class="ml-dot" style="background:#dc2626;"></div>Critical</div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 4. Alerts -->
     <div class="screen">
-      <div class="screen-bar">
-        <div class="dot" style="background:#ff5f57;"></div>
-        <div class="dot" style="background:#febc2e;"></div>
-        <div class="dot" style="background:#28c840;"></div>
+      <div class="chrome">
+        <div class="chrome-dot" style="background:#ff5f57;"></div>
+        <div class="chrome-dot" style="background:#febc2e;"></div>
+        <div class="chrome-dot" style="background:#28c840;"></div>
+        <div class="chrome-url">lisa.amplifyapp.com/alerts</div>
       </div>
-      <div class="screen-caption">④ Alert Management</div>
-      <div class="alert-mock">
-        <div class="alert-item crit" style="border-left-width:3px;">
-          <div class="alert-top">
-            <div class="alert-icon">🚨</div>
-            <div class="alert-title">Temperature Excursion · SHIP-003</div>
-            <div class="alert-time">2m ago</div>
-          </div>
-          <div class="alert-msg">Temp exceeded 8°C threshold — current: 9.4°C</div>
-          <div class="alert-resolve">Resolve →</div>
-        </div>
-        <div class="alert-item warn" style="border-left-width:3px;">
-          <div class="alert-top">
-            <div class="alert-icon">⚡</div>
-            <div class="alert-title">G-Force Shock · SHIP-003</div>
-            <div class="alert-time">15m ago</div>
-          </div>
-          <div class="alert-msg">Impact detected: 1.8G — check cargo integrity</div>
-          <div class="alert-resolve">Resolve →</div>
-        </div>
-        <div class="alert-item ok" style="border-left-width:3px;opacity:.7;">
-          <div class="alert-top">
-            <div class="alert-icon">✅</div>
-            <div class="alert-title">Humidity Normal · SHIP-001</div>
-            <div class="alert-time">1h ago</div>
-          </div>
-          <div class="alert-msg">RH returned to 55–65% range — resolved</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5. Discord Bot -->
-    <div class="screen">
-      <div class="screen-bar" style="background:#1e1f22;">
-        <div class="dot" style="background:#ff5f57;"></div>
-        <div class="dot" style="background:#febc2e;"></div>
-        <div class="dot" style="background:#28c840;"></div>
-        <div style="flex:1;text-align:center;font-size:8px;color:#64748b;">LISA-Bot · #alerts</div>
-      </div>
-      <div class="screen-caption" style="background:#1e1f22;color:#94a3b8;">⑤ Discord Bot Integration</div>
-      <div class="discord-mock">
-        <div class="dc-msg">
-          <div class="dc-avatar" style="background:#5865f2;color:#fff;">B</div>
-          <div class="dc-content">
-            <div class="dc-name" style="color:#5865f2;">LISA-Bot <span style="font-size:7px;color:#6b7280;font-weight:400;">Today at 14:23</span></div>
-            <div class="dc-embed" style="border-left-color:#dc2626;">
-              <div class="dc-embed-title">🚨 CRITICAL ALERT — SHIP-003</div>
-              <div class="dc-embed-line">Temp: 9.4°C (threshold: 8°C)</div>
-              <div class="dc-embed-line">Location: 22.6°N, 120.3°E</div>
-              <div class="dc-embed-line" style="color:#f87171;">Immediate action required</div>
+      <div class="caption"><span>4</span>Alert Management</div>
+      <div class="sbody">
+        <div class="alerts-body">
+          <div class="alert-card ac-crit">
+            <div class="alert-top">
+              <div class="sev-dot" style="background:#dc2626;"></div>
+              <div class="alert-type">Temperature Excursion — SHIP-003</div>
+              <div class="alert-time">2 min ago</div>
             </div>
+            <div class="alert-body-text">Sensor reading 9.4°C exceeded threshold of 8°C</div>
+            <div class="alert-action">Mark Resolved</div>
           </div>
-        </div>
-        <div class="dc-msg">
-          <div class="dc-avatar" style="background:#64748b;color:#fff;">U</div>
-          <div class="dc-content">
-            <div class="dc-name" style="color:#d1d5db;">driver01 <span style="font-size:7px;color:#6b7280;font-weight:400;">14:24</span></div>
-            <div class="dc-text">/shipment SHIP-003</div>
-          </div>
-        </div>
-        <div class="dc-msg">
-          <div class="dc-avatar" style="background:#5865f2;color:#fff;">B</div>
-          <div class="dc-content">
-            <div class="dc-name" style="color:#5865f2;">LISA-Bot</div>
-            <div class="dc-embed" style="border-left-color:#1a56db;">
-              <div class="dc-embed-title">📦 SHIP-003 Status</div>
-              <div class="dc-embed-line">Temp: 9.4°C · Humidity: 54%</div>
-              <div class="dc-embed-line">G-Force: 1.8G · Battery: 72%</div>
+          <div class="alert-card ac-warn">
+            <div class="alert-top">
+              <div class="sev-dot" style="background:#f59e0b;"></div>
+              <div class="alert-type">G-Force Shock — SHIP-003</div>
+              <div class="alert-time">15 min ago</div>
             </div>
+            <div class="alert-body-text">Impact detected at 1.8G — check cargo integrity</div>
+            <div class="alert-action">Mark Resolved</div>
+          </div>
+          <div class="alert-card ac-ok">
+            <div class="alert-top">
+              <div class="sev-dot" style="background:#16a34a;"></div>
+              <div class="alert-type">Humidity Restored — SHIP-001</div>
+              <div class="alert-time">1 hr ago</div>
+            </div>
+            <div class="alert-body-text">RH returned to 55–65% range — resolved</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 6. Role-based views -->
+    <!-- 5. Discord -->
     <div class="screen">
-      <div class="screen-bar">
-        <div class="dot" style="background:#ff5f57;"></div>
-        <div class="dot" style="background:#febc2e;"></div>
-        <div class="dot" style="background:#28c840;"></div>
+      <div class="chrome" style="background:#1e1f22;">
+        <div class="chrome-dot" style="background:#ff5f57;"></div>
+        <div class="chrome-dot" style="background:#febc2e;"></div>
+        <div class="chrome-dot" style="background:#28c840;"></div>
+        <div class="chrome-url" style="background:#111214;color:#5c5e66;">Discord — #lisa-alerts</div>
       </div>
-      <div class="screen-caption">⑥ Role-Based Access (RBAC)</div>
-      <div class="role-mock">
-        <div class="role-header">Cognito JWT → Role-Gated Views</div>
-        <div class="role-card">
-          <div class="role-icon">🛡️</div>
-          <div class="role-info">
-            <div class="role-name">Admin</div>
-            <div class="role-desc">Full access · manage all shipments · resolve alerts · NFC whitelist</div>
+      <div class="caption" style="background:#2b2d31;border-color:#3f4147;color:#b5bac1;">
+        <span style="background:#5865f2;">5</span>Discord Bot Integration
+      </div>
+      <div class="sbody">
+        <div class="dc-bg">
+          <div class="dc-channel"># lisa-alerts</div>
+          <div class="dc-msg">
+            <div class="dc-av" style="background:#5865f2;color:#fff;">B</div>
+            <div class="dc-right">
+              <div><span class="dc-name" style="color:#5865f2;">LISA-Bot</span><span class="dc-ts">Today 14:23</span></div>
+              <div class="dc-embed" style="border-left-color:#dc2626;">
+                <div class="dc-embed-title">CRITICAL — SHIP-003 Temperature Excursion</div>
+                <div class="dc-embed-line">Reading: 9.4°C &nbsp;|&nbsp; Threshold: 8.0°C</div>
+                <div class="dc-embed-line">Location: 22.6°N, 120.3°E &nbsp;|&nbsp; Battery: 72%</div>
+              </div>
+            </div>
           </div>
-          <div class="role-badge rb-admin">ADMIN</div>
+          <div class="dc-msg">
+            <div class="dc-av" style="background:#4b5563;color:#d1d5db;">D</div>
+            <div class="dc-right">
+              <div><span class="dc-name" style="color:#d1d5db;">driver01</span><span class="dc-ts">14:24</span></div>
+              <div class="dc-text">/shipment SHIP-003</div>
+            </div>
+          </div>
+          <div class="dc-msg">
+            <div class="dc-av" style="background:#5865f2;color:#fff;">B</div>
+            <div class="dc-right">
+              <div><span class="dc-name" style="color:#5865f2;">LISA-Bot</span><span class="dc-ts">14:24</span></div>
+              <div class="dc-embed" style="border-left-color:#2563eb;">
+                <div class="dc-embed-title">SHIP-003 Status</div>
+                <div class="dc-embed-line">Temp: 9.4°C &nbsp;·&nbsp; Humidity: 54% &nbsp;·&nbsp; G-Force: 1.8G</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="role-card">
-          <div class="role-icon">🚚</div>
-          <div class="role-info">
-            <div class="role-name">Driver</div>
-            <div class="role-desc">Own shipments · sensor readings · receive alerts</div>
+      </div>
+    </div>
+
+    <!-- 6. RBAC -->
+    <div class="screen">
+      <div class="chrome">
+        <div class="chrome-dot" style="background:#ff5f57;"></div>
+        <div class="chrome-dot" style="background:#febc2e;"></div>
+        <div class="chrome-dot" style="background:#28c840;"></div>
+        <div class="chrome-url">Cognito JWT — custom:role claim</div>
+      </div>
+      <div class="caption"><span>6</span>Role-Based Access Control</div>
+      <div class="sbody">
+        <div class="rbac-body">
+          <div class="rbac-header">Three roles — enforced from JWT token claim</div>
+          <div class="role-card">
+            <div class="role-icon-box" style="background:#eff6ff;color:#1a56db;">A</div>
+            <div class="role-info">
+              <div class="role-name">Administrator</div>
+              <div class="role-perm">Full access — all shipments, alert resolution, NFC whitelist management</div>
+            </div>
+            <div class="role-badge rb-admin">ADMIN</div>
           </div>
-          <div class="role-badge rb-driver">DRIVER</div>
-        </div>
-        <div class="role-card">
-          <div class="role-icon">📦</div>
-          <div class="role-info">
-            <div class="role-name">Customer</div>
-            <div class="role-desc">View-only · tracking · alert history</div>
+          <div class="role-card">
+            <div class="role-icon-box" style="background:#f0fdf4;color:#16a34a;">D</div>
+            <div class="role-info">
+              <div class="role-name">Driver</div>
+              <div class="role-perm">Assigned shipments only — sensor readings, map view, alert notifications</div>
+            </div>
+            <div class="role-badge rb-driver">DRIVER</div>
           </div>
-          <div class="role-badge rb-cust">CUSTOMER</div>
+          <div class="role-card">
+            <div class="role-icon-box" style="background:#fefce8;color:#b45309;">C</div>
+            <div class="role-info">
+              <div class="role-name">Customer</div>
+              <div class="role-perm">View-only — assigned shipments, tracking history, alert log</div>
+            </div>
+            <div class="role-badge rb-cust">CUSTOMER</div>
+          </div>
         </div>
       </div>
     </div>
