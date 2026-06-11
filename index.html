@@ -1838,12 +1838,12 @@
         document.getElementById("nav-nfc").style.display = role === "ADMIN" ? "inline-block" : "none";
         document.getElementById("btn-add-shipment").style.display = role === "ADMIN" ? "inline-block" : "none";
         // DRIVER/CUSTOMER dashboards are scoped to their own shipments and
-        // lose the Alert Center tab; DRIVER additionally keeps the Map tab
-        // (showing all shipment locations, same as ADMIN). CUSTOMER is
-        // dashboard-only.
+        // lose the Alert Center tab. Everyone keeps the Map tab: DRIVER's
+        // map shows everything (same as ADMIN), CUSTOMER's map is scoped
+        // to their own shipments + the accidents tied to them.
         const restricted = role === "DRIVER" || role === "CUSTOMER";
         document.getElementById("nav-alerts").style.display = restricted ? "none" : "inline-block";
-        document.getElementById("nav-map").style.display    = role === "CUSTOMER" ? "none" : "inline-block";
+        document.getElementById("nav-map").style.display    = "inline-block";
         initApp();
       }
 
@@ -2131,16 +2131,20 @@
           { userId: "demo-customer", email: "customer@lisa.demo", role: "CUSTOMER" },
         ],
         // Mirrors the DynamoDB `AccidentEvents` table (PK: accidentId).
-        // Road accidents drawn as warning markers on the Map page; demo
+        // Road accidents drawn as warning markers on the Map page; each
+        // belongs to the shipment that ran into it (shipmentId). Demo
         // coordinates sit on Hsinchu City roads.
         accidents: [
-          { accidentId: "ACC-001", type: "COLLISION", severity: "HIGH",
+          { accidentId: "ACC-001", shipmentId: "SHIP-001",
+            type: "COLLISION", severity: "HIGH",
             description: "Collision reported on a Hsinchu City road",
             latitude: 24.8043, longitude: 120.9688, reportedAt: "2025-06-05T07:40:00Z" },
-          { accidentId: "ACC-002", type: "ROAD_BLOCKED", severity: "MEDIUM",
+          { accidentId: "ACC-002", shipmentId: "SHIP-002",
+            type: "ROAD_BLOCKED", severity: "MEDIUM",
             description: "Road Blocked reported on a Hsinchu City road",
             latitude: 24.7975, longitude: 120.9900, reportedAt: "2025-06-05T08:10:00Z" },
-          { accidentId: "ACC-003", type: "VEHICLE_BREAKDOWN", severity: "LOW",
+          { accidentId: "ACC-003", shipmentId: "SHIP-003",
+            type: "VEHICLE_BREAKDOWN", severity: "LOW",
             description: "Vehicle Breakdown reported on a Hsinchu City road",
             latitude: 24.8046, longitude: 120.9940, reportedAt: "2025-06-05T08:30:00Z" },
         ],
@@ -2422,11 +2426,11 @@
       // ROUTING
       function navigate(page) {
         // Restricted roles: block hash navigation to hidden tabs (shipment
-        // detail stays reachable for own shipments). DRIVER keeps the Map
-        // tab; CUSTOMER is dashboard-only.
+        // detail stays reachable for own shipments). DRIVER and CUSTOMER
+        // keep Dashboard + Map; only ADMIN gets Alert Center / NFC pages.
         const allowedPages =
           _currentRole === "DRIVER"   ? ["dashboard", "map"] :
-          _currentRole === "CUSTOMER" ? ["dashboard"] : null;
+          _currentRole === "CUSTOMER" ? ["dashboard", "map"] : null;
         if (
           allowedPages &&
           !allowedPages.includes(page) &&
@@ -2787,10 +2791,10 @@
       let _leafletMarkers = [];
 
       function renderMap() {
-        // The map intentionally shows ALL shipment locations — DRIVER users
-        // see the same picture as ADMIN here (their dashboard table stays
-        // scoped to their own shipments; CUSTOMER never reaches this page).
-        const ships = dbShipments();
+        // ADMIN and DRIVER maps show ALL shipment locations (the driver's
+        // dashboard table stays scoped to their own shipments). CUSTOMER
+        // maps only show their own shipments + the accidents tied to them.
+        const ships = _currentRole === "CUSTOMER" ? visibleShipments() : dbShipments();
 
         if (!_leafletMap) {
           // Centered on Hsinchu City, Taiwan (near the train station).
@@ -2857,9 +2861,13 @@
           _leafletMarkers.push(marker);
         });
 
-        // Road accidents (AccidentEvents table) as warning markers, so
-        // drivers/admins can spot trouble near a shipment's route.
-        const accidents = dbAccidents();
+        // Road accidents (AccidentEvents table) as warning markers, each
+        // tied to the shipment that ran into it. CUSTOMER maps only show
+        // accidents belonging to one of their visible shipments.
+        const shipIds   = new Set(ships.map((s) => s.shipmentId));
+        const accidents = _currentRole === "CUSTOMER"
+          ? dbAccidents().filter((a) => shipIds.has(a.shipmentId))
+          : dbAccidents();
         const accidentColor = { HIGH: "#dc2626", MEDIUM: "#b45309", LOW: "#64748b" };
 
         accidents.forEach((a) => {
@@ -2883,6 +2891,9 @@
               a.accidentId +
               "</div>" +
               '<div style="font-size:12px; line-height:1.9; color:#374151;">' +
+              'Shipment: <strong style="font-family:monospace;">' +
+              (a.shipmentId || "–") +
+              "</strong><br>" +
               'Type: <strong>' +
               (a.type || "").replace(/_/g, " ") +
               "</strong><br>" +
@@ -2896,6 +2907,15 @@
               "Reported: " +
               fmtTime(a.reportedAt) +
               "</div>" +
+              (a.shipmentId
+                ? "<button onclick=\"navigate('shipment-" +
+                  a.shipmentId +
+                  "')\" " +
+                  'style="margin-top:10px; width:100%; padding:5px 0; font-size:12px; font-weight:600; ' +
+                  'border:1px solid #dde3ec; border-radius:6px; cursor:pointer; background:#f5f7fa; color:#0f172a;">' +
+                  "View Shipment" +
+                  "</button>"
+                : "") +
               "</div>",
           );
 

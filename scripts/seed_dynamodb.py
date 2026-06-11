@@ -70,17 +70,20 @@ def seed():
     })
 
     # Seed AccidentEvents: 3 demo road accidents randomly placed on Hsinchu
-    # City roads. The dashboard's Map page draws these as warning markers
-    # alongside the shipment markers.
+    # City roads, each tied to the shipment that ran into it (shipmentId).
+    # The dashboard's Map page draws these as warning markers alongside the
+    # shipment markers; CUSTOMER maps only show accidents whose shipmentId
+    # belongs to one of their own shipments.
     accidents = dynamodb.Table('AccidentEvents')
-    for i, (acc_type, severity) in enumerate([
-        ('COLLISION',          'HIGH'),
-        ('ROAD_BLOCKED',       'MEDIUM'),
-        ('VEHICLE_BREAKDOWN',  'LOW'),
+    for i, (acc_type, severity, ship_id) in enumerate([
+        ('COLLISION',          'HIGH',   'SHIP-001'),
+        ('ROAD_BLOCKED',       'MEDIUM', 'SHIP-002'),
+        ('VEHICLE_BREAKDOWN',  'LOW',    'SHIP-003'),
     ], start=1):
         lat, lng = random_road_point()
         accidents.put_item(Item={
             'accidentId': f'ACC-{i:03d}',
+            'shipmentId': ship_id,
             'type': acc_type,
             'severity': severity,
             'description': acc_type.replace('_', ' ').title() + ' reported on a Hsinchu City road',
