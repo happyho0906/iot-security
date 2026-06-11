@@ -247,12 +247,15 @@ See `lambda/shadow-processor/lambda_function.py` and `pi/sensor_agent.py`.
 ### AccidentEvents (PK: accidentId) — new
 
 Road accidents shown as warning markers on the dashboard's Map page,
-alongside the shipment markers. Seeded with 3 demo events randomly placed
-on Hsinchu City roads (`scripts/seed_dynamodb.py`).
+alongside the shipment markers. Each accident belongs to the shipment that
+ran into it (`shipmentId`); CUSTOMER maps only show accidents tied to one
+of their own shipments. Seeded with 3 demo events randomly placed on
+Hsinchu City roads (`scripts/seed_dynamodb.py`).
 
 | Field | Type | Notes |
 |-------|------|-------|
 | accidentId | S | e.g. `ACC-001` |
+| shipmentId | S | Shipment that encountered this accident |
 | type | S | COLLISION / ROAD_BLOCKED / VEHICLE_BREAKDOWN / ... |
 | severity | S | LOW / MEDIUM / HIGH |
 | description | S | |
