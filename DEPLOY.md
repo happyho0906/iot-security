@@ -20,35 +20,6 @@ push/Amplify build.
 
 ---
 
-## Note: the existing API (`d1rocl5xb9` / `Sentinel_NFC_API`) is an HTTP API (v2)
-
-This matters because it's a different product from a REST API (v1) and uses a
-different console/CLI:
-
-- **No "Deploy API" step.** The `$default` stage has auto-deploy enabled —
-  routes go live as soon as they're created/updated.
-- **No per-resource CORS.** CORS is one config block at the API level
-  (`aws apigatewayv2 update-api --cors-configuration ...`), not an `OPTIONS`
-  method per resource.
-- **URLs have no stage prefix.** Base URL is just
-  `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com` — e.g.
-  `POST /unlock` is reachable at
-  `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/unlock`, and the new
-  NFC routes will be at `.../nfc/devices`, `.../nfc/check/{tagId}`, etc.
-  (**no** `/unlock` or `/prod` segment in front of `/nfc/...`).
-- **Cognito authorization uses a JWT authorizer** (`--authorizer-type JWT`),
-  not the REST API `COGNITO_USER_POOLS` authorizer type. Claims land at
-  `event.requestContext.authorizer.jwt.claims` in the Lambda event (the 3
-  admin NFC Lambdas already expect this shape).
-- **Lambda execution role**: in this AWS Academy account, both
-  `lisa-discord-commands` and `Sentinel_NFC_Unlock` run as `LabRole`
-  (`arn:aws:iam::194686029661:role/LabRole`). Reuse this role for the 4 new
-  NFC Lambdas too.
-
-`scripts/deploy_nfc_backend.sh` (Step 2b) already accounts for all of this.
-
----
-
 ## Step 1: DynamoDB Tables
 
 Create these tables in AWS Console → DynamoDB → Create table:
@@ -103,41 +74,34 @@ Create these 4 additional functions, also **Runtime: Python 3.12**:
 ### Step 2b (alternative): scripted deploy of the NFC backend
 
 Instead of clicking through the console for the `NFCDevices` table, the 4 NFC
-Lambdas, and their HTTP API routes (Steps 1, 2, and 3 for the NFC pieces),
-you can run `scripts/deploy_nfc_backend.sh` from **AWS CloudShell** (preinstalled
-AWS CLI/zip/Python — no local setup needed). It is idempotent — safe to re-run
+Lambdas, and their API Gateway routes (Steps 1, 2, and 3 for the NFC pieces),
+you can run `scripts/deploy_nfc_backend.sh`. It is idempotent — safe to re-run
 after editing a Lambda's code.
 
 ```bash
 export AWS_REGION=us-east-1
-export API_ID=d1rocl5xb9        # existing HTTP API "Sentinel_NFC_API"
-export LAMBDA_ROLE_ARN=arn:aws:iam::194686029661:role/LabRole
-
-# Optional — enables Cognito JWT auth on the 3 admin routes. Omit both to
-# deploy with auth=NONE on those routes (they'll 403 until you set these
-# and re-run).
-export COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
-export COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+export API_ID=d1rocl5xb9        # existing REST API, see "API Reference" in README.md
+export STAGE=unlock             # existing deployed stage — do not rename
+export LAMBDA_ROLE_ARN=arn:aws:iam::<account-id>:role/<shared-lambda-role>
+export COGNITO_AUTHORIZER_ID=<id>   # optional — omit if you'll attach it manually later
 
 bash scripts/deploy_nfc_backend.sh
-python3 scripts/seed_dynamodb.py
+python scripts/seed_dynamodb.py
 ```
 
-Find `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` (the User Pool and App
-Client used by the dashboard's login) via:
+Find `LAMBDA_ROLE_ARN` (the role used by `lisa-list-shipments` etc.) and
+`COGNITO_AUTHORIZER_ID` (the authorizer used by `/shipments`) in the Lambda /
+API Gateway consoles, or via:
 
 ```bash
-aws cognito-idp list-user-pools --max-results 20 \
-  --query 'UserPools[*].{id:Id,name:Name}' --output table
-
-aws cognito-idp list-user-pool-clients --user-pool-id <pool-id> \
-  --query 'UserPoolClients[*].{id:ClientId,name:ClientName}' --output table
+aws lambda get-function-configuration --function-name lisa-list-shipments \
+  --query Role --output text
+aws apigateway get-authorizers --rest-api-id $API_ID --query 'items[*].{id:id,name:name}'
 ```
 
-If `LAMBDA_ROLE_ARN` (`LabRole`) doesn't already have access to `NFCDevices`,
-attach the IAM policy from ARCHITECTURE.md §6 (includes `NFCDevices` and
-`NFCDevices/index/*`) — AWS Academy `LabRole` usually already has broad
-DynamoDB access, so this is normally unnecessary.
+If `LAMBDA_ROLE_ARN` doesn't yet have access to `NFCDevices`, attach the IAM
+policy from ARCHITECTURE.md §6 (includes `NFCDevices` and
+`NFCDevices/index/*`).
 
 ### discord-commands bundle (requires PyNaCl)
 
@@ -191,57 +155,36 @@ Set on the respective Lambda functions:
 
 ## Step 3: API Gateway Routes
 
-Open the existing **HTTP API** `Sentinel_NFC_API` (API ID: `d1rocl5xb9`) in
-AWS Console → API Gateway. (This is an **HTTP API**, not a REST API — the
-console UI is the simpler "Routes" / "Integrations" list, and there's no
-"Resources" tree or "Deploy API" button.)
+Open the existing API Gateway (API ID: `d1rocl5xb9`) in AWS Console.
 
-Add these routes — do NOT modify the existing `POST /unlock` or
-`POST /discord/commands` routes:
+Add these resources and methods — do NOT modify the existing `/unlock` route:
 
-| Method | Route | Lambda Integration |
+| Method | Resource Path | Lambda Integration |
 |--------|--------------|-------------------|
 | GET | /shipments | lisa-list-shipments |
 | GET | /shipments/{id} | lisa-get-shipment |
 | GET | /alerts | lisa-list-alerts |
 | POST | /demo/trigger-alert | lisa-trigger-alert |
 | POST | /alerts/{alertId}/resolve | lisa-resolve-alert |
+| POST | /discord/commands | lisa-discord-commands |
 | POST | /nfc/devices | lisa-register-nfc-device |
 | GET | /nfc/devices | lisa-list-nfc-devices |
 | PUT | /nfc/devices/{tagId}/whitelist | lisa-update-nfc-whitelist |
 | GET | /nfc/check/{tagId} | lisa-check-nfc-device |
 
-For each route: **Routes → Create**, enter the method + path, then attach an
-integration of type **Lambda function** (proxy), payload format **2.0**,
-pointing at the Lambda above.
+**Enable CORS on every new resource** (select resource → Actions → Enable CORS → Enable).
 
-**No per-route CORS / no "Deploy API" step.** HTTP APIs configure CORS once at
-the API level (**Develop → CORS**) and the `$default` stage auto-deploys new
-routes immediately. Make sure the CORS config includes:
-- Allow methods: `GET, POST, PUT, OPTIONS`
-- Allow headers: `content-type, authorization`
-- Allow origins: keep the existing entries (`*`, `http://localhost:5500`)
+For `/nfc/devices` and `/nfc/devices/{tagId}/whitelist`, attach the same Cognito
+authorizer used by `/shipments` etc. (these Lambdas additionally check
+`custom:role = ADMIN` themselves). For `/nfc/check/{tagId}`, leave the
+authorizer set to **NONE** — same as `/unlock` — so hardware can call it
+without a JWT.
 
-**Authorization** (Routes → select route → Attach authorizer):
-- `POST /nfc/devices`, `GET /nfc/devices`, `PUT /nfc/devices/{tagId}/whitelist`
-  → attach a **JWT authorizer** backed by the Cognito User Pool used for login
-  (Issuer = `https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>`,
-  Audience = the App Client ID). These Lambdas additionally check
-  `custom:role = ADMIN` themselves via
-  `event.requestContext.authorizer.jwt.claims`.
-- `GET /nfc/check/{tagId}` → leave authorization as **NONE**, same as
-  `/unlock`, so hardware can call it without a token.
+After adding all routes: **Actions → Deploy API** → select your stage (or create `prod`) → Deploy.
 
-Your base URL has **no stage prefix**:
-`https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com`
-(e.g. the unlock endpoint is `.../unlock`, the new check endpoint is
-`.../nfc/check/{tagId}`).
+Your new base URL: `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{stage}`
 
-Update `API_BASE` in `index.html` to `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com`
-(no trailing `/unlock` or stage name).
-
-> `scripts/deploy_nfc_backend.sh` (Step 2b) does all of the above for the 4 NFC
-> routes automatically, including the CORS update and JWT authorizer setup.
+Update `API_BASE` in `index.html` to match this URL.
 
 ---
 
@@ -283,9 +226,8 @@ Update `API_BASE` in `index.html` to `https://d1rocl5xb9.execute-api.us-east-1.a
    DISCORD_APPLICATION_ID=<id> DISCORD_BOT_TOKEN=<token> python scripts/register_discord_commands.py
    ```
 6. In Discord Developer Portal → your app → General Information:
-   **Interactions Endpoint URL** = `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/discord/commands`
-   (no stage prefix — this is an HTTP API on `$default`. Discord verifies
-   immediately via PING — Ed25519 must work)
+   **Interactions Endpoint URL** = `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{stage}/discord/commands`
+   (Discord verifies immediately via PING — Ed25519 must work)
 7. Add bot to server: OAuth2 → URL Generator → scopes: `bot`, `applications.commands` → permissions: Send Messages → copy URL → open in browser
 
 ---
@@ -293,8 +235,8 @@ Update `API_BASE` in `index.html` to `https://d1rocl5xb9.execute-api.us-east-1.a
 ## Step 6: Test Everything
 
 ```bash
-# HTTP API on $default — no stage prefix in the URL
-BASE=https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com
+STAGE=unlock  # or prod — match your deployed stage
+BASE=https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/$STAGE
 
 # Verify endpoints
 curl $BASE/shipments

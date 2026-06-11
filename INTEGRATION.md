@@ -127,7 +127,7 @@ Partition key: `tagId` (String)
 ### Option A  Call the API Gateway (recommended for external services)
 
 ```bash
-curl -X POST https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/demo/trigger-alert \
+curl -X POST https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{stage}/demo/trigger-alert \
   -H "Content-Type: application/json" \
   -d '{
     "shipmentId": "SHIP-001",
@@ -251,8 +251,7 @@ unlock:
 import urllib.request, json
 
 def is_tag_whitelisted(tag_id):
-    # HTTP API on $default — no stage prefix in the URL
-    url = f"https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/nfc/check/{tag_id}"
+    url = f"https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{STAGE}/nfc/check/{tag_id}"
     with urllib.request.urlopen(url, timeout=2) as r:
         return json.load(r).get('allowed', False)
 ```
@@ -435,18 +434,11 @@ The `DISCORD_WEBHOOK_URL` in `index.html` (frontend) is separate from the one on
 
 ## API Gateway
 
-`d1rocl5xb9` (`Sentinel_NFC_API`) is an **HTTP API (v2)** on the `$default`
-stage, which has **no stage prefix** in the URL and **auto-deploys** new
-routes immediately:
+Base URL: `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/{stage}`
 
-Base URL: `https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com`
+Current deployed stage: `unlock` (existing, do not rename  NFC hardware is hardcoded to it)
 
-`/unlock` is a **route path**, not a stage  it's reachable at
-`.../unlock` (NFC hardware is hardcoded to this exact path, do not rename it).
-
-When adding new routes, just create the route + integration on this same API
- there's no separate "deploy stage" step. The frontend `API_BASE` constant
-points to this base URL (no trailing path).
+When adding new routes, deploy to the same stage so new paths are available at the same base URL. The frontend `API_BASE` constant points to this.
 
 ---
 
@@ -460,5 +452,5 @@ Before calling LISA "integrated", verify:
 - [ ] `severity` is one of `LOW`, `HIGH`, `CRITICAL`  the dashboard badge colors depend on exact case
 - [ ] `lastUpdatedAt` is ISO 8601 UTC (`datetime.now(timezone.utc).isoformat()`)  the frontend parses it with `new Date()`
 - [ ] Your Lambda has CORS headers on all responses: `'Access-Control-Allow-Origin': '*'`
-- [ ] New routes are covered by the API-level CORS config (HTTP API  Develop → CORS), not a per-resource setting
+- [ ] New API Gateway resources have CORS enabled (Actions → Enable CORS) and the stage is redeployed
 - [ ] The existing `POST /unlock` route is untouched

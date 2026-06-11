@@ -108,9 +108,7 @@ See [DEPLOY.md](DEPLOY.md) for step-by-step instructions.
 In `index.html`, uncomment `API_BASE` and replace `db*` functions:
 
 ```javascript
-// Note: d1rocl5xb9 is an HTTP API on the $default stage — no stage
-// prefix in the URL (POST /unlock lives at .../unlock, not .../unlock/unlock).
-const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com';
+const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/unlock';
 
 async function dbShipments() {
   return fetch(API_BASE + '/shipments').then(r => r.json());

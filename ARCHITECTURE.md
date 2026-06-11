@@ -13,8 +13,8 @@
                          │ HTTPS + Cognito JWT
                          ▼
 ┌────────────────────────────────────────────────────┐
-│  API Gateway  (HTTP API, us-east-1, d1rocl5xb9)    │
-│  Cognito JWT Authorizer on all routes except:      │
+│  API Gateway  (REST, us-east-1, d1rocl5xb9)        │
+│  Cognito Authorizer on all routes except:          │
 │    POST /unlock          (NFC hardware — no auth)  │
 │    POST /discord/commands  (Ed25519 by Discord)    │
 └──────────┬─────────────────────────────────────────┘
@@ -125,20 +125,11 @@ Demo mode continues to work when `COGNITO_USER_POOL_ID` is not set.
 
 ### API Gateway Authorizer
 
-`d1rocl5xb9` is an **HTTP API (v2)**, so the authorizer is a **JWT authorizer**
-(not the REST API "Cognito User Pool" type):
+Create a Cognito authorizer on the API:
 
-- Type: JWT
-- Identity source: `$request.header.Authorization` (clients send
-  `Authorization: Bearer <Cognito ID token>`)
-- Issuer: `https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>`
-- Audience: the App Client ID
-- Apply to all routes except `POST /unlock`, `POST /discord/commands`, and
-  `GET /nfc/check/{tagId}`
-
-In the Lambda event, claims land at
-`event.requestContext.authorizer.jwt.claims` (note the extra `.jwt` level
-compared to REST API's `event.requestContext.authorizer.claims`).
+- Type: Cognito User Pool
+- Token source: `Authorization` header
+- Apply to all routes except `POST /unlock` and `POST /discord/commands`
 
 ---
 
@@ -312,11 +303,11 @@ Future paths to reserve now (mock integration, no Lambda yet):
 3. Deploy 6 Lambda functions (Python 3.12) — paste from `lambda/*/lambda_function.py`
 4. Upload `lambda/discord-commands/discord-commands.zip` (pre-built, 924 KB)
 5. Deploy the 4 NFC Lambda functions (`register-nfc-device`, `list-nfc-devices`, `update-nfc-whitelist`, `check-nfc-device`)
-6. Add HTTP API routes + Lambda proxy integrations (payload format 2.0), update the API-level CORS config; `$default` stage auto-deploys (`/nfc/check/{tagId}` gets **no** authorizer, same as `/unlock`; the other 3 NFC routes get the JWT authorizer)
+6. Add API Gateway routes, enable CORS on each, deploy stage (`/nfc/check/{tagId}` gets **no** Cognito authorizer, same as `/unlock`)
 
 Verify:
 ```bash
-BASE=https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com
+BASE=https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com/unlock
 curl $BASE/shipments          # 3 items
 curl "$BASE/alerts?resolved=false"  # 1 item
 ```
