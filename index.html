@@ -1808,9 +1808,11 @@
           role === "DRIVER"  ? "var(--green)" : "var(--muted)";
         document.getElementById("nav-nfc").style.display = role === "ADMIN" ? "inline-block" : "none";
         document.getElementById("btn-add-shipment").style.display = role === "ADMIN" ? "inline-block" : "none";
-        // DRIVER users get a dashboard-only view scoped to their own shipments.
-        document.getElementById("nav-alerts").style.display = role === "DRIVER" ? "none" : "inline-block";
-        document.getElementById("nav-map").style.display    = role === "DRIVER" ? "none" : "inline-block";
+        // DRIVER/CUSTOMER users get a dashboard-only view scoped to their
+        // own shipments; only ADMIN keeps the Alert Center and Map tabs.
+        const dashboardOnly = role === "DRIVER" || role === "CUSTOMER";
+        document.getElementById("nav-alerts").style.display = dashboardOnly ? "none" : "inline-block";
+        document.getElementById("nav-map").style.display    = dashboardOnly ? "none" : "inline-block";
         initApp();
       }
 
@@ -2121,12 +2123,14 @@
         return _db.shipments;
       }
 
-      // DRIVER users only see shipments assigned to them (Shipments.driver
-      // matches their login email); other roles see everything.
+      // DRIVER/CUSTOMER users only see shipments assigned to them (the
+      // Shipments driver/customer email field matches their login email);
+      // ADMIN sees everything.
       function visibleShipments() {
-        if (_currentRole !== "DRIVER") return dbShipments();
         const email = sessionStorage.getItem("lisa_email") || "";
-        return dbShipments().filter((s) => s.driver === email);
+        if (_currentRole === "DRIVER")   return dbShipments().filter((s) => s.driver === email);
+        if (_currentRole === "CUSTOMER") return dbShipments().filter((s) => s.customer === email);
+        return dbShipments();
       }
 
       function dbAddShipment(shipment) {
@@ -2334,10 +2338,10 @@
 
       // ROUTING
       function navigate(page) {
-        // DRIVER role is dashboard-only: block hash navigation to the
-        // hidden tabs (shipment detail stays reachable for own shipments).
+        // DRIVER/CUSTOMER roles are dashboard-only: block hash navigation to
+        // the hidden tabs (shipment detail stays reachable for own shipments).
         if (
-          _currentRole === "DRIVER" &&
+          (_currentRole === "DRIVER" || _currentRole === "CUSTOMER") &&
           page !== "dashboard" &&
           !page.startsWith("shipment-")
         ) {
@@ -2528,8 +2532,8 @@
       let _alertFilter = "all";
 
       function renderAlerts() {
-        // Scope to visible shipments so a DRIVER's hidden Alert Center DOM
-        // never contains other drivers' alerts.
+        // Scope to visible shipments so a DRIVER/CUSTOMER's hidden Alert
+        // Center DOM never contains other users' alerts.
         const shipIds = new Set(visibleShipments().map((s) => s.shipmentId));
         const all  = dbAlerts().filter((a) => shipIds.has(a.shipmentId));
         const data = _alertFilter === "active"   ? all.filter((a) => !a.resolved)
@@ -2575,8 +2579,8 @@
       // SHIPMENT DETAIL
       function renderDetail(sid) {
         const el = document.getElementById("shipment-detail-content");
-        // visibleShipments() limits DRIVER users to their own shipments,
-        // so a driver can't open another driver's detail via the URL hash.
+        // visibleShipments() limits DRIVER/CUSTOMER users to their own
+        // shipments, so they can't open someone else's detail via the hash.
         const s  = visibleShipments().find((x) => x.shipmentId === sid) || null;
         if (!s) { el.innerHTML = '<div style="color:var(--muted);">Shipment not found.</div>'; return; }
 
