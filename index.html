@@ -1683,23 +1683,15 @@
         </div>
         <div class="form-group" style="margin-bottom: 8px">
           <label class="form-label">Driver</label>
-          <input
-            id="add-shipment-driver"
-            class="form-input"
-            type="text"
-            placeholder="e.g. driver@lisa.demo"
-            maxlength="64"
-          />
+          <select id="add-shipment-driver" class="form-input">
+            <option value="">– None –</option>
+          </select>
         </div>
         <div class="form-group" style="margin-bottom: 8px">
           <label class="form-label">Customer</label>
-          <input
-            id="add-shipment-customer"
-            class="form-input"
-            type="text"
-            placeholder="e.g. customer@lisa.demo"
-            maxlength="64"
-          />
+          <select id="add-shipment-customer" class="form-input">
+            <option value="">– None –</option>
+          </select>
         </div>
         <div
           id="add-shipment-error"
@@ -2095,6 +2087,13 @@
           { tagId: "04:9F:33:11:22:AA:BB", label: "Guest Phone",       status: "KNOWN",
             firstSeenAt: "2025-06-06T11:00:00Z", lastSeenAt: "2025-06-06T11:00:00Z" },
         ],
+        // Mirrors the DynamoDB `Users` table (PK: userId). Used to populate
+        // the Driver/Customer dropdowns in the "Add Shipment" modal.
+        users: [
+          { userId: "demo-admin",    email: "admin@lisa.demo",    role: "ADMIN" },
+          { userId: "demo-driver",   email: "driver@lisa.demo",   role: "DRIVER" },
+          { userId: "demo-customer", email: "customer@lisa.demo", role: "CUSTOMER" },
+        ],
       };
 
       function dbShipments()    { return _db.shipments; }
@@ -2104,6 +2103,48 @@
       function dbAddShipment(shipment) {
         _db.shipments.push(shipment);
         return shipment;
+      }
+
+      // Returns Users entries with the given role (DRIVER/CUSTOMER/ADMIN),
+      // for populating the "Add Shipment" Driver/Customer dropdowns.
+      async function dbListUsers(role) {
+        if (typeof API_BASE !== "undefined" && API_BASE) {
+          return fetch(API_BASE + "/users?role=" + encodeURIComponent(role), {
+            headers: await _authHeaders(),
+          }).then((r) => r.json());
+        }
+        return _db.users.filter((u) => u.role === role);
+      }
+
+      // Creates a shipment via the live API (persists to DynamoDB) when
+      // configured, falling back to an in-memory record otherwise. Either
+      // way, the new shipment is added to _db.shipments so it appears in
+      // the dashboard table immediately.
+      async function dbCreateShipment({ shipmentId, status, riskLevel, driver, customer }) {
+        let item;
+        if (typeof API_BASE !== "undefined" && API_BASE) {
+          const resp = await fetch(API_BASE + "/shipments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...(await _authHeaders()) },
+            body: JSON.stringify({ shipmentId, status, riskLevel, driver, customer }),
+          });
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to create shipment.");
+          }
+          item = await resp.json();
+        } else {
+          item = {
+            shipmentId, status, riskLevel,
+            temperature: 4.0, humidity: 60, gForce: 0.0, batteryLevel: 100,
+            lockStatus: "LOCKED", deviceStatus: "ONLINE",
+            latitude: 1.3521, longitude: 103.8198,
+            lastUpdatedAt: new Date().toISOString(),
+          };
+          if (driver)   item.driver   = driver;
+          if (customer) item.customer = customer;
+        }
+        return dbAddShipment(item);
       }
 
       function dbResolveAlert(alertId, resolvedBy) {
@@ -2345,28 +2386,44 @@
 
       // ── Add shipment modal (admin only) ─────────────────────────────────────
 
-      function openAddShipmentModal() {
+      async function _populateUserSelect(selectId, role) {
+        const select = document.getElementById(selectId);
+        select.innerHTML = '<option value="">– None –</option>';
+        const users = await dbListUsers(role);
+        users.forEach((u) => {
+          const opt = document.createElement("option");
+          opt.value       = u.email;
+          opt.textContent = u.email;
+          select.appendChild(opt);
+        });
+      }
+
+      async function openAddShipmentModal() {
         document.getElementById("add-shipment-id").value = "";
         document.getElementById("add-shipment-status").value = "IN_TRANSIT";
         document.getElementById("add-shipment-risk").value = "LOW";
-        document.getElementById("add-shipment-driver").value = "";
-        document.getElementById("add-shipment-customer").value = "";
         document.getElementById("add-shipment-error").style.display = "none";
         document.getElementById("add-shipment-modal").classList.add("open");
         setTimeout(() => document.getElementById("add-shipment-id").focus(), 50);
+
+        await Promise.all([
+          _populateUserSelect("add-shipment-driver", "DRIVER"),
+          _populateUserSelect("add-shipment-customer", "CUSTOMER"),
+        ]);
       }
 
       function cancelAddShipment() {
         document.getElementById("add-shipment-modal").classList.remove("open");
       }
 
-      function confirmAddShipment() {
+      async function confirmAddShipment() {
         const shipmentId = document.getElementById("add-shipment-id").value.trim();
         const status     = document.getElementById("add-shipment-status").value;
         const riskLevel  = document.getElementById("add-shipment-risk").value;
-        const driver     = document.getElementById("add-shipment-driver").value.trim();
-        const customer   = document.getElementById("add-shipment-customer").value.trim();
+        const driver     = document.getElementById("add-shipment-driver").value;
+        const customer   = document.getElementById("add-shipment-customer").value;
         const errEl      = document.getElementById("add-shipment-error");
+        errEl.style.display = "none";
 
         if (!shipmentId) {
           errEl.textContent   = "Please enter a shipment ID.";
@@ -2379,14 +2436,13 @@
           return;
         }
 
-        dbAddShipment({
-          shipmentId, status, riskLevel,
-          temperature: 4.0, humidity: 60, gForce: 0.0, batteryLevel: 100,
-          lockStatus: "LOCKED", deviceStatus: "ONLINE",
-          latitude: 1.3521, longitude: 103.8198,
-          driver: driver || "–", customer: customer || "–",
-          lastUpdatedAt: new Date().toISOString(),
-        });
+        try {
+          await dbCreateShipment({ shipmentId, status, riskLevel, driver, customer });
+        } catch (e) {
+          errEl.textContent   = e.message || "Failed to create shipment.";
+          errEl.style.display = "block";
+          return;
+        }
 
         document.getElementById("add-shipment-modal").classList.remove("open");
         renderDashboard();

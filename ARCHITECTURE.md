@@ -227,6 +227,8 @@ See `lambda/shadow-processor/lambda_function.py` and `pi/sensor_agent.py`.
 | thingName | S | IoT Thing, e.g. `shipment-SHIP-001` |
 | batteryLevel | N | 0–100, written by shadow-processor |
 | assignedTo | S | Cognito sub of assigned driver |
+| driver | S | Email of the assigned Users entry with role DRIVER (optional) |
+| customer | S | Email of the assigned Users entry with role CUSTOMER (optional) |
 
 ### AlertEvents (PK: alertId)
 
@@ -292,6 +294,8 @@ future queries use `Query` instead of `Scan` once the table grows.
 | GET | `/nfc/devices` | lisa-list-nfc-devices | Cognito (ADMIN) | New |
 | PUT | `/nfc/devices/{tagId}/whitelist` | lisa-update-nfc-whitelist | Cognito (ADMIN) | New |
 | GET | `/nfc/check/{tagId}` | lisa-check-nfc-device | None (hardware) | New |
+| GET | `/users` | lisa-list-users | Cognito (ADMIN) | New |
+| POST | `/shipments` | lisa-create-shipment | Cognito (ADMIN) | New |
 
 Future paths to reserve now (mock integration, no Lambda yet):
 
