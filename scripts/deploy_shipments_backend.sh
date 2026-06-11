@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #
-# Deploys the "Add Shipment" admin feature onto the EXISTING LISA HTTP API
+# Deploys the shipments backend onto the EXISTING LISA HTTP API
 # (API Gateway v2, e.g. "Sentinel_NFC_API"):
 #   - Creates the `Shipments` and `Users` DynamoDB tables if they don't
 #     already exist (PK shipmentId / userId respectively)
-#   - Creates/updates the `lisa-list-users` and `lisa-create-shipment`
-#     Lambda functions
-#   - Adds GET /users and POST /shipments routes to the existing HTTP API,
-#     both protected by the shared Cognito JWT authorizer (admin-only)
+#   - Creates/updates the `lisa-list-shipments`, `lisa-list-users` and
+#     `lisa-create-shipment` Lambda functions
+#   - Adds GET /shipments (any signed-in user), GET /users and
+#     POST /shipments (admin-only Lambdas) routes to the existing HTTP API,
+#     all protected by the shared Cognito JWT authorizer
 #
 # This script is purely additive. It never touches POST /unlock,
 # Sentinel_NFC_Unlock, Sentinel_Image_Processor, /discord/commands, or the
@@ -118,6 +119,7 @@ deploy_lambda() {
     --query 'Configuration.FunctionArn' --output text
 }
 
+ARN_LIST_SHIP=$(deploy_lambda  lisa-list-shipments  lambda/list-shipments)
 ARN_LIST_USERS=$(deploy_lambda lisa-list-users     lambda/list-users)
 ARN_CREATE_SHIP=$(deploy_lambda lisa-create-shipment lambda/create-shipment)
 
@@ -168,12 +170,15 @@ add_permission() {
     --region "$AWS_REGION" >/dev/null 2>&1 || true
 }
 
+INT_LIST_SHIP=$(get_or_create_integration "$ARN_LIST_SHIP")
 INT_LIST_USERS=$(get_or_create_integration "$ARN_LIST_USERS")
 INT_CREATE_SHIP=$(get_or_create_integration "$ARN_CREATE_SHIP")
 
+get_or_create_route "GET /shipments"  "$INT_LIST_SHIP"
 get_or_create_route "GET /users"      "$INT_LIST_USERS"
 get_or_create_route "POST /shipments" "$INT_CREATE_SHIP"
 
+add_permission lisa-list-shipments
 add_permission lisa-list-users
 add_permission lisa-create-shipment
 
@@ -184,10 +189,12 @@ BASE="https://${API_ID}.execute-api.${AWS_REGION}.amazonaws.com"
 cat <<EOF
 
 Done. New routes are live at:
+  GET  $BASE/shipments                          (any signed-in user)
   GET  $BASE/users?role=DRIVER|CUSTOMER|ADMIN  (admin only)
   POST $BASE/shipments                          (admin only)
 
-Smoke test (needs an admin Cognito ID token):
+Smoke test (needs a Cognito ID token; /users needs an admin one):
+  curl -H "Authorization: Bearer \$TOKEN" "$BASE/shipments"
   curl -H "Authorization: Bearer \$TOKEN" "$BASE/users?role=DRIVER"
   curl -H "Authorization: Bearer \$TOKEN" -H "Content-Type: application/json" \\
        -X POST "$BASE/shipments" \\

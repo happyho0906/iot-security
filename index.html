@@ -1116,9 +1116,9 @@
       const DISCORD_WEBHOOK_URL = (window.LISA_CONFIG || {}).DISCORD_WEBHOOK_URL || "";
 
       // HTTP API on $default stage — no stage prefix in the URL.
-      // Currently only the NFC Whitelist db* helpers check API_BASE; other
-      // db* functions (dbShipments etc.) remain demo-only until their
-      // Lambdas/routes are deployed too.
+      // Live-backed helpers: NFC Whitelist (dbNfc*), Shipments
+      // (dbLoadShipments/dbCreateShipment) and Users (dbListUsers).
+      // Alerts remain demo-only until their Lambdas/routes are deployed.
       const API_BASE = 'https://d1rocl5xb9.execute-api.us-east-1.amazonaws.com';
     </script>
 
@@ -2103,6 +2103,24 @@
       function dbShipment(id)   { return _db.shipments.find((s) => s.shipmentId === id) || null; }
       function dbAlerts()       { return _db.alerts; }
 
+      // Replaces the in-memory shipments with the live DynamoDB Shipments
+      // table (GET /shipments) when API_BASE is set. On any failure the
+      // demo data is kept so the dashboard still renders.
+      async function dbLoadShipments() {
+        if (typeof API_BASE === "undefined" || !API_BASE) return _db.shipments;
+        try {
+          const resp = await fetch(API_BASE + "/shipments", {
+            headers: await _authHeaders(),
+          });
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
+          const items = await resp.json();
+          if (Array.isArray(items)) _db.shipments = items;
+        } catch (e) {
+          console.warn("GET /shipments failed, keeping demo shipments:", e);
+        }
+        return _db.shipments;
+      }
+
       // DRIVER users only see shipments assigned to them (Shipments.driver
       // matches their login email); other roles see everything.
       function visibleShipments() {
@@ -2347,11 +2365,21 @@
         if (page === "nfc-whitelist") renderNfcWhitelist();
       }
 
-      function initApp() {
+      async function initApp() {
+        // First paint uses the in-memory demo data, then re-render once the
+        // live Shipments table has loaded (no-op when API_BASE is unset).
         renderDashboard();
         renderAlerts();
         renderDiscordStatus();
         navigate(location.hash.replace("#", "") || "dashboard");
+
+        await dbLoadShipments();
+        renderDashboard();
+        renderAlerts();
+        // Re-render whichever data page is currently visible.
+        const hash = location.hash.replace("#", "");
+        if (hash === "map") renderMap();
+        if (hash.startsWith("shipment-")) renderDetail(hash.replace("shipment-", ""));
       }
 
       window.addEventListener("hashchange", () =>

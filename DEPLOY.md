@@ -155,11 +155,13 @@ bash scripts/deploy_shipments_backend.sh
 python3 scripts/seed_dynamodb.py
 ```
 
-This deploys `lisa-list-users` (`GET /users?role=...`) and
-`lisa-create-shipment` (`POST /shipments`), both admin-only via the JWT
-authorizer. The dashboard's "Add Shipment" modal uses these to populate the
-Driver/Customer dropdowns from the `Users` table and to persist new shipments
-to the `Shipments` table.
+This deploys `lisa-list-shipments` (`GET /shipments`, any signed-in user),
+`lisa-list-users` (`GET /users?role=...`) and `lisa-create-shipment`
+(`POST /shipments`), the latter two admin-only — all behind the JWT
+authorizer. The dashboard reads the "All Shipments" table from
+`GET /shipments`, and the "Add Shipment" modal uses the other two to populate
+the Driver/Customer dropdowns from the `Users` table and persist new
+shipments to the `Shipments` table.
 
 ### discord-commands bundle (requires PyNaCl)
 
