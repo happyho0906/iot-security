@@ -244,6 +244,22 @@ See `lambda/shadow-processor/lambda_function.py` and `pi/sensor_agent.py`.
 | createdAt | S | ISO 8601 UTC |
 | resolvedAt | S | |
 
+### AccidentEvents (PK: accidentId) — new
+
+Road accidents shown as warning markers on the dashboard's Map page,
+alongside the shipment markers. Seeded with 3 demo events randomly placed
+on Hsinchu City roads (`scripts/seed_dynamodb.py`).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| accidentId | S | e.g. `ACC-001` |
+| type | S | COLLISION / ROAD_BLOCKED / VEHICLE_BREAKDOWN / ... |
+| severity | S | LOW / MEDIUM / HIGH |
+| description | S | |
+| latitude | S | parseFloat in frontend |
+| longitude | S | parseFloat in frontend |
+| reportedAt | S | ISO 8601 UTC |
+
 ### Users (PK: userId) — new
 
 | Field | Type | Notes |
@@ -300,6 +316,7 @@ future queries use `Query` instead of `Scan` once the table grows.
 | GET | `/users` | lisa-list-users | Cognito (ADMIN) | New |
 | POST | `/shipments` | lisa-create-shipment | Cognito (ADMIN) | New |
 | DELETE | `/shipments/{id}` | lisa-delete-shipment | Cognito (ADMIN) | New |
+| GET | `/accidents` | lisa-list-accidents | Cognito | New |
 
 Future paths to reserve now (mock integration, no Lambda yet):
 
