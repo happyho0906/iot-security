@@ -93,8 +93,9 @@ def lambda_handler(event, context):
         'gForce':        '0.0',
         'lockStatus':    'LOCKED',
         'deviceStatus':  'ONLINE',
-        'latitude':      '1.3521',
-        'longitude':     '103.8198',
+        # Default location: Hsinchu City, Taiwan (near the train station).
+        'latitude':      '24.8016',
+        'longitude':     '120.9715',
         'lastUpdatedAt': datetime.now(timezone.utc).isoformat(),
         'thingName':     'shipment-' + shipment_id,
         'batteryLevel':  100,
