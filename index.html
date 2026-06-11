@@ -1713,6 +1713,35 @@
       </div>
     </div>
 
+    <!-- Delete shipment confirmation modal (admin only) -->
+    <div id="delete-shipment-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-title">Delete Shipment</div>
+        <div class="modal-sub">
+          This permanently removes the shipment below from the Shipments
+          table. This action cannot be undone.
+        </div>
+        <div class="modal-tagid" id="delete-shipment-id">&mdash;</div>
+        <div
+          id="delete-shipment-error"
+          class="form-error"
+          style="margin-bottom: 0"
+        ></div>
+        <div style="display: flex; gap: 8px; margin-top: 16px">
+          <button class="btn" style="flex: 1" onclick="cancelDeleteShipment()">
+            Cancel
+          </button>
+          <button
+            class="btn btn-danger"
+            style="flex: 1"
+            onclick="confirmDeleteShipment()"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script>
       let _currentRole = null;
       let _cognitoUser = null;
@@ -2187,6 +2216,23 @@
         return dbAddShipment(item);
       }
 
+      // Deletes a shipment via the live API (DELETE /shipments/{id}) when
+      // configured, then removes it from the in-memory list either way.
+      async function dbDeleteShipment(shipmentId) {
+        if (typeof API_BASE !== "undefined" && API_BASE) {
+          const resp = await fetch(
+            API_BASE + "/shipments/" + encodeURIComponent(shipmentId),
+            { method: "DELETE", headers: await _authHeaders() },
+          );
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to delete shipment.");
+          }
+        }
+        const i = _db.shipments.findIndex((s) => s.shipmentId === shipmentId);
+        if (i !== -1) _db.shipments.splice(i, 1);
+      }
+
       function dbResolveAlert(alertId, resolvedBy) {
         const a = _db.alerts.find((x) => x.alertId === alertId);
         if (!a || a.resolved) return;
@@ -2440,7 +2486,10 @@
             <td>${s.driver || "–"}</td>
             <td>${s.customer || "–"}</td>
             <td style="font-size:11px; color:var(--muted);">${fmtTime(s.lastUpdatedAt)}</td>
-            <td><button class="btn btn-sm" onclick="navigate('shipment-${s.shipmentId}')">View</button></td>
+            <td style="white-space:nowrap;">
+              <button class="btn btn-sm" onclick="navigate('shipment-${s.shipmentId}')">View</button>
+              ${_currentRole === "ADMIN" ? `<button class="btn btn-danger btn-sm" style="margin-left:6px;" onclick="openDeleteShipmentModal('${s.shipmentId}')">Delete</button>` : ""}
+            </td>
           </tr>`).join("");
       }
 
@@ -2517,6 +2566,40 @@
       document.getElementById("add-shipment-id").addEventListener("keydown", (e) => {
         if (e.key === "Enter") confirmAddShipment();
       });
+
+      // ── Delete shipment confirmation modal (admin only) ──────────────────────
+
+      let _pendingDeleteShipmentId = null;
+
+      function openDeleteShipmentModal(shipmentId) {
+        if (_currentRole !== "ADMIN") return;
+        _pendingDeleteShipmentId = shipmentId;
+        document.getElementById("delete-shipment-id").textContent = shipmentId;
+        document.getElementById("delete-shipment-error").style.display = "none";
+        document.getElementById("delete-shipment-modal").classList.add("open");
+      }
+
+      function cancelDeleteShipment() {
+        document.getElementById("delete-shipment-modal").classList.remove("open");
+        _pendingDeleteShipmentId = null;
+      }
+
+      async function confirmDeleteShipment() {
+        const errEl = document.getElementById("delete-shipment-error");
+        errEl.style.display = "none";
+
+        try {
+          await dbDeleteShipment(_pendingDeleteShipmentId);
+        } catch (e) {
+          errEl.textContent   = e.message || "Failed to delete shipment.";
+          errEl.style.display = "block";
+          return;
+        }
+
+        document.getElementById("delete-shipment-modal").classList.remove("open");
+        _pendingDeleteShipmentId = null;
+        renderDashboard();
+      }
 
       function renderDiscordStatus() {
         const connected = !!DISCORD_WEBHOOK_URL;

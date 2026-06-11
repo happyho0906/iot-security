@@ -156,12 +156,13 @@ python3 scripts/seed_dynamodb.py
 ```
 
 This deploys `lisa-list-shipments` (`GET /shipments`, any signed-in user),
-`lisa-list-users` (`GET /users?role=...`) and `lisa-create-shipment`
-(`POST /shipments`), the latter two admin-only — all behind the JWT
-authorizer. The dashboard reads the "All Shipments" table from
-`GET /shipments`, and the "Add Shipment" modal uses the other two to populate
-the Driver/Customer dropdowns from the `Users` table and persist new
-shipments to the `Shipments` table.
+`lisa-list-users` (`GET /users?role=...`), `lisa-create-shipment`
+(`POST /shipments`) and `lisa-delete-shipment` (`DELETE /shipments/{id}`),
+the latter three admin-only — all behind the JWT authorizer. It also adds
+`DELETE` to the API-level CORS AllowMethods. The dashboard reads the
+"All Shipments" table from `GET /shipments`; the "Add Shipment" modal uses
+`GET /users` + `POST /shipments` to create shipments, and the per-row
+Delete button (with its confirmation dialog) calls `DELETE /shipments/{id}`.
 
 ### discord-commands bundle (requires PyNaCl)
 
@@ -186,7 +187,8 @@ Upload `lambda/discord-commands/discord-commands.zip` via the Lambda console.
         "dynamodb:Scan",
         "dynamodb:GetItem",
         "dynamodb:PutItem",
-        "dynamodb:UpdateItem"
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem"
       ],
       "Resource": [
         "arn:aws:dynamodb:us-east-1:*:table/Shipments",

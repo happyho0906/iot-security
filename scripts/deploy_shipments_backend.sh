@@ -4,13 +4,15 @@
 # (API Gateway v2, e.g. "Sentinel_NFC_API"):
 #   - Creates the `Shipments` and `Users` DynamoDB tables if they don't
 #     already exist (PK shipmentId / userId respectively)
-#   - Creates/updates the `lisa-list-shipments`, `lisa-list-users` and
-#     `lisa-create-shipment` Lambda functions
-#   - Adds GET /shipments (any signed-in user), GET /users and
-#     POST /shipments (admin-only Lambdas) routes to the existing HTTP API,
-#     all protected by the shared Cognito JWT authorizer
+#   - Creates/updates the `lisa-list-shipments`, `lisa-list-users`,
+#     `lisa-create-shipment` and `lisa-delete-shipment` Lambda functions
+#   - Adds GET /shipments (any signed-in user), GET /users, POST /shipments
+#     and DELETE /shipments/{id} (admin-only Lambdas) routes to the existing
+#     HTTP API, all protected by the shared Cognito JWT authorizer
+#   - Adds DELETE to the API-level CORS AllowMethods (needed for the
+#     dashboard's delete-shipment button to pass the browser preflight)
 #
-# This script is purely additive. It never touches POST /unlock,
+# This script is otherwise purely additive. It never touches POST /unlock,
 # Sentinel_NFC_Unlock, Sentinel_Image_Processor, /discord/commands, or the
 # /nfc/* routes (see INTEGRATION.md "Do Not Touch").
 # Re-running it is safe (idempotent: existing tables/integrations/routes/
@@ -122,6 +124,7 @@ deploy_lambda() {
 ARN_LIST_SHIP=$(deploy_lambda  lisa-list-shipments  lambda/list-shipments)
 ARN_LIST_USERS=$(deploy_lambda lisa-list-users     lambda/list-users)
 ARN_CREATE_SHIP=$(deploy_lambda lisa-create-shipment lambda/create-shipment)
+ARN_DELETE_SHIP=$(deploy_lambda lisa-delete-shipment lambda/delete-shipment)
 
 # ── 3. HTTP API integrations + routes ───────────────────────────────────────
 
@@ -173,14 +176,34 @@ add_permission() {
 INT_LIST_SHIP=$(get_or_create_integration "$ARN_LIST_SHIP")
 INT_LIST_USERS=$(get_or_create_integration "$ARN_LIST_USERS")
 INT_CREATE_SHIP=$(get_or_create_integration "$ARN_CREATE_SHIP")
+INT_DELETE_SHIP=$(get_or_create_integration "$ARN_DELETE_SHIP")
 
-get_or_create_route "GET /shipments"  "$INT_LIST_SHIP"
-get_or_create_route "GET /users"      "$INT_LIST_USERS"
-get_or_create_route "POST /shipments" "$INT_CREATE_SHIP"
+get_or_create_route "GET /shipments"          "$INT_LIST_SHIP"
+get_or_create_route "GET /users"              "$INT_LIST_USERS"
+get_or_create_route "POST /shipments"         "$INT_CREATE_SHIP"
+get_or_create_route "DELETE /shipments/{id}"  "$INT_DELETE_SHIP"
 
 add_permission lisa-list-shipments
 add_permission lisa-list-users
 add_permission lisa-create-shipment
+add_permission lisa-delete-shipment
+
+# ── CORS: make sure DELETE is allowed at the API level ──────────────────────
+# (HTTP API CORS is one API-level block; the NFC deploy script set
+# AllowMethods to GET/POST/PUT/OPTIONS, which blocks DELETE preflights.)
+
+echo "==> Updating API-level CORS configuration (adding DELETE)..."
+EXISTING_ORIGINS=$(aws apigatewayv2 get-api --api-id "$API_ID" --region "$AWS_REGION" \
+  --query 'CorsConfiguration.AllowOrigins' --output json)
+
+aws apigatewayv2 update-api --api-id "$API_ID" --region "$AWS_REGION" \
+  --cors-configuration "{
+    \"AllowOrigins\": ${EXISTING_ORIGINS:-[\"*\"]},
+    \"AllowMethods\": [\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],
+    \"AllowHeaders\": [\"content-type\",\"authorization\"],
+    \"AllowCredentials\": false,
+    \"MaxAge\": 0
+  }" >/dev/null
 
 # ── 4. Done ──────────────────────────────────────────────────────────────────
 # $default stage has auto-deploy enabled, so routes are live immediately.
@@ -189,9 +212,10 @@ BASE="https://${API_ID}.execute-api.${AWS_REGION}.amazonaws.com"
 cat <<EOF
 
 Done. New routes are live at:
-  GET  $BASE/shipments                          (any signed-in user)
-  GET  $BASE/users?role=DRIVER|CUSTOMER|ADMIN  (admin only)
-  POST $BASE/shipments                          (admin only)
+  GET    $BASE/shipments                          (any signed-in user)
+  GET    $BASE/users?role=DRIVER|CUSTOMER|ADMIN  (admin only)
+  POST   $BASE/shipments                          (admin only)
+  DELETE $BASE/shipments/{id}                     (admin only)
 
 Smoke test (needs a Cognito ID token; /users needs an admin one):
   curl -H "Authorization: Bearer \$TOKEN" "$BASE/shipments"
