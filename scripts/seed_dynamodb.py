@@ -42,17 +42,26 @@ def seed():
         'resolvedAt': None,
     })
 
-    # Seed Users table (for Cognito role mapping)
+    # Seed Users table (for Cognito role mapping). Shipment assignment is
+    # not stored here — it lives on the Shipments table's driver/customer
+    # email fields, so query Shipments by those to find a user's shipments.
     users = dynamodb.Table('Users')
     for u in [
-        {'userId': 'demo-admin',    'email': 'admin@lisa.demo',    'role': 'ADMIN',
-         'assignedShipments': [], 'createdAt': now},
-        {'userId': 'demo-driver',   'email': 'driver@lisa.demo',   'role': 'DRIVER',
-         'assignedShipments': ['SHIP-001', 'SHIP-002'], 'createdAt': now},
-        {'userId': 'demo-customer', 'email': 'customer@lisa.demo', 'role': 'CUSTOMER',
-         'assignedShipments': ['SHIP-001'], 'createdAt': now},
+        {'userId': 'demo-admin',    'email': 'admin@lisa.demo',    'role': 'ADMIN',    'createdAt': now},
+        {'userId': 'demo-driver',   'email': 'driver@lisa.demo',   'role': 'DRIVER',   'createdAt': now},
+        {'userId': 'demo-customer', 'email': 'customer@lisa.demo', 'role': 'CUSTOMER', 'createdAt': now},
     ]:
         users.put_item(Item=u)
+
+    # Migration: strip the legacy assignedShipments attribute from any
+    # remaining Users rows (put_item above already replaced the demo users
+    # wholesale, so this only touches non-demo entries).
+    for u in users.scan().get('Items', []):
+        if 'assignedShipments' in u:
+            users.update_item(
+                Key={'userId': u['userId']},
+                UpdateExpression='REMOVE assignedShipments',
+            )
 
     # Seed NFCDevices table (known devices + whitelist, single table keyed by tagId)
     nfc = dynamodb.Table('NFCDevices')

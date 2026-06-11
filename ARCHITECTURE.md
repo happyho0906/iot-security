@@ -226,7 +226,6 @@ See `lambda/shadow-processor/lambda_function.py` and `pi/sensor_agent.py`.
 | lastUpdatedAt | S | ISO 8601 UTC |
 | thingName | S | IoT Thing, e.g. `shipment-SHIP-001` |
 | batteryLevel | N | 0–100, written by shadow-processor |
-| assignedTo | S | Cognito sub of assigned driver |
 | driver | S | Email of the assigned Users entry with role DRIVER (optional) |
 | customer | S | Email of the assigned Users entry with role CUSTOMER (optional) |
 
@@ -252,8 +251,12 @@ See `lambda/shadow-processor/lambda_function.py` and `pi/sensor_agent.py`.
 | userId | S | Cognito sub |
 | email | S | |
 | role | S | ADMIN / DRIVER / CUSTOMER |
-| assignedShipments | L | List of shipmentId strings |
 | createdAt | S | ISO 8601 UTC |
+
+Shipment assignment is not stored on Users — it lives on the Shipments
+table's `driver` / `customer` email fields. To find a user's shipments,
+query Shipments by those fields (e.g. the dashboard's driver view filters
+shipments where `driver` equals the logged-in email).
 
 ### NFCDevices (PK: tagId) — new
 
