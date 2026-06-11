@@ -2106,12 +2106,19 @@
       }
 
       // Returns Users entries with the given role (DRIVER/CUSTOMER/ADMIN),
-      // for populating the "Add Shipment" Driver/Customer dropdowns.
+      // for populating the "Add Shipment" Driver/Customer dropdowns. Reads
+      // the live DynamoDB Users table via GET /users when API_BASE is set.
       async function dbListUsers(role) {
         if (typeof API_BASE !== "undefined" && API_BASE) {
-          return fetch(API_BASE + "/users?role=" + encodeURIComponent(role), {
+          const resp = await fetch(API_BASE + "/users?role=" + encodeURIComponent(role), {
             headers: await _authHeaders(),
-          }).then((r) => r.json());
+          });
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error || "Failed to load users (HTTP " + resp.status + ").");
+          }
+          const users = await resp.json();
+          return Array.isArray(users) ? users : [];
         }
         return _db.users.filter((u) => u.role === role);
       }
@@ -2399,17 +2406,23 @@
       }
 
       async function openAddShipmentModal() {
+        const errEl = document.getElementById("add-shipment-error");
         document.getElementById("add-shipment-id").value = "";
         document.getElementById("add-shipment-status").value = "IN_TRANSIT";
         document.getElementById("add-shipment-risk").value = "LOW";
-        document.getElementById("add-shipment-error").style.display = "none";
+        errEl.style.display = "none";
         document.getElementById("add-shipment-modal").classList.add("open");
         setTimeout(() => document.getElementById("add-shipment-id").focus(), 50);
 
-        await Promise.all([
-          _populateUserSelect("add-shipment-driver", "DRIVER"),
-          _populateUserSelect("add-shipment-customer", "CUSTOMER"),
-        ]);
+        try {
+          await Promise.all([
+            _populateUserSelect("add-shipment-driver", "DRIVER"),
+            _populateUserSelect("add-shipment-customer", "CUSTOMER"),
+          ]);
+        } catch (e) {
+          errEl.textContent   = e.message || "Failed to load driver/customer users.";
+          errEl.style.display = "block";
+        }
       }
 
       function cancelAddShipment() {
